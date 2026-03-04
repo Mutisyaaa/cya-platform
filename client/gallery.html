@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gallery | AIC Ziwani</title>
+
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f4f4;
+  color: #222;
+}
+
+/* NAVBAR */
+nav {
+  background: white;
+  padding: 18px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-area img {
+  width: 60px;
+}
+
+.church-name h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: black;
+}
+
+.church-name span {
+  font-size: 13px;
+  color: black;
+}
+
+.nav-links {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: 0.3s ease;
+  color: black;
+}
+
+.nav-links a:hover {
+  background: var(--primary-red);
+  color: white;
+  transform: translateY(-3px);
+}
+
+.nav-links a.active {
+  background: var(--primary-red);
+  color: white;
+}
+
+/* HEADER */
+.page-header {
+  background: linear-gradient(135deg, #c8102e, #9e0d23);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.page-header h2 {
+  font-size: 42px;
+}
+
+.page-header p {
+  margin-top: 15px;
+  font-size: 18px;
+}
+
+/* GALLERY SECTION */
+.gallery-section {
+  padding: 100px 60px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 25px;
+}
+
+.gallery-item {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 280px;
+  object-fit: cover;
+  transition: 0.4s ease;
+}
+
+.gallery-item:hover img {
+  transform: scale(1.1);
+}
+
+.gallery-title {
+  position: absolute;
+  bottom: 0;
+  background: rgba(0,0,0,0.6);
+  color: white;
+  width: 100%;
+  padding: 10px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* FOOTER */
+footer {
+  background: #111;
+  color: white;
+  padding: 30px;
+  text-align: center;
+  margin-top: 80px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo-area">
+    <img src="logo.png" alt="AIC Logo">
+    <div class="church-name">
+      <h1>AIC Ziwani</h1>
+      <span>Africa Inland Church</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="blog.html">Blog</a>
+    <a href="services.html">Services</a>
+    <a href="events.html">Events</a>
+    <a href="gallery.html" class="active">Gallery</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</nav>
+
+<section class="page-header">
+  <h2>Church Gallery</h2>
+  <p>Moments from worship, fellowship, and outreach.</p>
+</section>
+
+<section class="gallery-section">
+  <div class="gallery-grid" id="galleryContainer"></div>
+</section>
+
+<footer>
+  © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
+</footer>
+
+<script>
+async function loadGallery() {
+  try {
+    const response = await fetch("/api/gallery");
+    const images = await response.json();
+
+    const container = document.getElementById("galleryContainer");
+    container.innerHTML = "";
+
+    images.forEach(image => {
+      const item = `
+        <div class="gallery-item">
+          <img src="${image.image_url}" alt="${image.title}">
+          <div class="gallery-title">${image.title}</div>
+        </div>
+      `;
+      container.innerHTML += item;
+    });
+
+  } catch (error) {
+    console.error("Error loading gallery:", error);
+  }
+}
+
+loadGallery();
+</script>
+
+</body>
+</html>

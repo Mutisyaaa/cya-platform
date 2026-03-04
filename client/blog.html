@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Blog | AIC Ziwani</title>
+
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f4f4;
+  color: #222;
+}
+
+/* NAVBAR */
+nav {
+  background: white;
+  padding: 18px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-area img {
+  width: 60px;
+}
+
+.church-name h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: black;
+}
+
+.church-name span {
+  font-size: 13px;
+  color: black;
+}
+
+.nav-links {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: 0.3s ease;
+  color: black;
+}
+
+.nav-links a:hover {
+  background: var(--primary-red);
+  color: white;
+  transform: translateY(-3px);
+}
+
+.nav-links a.active {
+  background: var(--primary-red);
+  color: white;
+}
+
+/* PAGE HEADER */
+.page-header {
+  background: linear-gradient(135deg, #c8102e, #9e0d23);
+  color: white;
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.page-header h2 {
+  font-size: 42px;
+}
+
+.page-header p {
+  margin-top: 15px;
+  font-size: 18px;
+}
+
+/* BLOG SECTION */
+.blog-section {
+  padding: 100px 60px;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 35px;
+}
+
+.blog-card {
+  background: white;
+  padding: 35px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
+}
+
+.blog-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+}
+
+.blog-card h3 {
+  margin-bottom: 10px;
+}
+
+.blog-card .meta {
+  font-size: 14px;
+  color: gray;
+  margin-bottom: 15px;
+}
+
+.blog-card p {
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.read-more {
+  display: inline-block;
+  background: var(--primary-red);
+  color: white;
+  padding: 8px 20px;
+  border-radius: 25px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: 0.3s ease;
+}
+
+.read-more:hover {
+  background: var(--dark-red);
+  transform: translateY(-3px);
+}
+
+/* FOOTER */
+footer {
+  background: #111;
+  color: white;
+  padding: 30px;
+  text-align: center;
+  margin-top: 80px;
+}
+
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo-area">
+    <img src="logo.png" alt="AIC Logo">
+    <div class="church-name">
+      <h1>AIC Ziwani</h1>
+      <span>Africa Inland Church</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="blog.html" class="active">Blog</a>
+    <a href="events.html">Events</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="contact.html">Contact</a>
+  </div>
+</nav>
+
+<section class="page-header">
+  <h2>Our Blog</h2>
+  <p>Devotionals, teachings, and updates from AIC Ziwani.</p>
+</section>
+
+<section class="blog-section">
+  <div class="blog-grid">
+
+    <!-- Static example posts for now -->
+    <div class="blog-card">
+      <h3>Walking in Faith</h3>
+      <div class="meta">By Admin | March 2026</div>
+      <p>
+        Faith is trusting God even when the path ahead seems unclear.
+        Here is how we can grow deeper in daily faith.
+      </p>
+      <a href="#" class="read-more">Read More</a>
+    </div>
+
+    <div class="blog-card">
+      <h3>Serving with Purpose</h3>
+      <div class="meta">By Admin | March 2026</div>
+      <p>
+        Serving is not just an action, it is a calling.
+        Discover how purpose transforms community impact.
+      </p>
+      <a href="#" class="read-more">Read More</a>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
+</footer>
+
+</body>
+</html>

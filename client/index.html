@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIC Ziwani CYA</title>
+
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f4f4;
+  color: #222;
+  scroll-behavior: smooth;
+}
+
+/* ================= NAVBAR ================= */
+nav {
+  background: white;
+  padding: 18px 60px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logo-area img {
+  width: 60px;
+}
+
+.church-name h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: black;
+}
+
+.church-name span {
+  font-size: 13px;
+  color: black;
+  letter-spacing: 1px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 15px;
+}
+
+.nav-links a {
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: 0.3s ease;
+  background: transparent;
+  color: black;
+}
+
+/* upgraded navbar buttons */
+.nav-links a:hover {
+  background: var(--primary-red);
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(200,16,46,0.25);
+}
+
+.nav-links a.btn-contact {
+  background: var(--primary-red);
+  color: white;
+}
+
+.nav-links a.btn-contact:hover {
+  background: var(--dark-red);
+}
+
+/* ================= HERO ================= */
+.hero {
+  background: linear-gradient(135deg, #c8102e, #9e0d23);
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: white;
+  padding: 20px;
+}
+
+.hero-content h2 {
+  font-size: 48px;
+}
+
+.hero-content p {
+  margin-top: 20px;
+  font-size: 18px;
+  max-width: 650px;
+}
+
+.hero-btn {
+  margin-top: 30px;
+  display: inline-block;
+  background: white;
+  color: var(--primary-red);
+  padding: 14px 32px;
+  border-radius: 30px;
+  font-weight: 700;
+  transition: 0.3s ease;
+  text-decoration: none;
+}
+
+.hero-btn:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* ================= SECTIONS ================= */
+.section {
+  padding: 100px 60px;
+  text-align: center;
+}
+
+.section h2 {
+  font-size: 34px;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.section h2::after {
+  content: "";
+  width: 60px;
+  height: 3px;
+  background: var(--primary-red);
+  display: block;
+  margin: 12px auto 0;
+}
+
+.light {
+  background: white;
+}
+
+/* ================= CARDS ================= */
+.cards {
+  display: flex;
+  justify-content: center;
+  gap: 35px;
+  margin-top: 50px;
+  flex-wrap: wrap;
+}
+
+.card {
+  background: white;
+  padding: 35px;
+  width: 280px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  transition: 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+}
+
+/* ================= GALLERY GRID ================= */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+  margin-top: 50px;
+}
+
+.grid-box {
+  background: var(--primary-red);
+  color: white;
+  padding: 60px 20px;
+  border-radius: 18px;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.grid-box:hover {
+  background: var(--dark-red);
+  transform: scale(1.05);
+}
+
+/* ================= BLOG ================= */
+.blog-cards {
+  display: flex;
+  justify-content: center;
+  gap: 35px;
+  margin-top: 50px;
+  flex-wrap: wrap;
+}
+
+.blog-card {
+  background: white;
+  padding: 35px;
+  width: 330px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  text-align: left;
+  transition: 0.3s ease;
+}
+
+.blog-card:hover {
+  transform: translateY(-8px);
+}
+
+.blog-card h3 {
+  margin-bottom: 12px;
+}
+
+.blog-card a {
+  display: inline-block;
+  margin-top: 15px;
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--primary-red);
+}
+
+/* ================= CONTACT ================= */
+.contact-box {
+  background: white;
+  padding: 50px;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  max-width: 600px;
+  margin: 50px auto 0;
+}
+
+/* ================= FOOTER ================= */
+footer {
+  background: #111;
+  color: white;
+  padding: 30px;
+  text-align: center;
+  font-size: 14px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo-area">
+    <img src="logo.png" alt="AIC Logo">
+    <div class="church-name">
+      <h1>AIC Ziwani CYA</h1>
+      <span>Africa Inland Church</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="#about">About</a>
+    <a href="services.html">Services</a>
+    <a href="#ministries">Ministries</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="blog.html">Blog</a>
+    <a href="events.html">Events</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-content">
+    <h2>Welcome to AIC Ziwani CYA</h2>
+    <p>Growing in faith. Serving with love. Building a Christ-centered community.</p>
+    <a href="#services" class="hero-btn">Join Our Services</a>
+  </div>
+</section>
+
+<section id="about" class="section">
+  <h2>About Us</h2>
+  <p>AIC Ziwani is committed to spreading the Gospel and nurturing believers through Christ-centered fellowship.</p>
+</section>
+
+<section id="services" class="section light">
+  <h2>Our Services</h2>
+  <div class="cards">
+    <div class="card"><h3>Sunday Worship</h3><p>Powerful worship and biblical teaching every week.</p></div>
+    <div class="card"><h3>Youth Fellowship</h3><p>Empowering young believers to grow spiritually.</p></div>
+    <div class="card"><h3>Midweek Prayer</h3><p>A time of prayer and spiritual renewal.</p></div>
+  </div>
+</section>
+
+<section id="ministries" class="section">
+  <h2>Ministries</h2>
+  <div class="cards">
+    <div class="card"><h3>Men's Ministry</h3><p>Strengthening men in faith and leadership.</p></div>
+    <div class="card"><h3>Women's Ministry</h3><p>Empowering women through fellowship and growth.</p></div>
+    <div class="card"><h3>Children's Ministry</h3><p>Raising children on biblical foundations.</p></div>
+  </div>
+</section>
+
+<section id="gallery" class="section light">
+  <h2>Gallery</h2>
+  <div class="grid">
+    <div class="grid-box">Worship</div>
+    <div class="grid-box">Youth Events</div>
+    <div class="grid-box">Outreach</div>
+    <div class="grid-box">Special Services</div>
+  </div>
+</section>
+
+<section id="blog" class="section">
+  <h2>Latest From Our Blog</h2>
+  <div class="blog-cards">
+    <div class="blog-card">
+      <h3>Walking in Faith</h3>
+      <p>A reflection on trusting God in every season.</p>
+      <a href="#">Read More →</a>
+    </div>
+    <div class="blog-card">
+      <h3>Serving with Purpose</h3>
+      <p>Why community service is central to our calling.</p>
+      <a href="#">Read More →</a>
+    </div>
+  </div>
+</section>
+
+<section id="contact" class="section light">
+  <h2>Contact Us</h2>
+  <div class="contact-box">
+    <p>Email: info@aicziwani.org</p>
+    <p>Phone: +254 700 000 000</p>
+  </div>
+</section>
+
+<footer>
+  © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
+</footer>
+
+</body>
+</html>
