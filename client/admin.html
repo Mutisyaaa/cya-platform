@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  color: #222;
+}
+
+#dashboard {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 250px;
+  background: #ffffff;
+  padding: 20px;
+  box-shadow: 4px 0 20px rgba(0,0,0,0.05);
+  border-right: 1px solid #e5e5e5;
+}
+
+.sidebar h2 {
+  color: var(--primary-red);
+  margin-bottom: 12px;
+}
+
+.sidebar p {
+  margin: 0 0 24px;
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.sidebar button {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: transparent;
+  color: #333;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.sidebar button:hover {
+  background: #f0f0f0;
+}
+
+.sidebar button.active {
+  background: var(--primary-red);
+  color: white;
+}
+
+.main {
+  flex: 1;
+  padding: 30px;
+}
+
+.status {
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.section {
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+.card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+input,
+textarea,
+button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: none;
+}
+
+input,
+textarea {
+  background: #f9f9f9;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+button.submit {
+  background: var(--primary-red);
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button.submit:hover {
+  background: var(--dark-red);
+}
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 25px;
+  margin-top: 25px;
+}
+
+.grid-item {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+  transition: 0.3s ease;
+}
+
+.grid-item:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+}
+
+.grid-item img, .grid-item video {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.grid-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.grid-item-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 65%;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.list-item {
+  background: #ffffff;
+  padding: 24px;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #f0f0f0;
+  transition: 0.3s ease;
+}
+
+.list-item:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+}
+
+.list-item h4 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #222;
+}
+
+.list-item p {
+  margin: 0;
+  font-size: 14px;
+  color: #777;
+}
+
+.delete-btn {
+  background: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.delete-btn:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.user-table th, .user-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.user-table th {
+  background: #fafafa;
+}
+</style>
+</head>
+
+<body>
+
+<div id="dashboard">
+<div class="sidebar">
+  <h2>Admin</h2>
+  <p>This page is standalone. It will stay on its own URL and talk to the backend on port 3000.</p>
+
+  <button onclick="showSection('gallery')">Gallery</button>
+  <button onclick="showSection('blogs')">Blogs</button>
+  <button onclick="showSection('ministries')">Ministries</button>
+  <button onclick="showSection('events')">Events</button>
+  <button onclick="showSection('users')">Users</button>
+
+  <button onclick="logout()">Logout</button>
+</div>
+
+<div class="main">
+  <div id="statusBox" class="status">Admin page loaded. No automatic redirect is active.</div>
+
+  <div id="gallery" class="section active">
+    <div class="card">
+      <h2>Upload Media (Image/Video)</h2>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <input type="text" name="title" placeholder="Media Title" required>
+        <input type="file" name="media" accept="image/*,video/*" required>
+        <button class="submit" type="submit">Upload</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Existing Media</h2>
+      <div id="galleryList" class="item-grid"></div>
+    </div>
+  </div>
+
+  <div id="blogs" class="section">
+    <div class="card">
+      <h2>Create Blog</h2>
+      <form id="blogForm">
+        <input type="text" name="title" placeholder="Title" required>
+        <textarea name="content" placeholder="Content" required></textarea>
+        <button class="submit" type="submit">Post Blog</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Existing Posts</h2>
+      <div id="blogList" class="item-list"></div>
+    </div>
+  </div>
+
+  <div id="ministries" class="section">
+    <div class="card">
+      <h2>Add Ministry</h2>
+      <form id="ministryForm">
+        <input type="text" name="name" placeholder="Ministry Name" required>
+        <textarea name="description" placeholder="Description"></textarea>
+        <button class="submit" type="submit">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="events" class="section">
+    <div class="card">
+      <h2>Create Event</h2>
+      <form id="eventForm">
+        <input type="text" name="title" placeholder="Event Title" required>
+        <input type="date" name="date" required>
+        <input type="time" name="time">
+        <textarea name="description" placeholder="Event Description"></textarea>
+        <button class="submit" type="submit">Create Event</button>
+      </form>
+    </div>
+    <div class="card">
+      <h2>Existing Events</h2>
+      <div id="eventList" class="item-list"></div>
+    </div>
+  </div>
+
+  <div id="users" class="section">
+    <div class="card">
+      <h2>Registered Users</h2>
+      <div id="userList"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+const statusBox = document.getElementById("statusBox");
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+
+function buildBackendUrl(path) {
+  return new URL(path, backendOrigin).toString();
+}
+
+function showStatus(message, isError = false) {
+  statusBox.textContent = message;
+  statusBox.style.background = isError ? "#450a0a" : "#172554";
+  statusBox.style.color = isError ? "#fecaca" : "#dbeafe";
+}
+
+async function ensureOk(response, actionLabel) {
+  if (response.ok) {
+    return response;
+  }
+
+  const payload = await response.json().catch(() => null);
+  const message = payload?.error || payload?.message || `${actionLabel} failed`;
+
+  if (response.status === 401) {
+    throw new Error(`Your session expired. Please log in again.`);
+  }
+
+  throw new Error(message);
+}
+
+async function showSection(id) {
+  document.querySelectorAll(".section").forEach((section) => {
+    section.classList.remove("active");
+  });
+  document.querySelectorAll(".sidebar button").forEach((btn) => {
+    btn.classList.remove("active");
+  });
+
+  document.getElementById(id)?.classList.add("active");
+  const activeBtn = document.querySelector(`.sidebar button[onclick="showSection('${id}')"]`);
+  if (activeBtn) activeBtn.classList.add("active");
+
+  if (id === 'gallery') await loadGallery();
+  else if (id === 'blogs') await loadBlogs();
+  else if (id === 'users') await loadUsers();
+  else if (id === 'events') await loadEvents();
+}
+
+async function loadGallery() {
+  const container = document.getElementById('galleryList');
+  try {
+    const response = await fetch(buildBackendUrl('/api/gallery'));
+    const items = await response.json();
+    if (response.ok) {
+      container.innerHTML = items.map(item => {
+        const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
+        const mediaTag = isVideo
+          ? `<video src="${buildBackendUrl(item.image_url)}" muted></video>`
+          : `<img src="${buildBackendUrl(item.image_url)}" alt="${item.title}">`;
+        
+        return `
+          <div class="grid-item">
+            ${mediaTag}
+            <div class="grid-item-header">
+              <h4 title="${item.title}">${item.title}</h4>
+              <button class="delete-btn" data-id="${item.id}" data-type="gallery">Delete</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+  } catch (error) {
+    container.innerHTML = `<p style="color: red;">Failed to load gallery items.</p>`;
+  }
+}
+
+async function loadBlogs() {
+  const container = document.getElementById('blogList');
+  try {
+    const response = await fetch(buildBackendUrl('/api/blogs'));
+    const items = await response.json();
+    if (response.ok) {
+      container.innerHTML = items.map(item => `
+        <div class="list-item">
+          <div>
+            <h4>${item.title}</h4>
+            <p>Created: ${new Date(item.created_at).toLocaleDateString()}</p>
+          </div>
+          <button class="delete-btn" data-id="${item.id}" data-type="blogs">Delete</button>
+        </div>
+      `).join('');
+    }
+  } catch (error) {
+    container.innerHTML = `<p style="color: red;">Failed to load blogs.</p>`;
+  }
+}
+
+async function loadEvents() {
+  const container = document.getElementById('eventList');
+  try {
+    const response = await fetch(buildBackendUrl('/api/events'));
+    const items = await response.json();
+    if (response.ok) {
+      container.innerHTML = items.map(item => `
+        <div class="list-item">
+          <div>
+            <h4>${item.title}</h4>
+            <p>Date: ${new Date(item.event_date).toLocaleDateString()} ${item.event_time ? ' at ' + item.event_time : ''}</p>
+          </div>
+          <button class="delete-btn" data-id="${item.id}" data-type="events">Delete</button>
+        </div>
+      `).join('');
+    }
+  } catch (error) {
+    container.innerHTML = `<p style="color: red;">Failed to load events.</p>`;
+  }
+}
+
+async function loadUsers() {
+  const container = document.getElementById('userList');
+  try {
+    const response = await fetch(buildBackendUrl('/api/users'), { credentials: 'include' });
+    if (response.ok) {
+      const items = await response.json();
+      let table = `<table class="user-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Provider</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody>`;
+      table += items.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.name}</td>
+          <td>${item.email}</td>
+          <td>${item.google_id ? 'Google' : 'Local'}</td>
+          <td>${new Date(item.created_at).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+      table += `</tbody></table>`;
+      container.innerHTML = table;
+    } else {
+      const data = await response.json().catch(() => null);
+      container.innerHTML = `<p style="color: red;">${data?.error || 'Unauthorized to view users. Please login.'}</p>`;
+    }
+  } catch (error) {
+    container.innerHTML = `<p style="color: red;">Network error while loading users.</p>`;
+  }
+}
+
+document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const formData = new FormData(this);
+
+  try {
+    const response = await fetch(buildBackendUrl("/api/gallery"), {
+      method: "POST",
+      body: formData,
+      credentials: "include",
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      }
+    });
+
+    await ensureOk(response, "Upload");
+    showStatus("Media uploaded successfully. Refreshing list...");
+    this.reset();
+    await loadGallery();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+});
+
+document.getElementById("blogForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this));
+
+  try {
+    const response = await fetch(buildBackendUrl("/api/blogs"), {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      },
+      body: JSON.stringify(data),
+      credentials: "include"
+    });
+
+    await ensureOk(response, "Blog post");
+    showStatus("Blog posted successfully. Refreshing list...");
+    this.reset();
+    await loadBlogs();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+});
+
+document.getElementById("eventForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this));
+
+  try {
+    const response = await fetch(buildBackendUrl("/api/events"), {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      },
+      body: JSON.stringify(data),
+      credentials: "include"
+    });
+
+    await ensureOk(response, "Event creation");
+    showStatus("Event created successfully. Refreshing list...");
+    this.reset();
+    await loadEvents();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+});
+
+async function logout() {
+  try {
+    await fetch(buildBackendUrl("/api/auth/logout"), {
+      credentials: "include"
+    });
+    window.location.href = '/';
+  } catch (error) {
+    showStatus("Could not reach the backend logout endpoint.", true);
+  }
+}
+
+document.querySelector('.main').addEventListener('click', async (e) => {
+  if (e.target.matches('.delete-btn')) {
+    const id = e.target.dataset.id;
+    const type = e.target.dataset.type;
+    const typeName = type === 'gallery' ? 'media' : (type === 'events' ? 'event' : 'blog post');
+    
+    if (!confirm(`Are you sure you want to delete this ${typeName}?`)) return;
+
+    try {
+      const response = await fetch(buildBackendUrl(`/api/${type}/${id}`), {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "fetch"
+        }
+      });
+      await ensureOk(response, 'Delete');
+      showStatus(`${typeName.charAt(0).toUpperCase() + typeName.slice(1)} deleted successfully.`);
+      e.target.closest('.list-item, .grid-item').remove();
+    } catch (error) {
+      showStatus(error.message, true);
+    }
+  }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+  showSection('gallery');
+});
+</script>
+
+</body>
+</html>

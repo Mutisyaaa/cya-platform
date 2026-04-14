@@ -62,6 +62,7 @@ nav {
 .nav-links {
   display: flex;
   gap: 15px;
+  align-items: center;
 }
 
 .nav-links a {
@@ -89,6 +90,119 @@ nav {
 
 .nav-links a.btn-contact:hover {
   background: var(--dark-red);
+}
+
+.auth-slot {
+  position: relative;
+}
+
+.auth-link {
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: 0.3s ease;
+  background: transparent;
+  color: black;
+  display: inline-flex;
+  align-items: center;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.auth-link:hover {
+  background: var(--primary-red);
+  color: white;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(200,16,46,0.25);
+}
+
+.profile-toggle {
+  border: none;
+  background: white;
+  border-radius: 999px;
+  padding: 6px 12px 6px 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  transition: 0.3s ease;
+}
+
+.profile-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+}
+
+.profile-avatar,
+.profile-fallback {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--primary-red);
+  color: white;
+  font-weight: 700;
+}
+
+.profile-name {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+  color: #222;
+}
+
+.profile-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 220px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  padding: 12px;
+  display: none;
+}
+
+.profile-menu.open {
+  display: block;
+}
+
+.profile-menu-name {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.profile-menu-email {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 12px;
+  word-break: break-word;
+}
+
+.profile-menu button {
+  width: 100%;
+  border: none;
+  background: #f6f6f6;
+  color: #222;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.profile-menu button:hover {
+  background: #f0d7dc;
+  color: var(--dark-red);
 }
 
 /* ================= HERO ================= */
@@ -253,6 +367,126 @@ footer {
   text-align: center;
   font-size: 14px;
 }
+
+/* ================= AUTH MODAL ================= */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-overlay.open {
+  display: flex;
+}
+
+.auth-modal {
+  background: white;
+  padding: 40px;
+  border-radius: 18px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+  position: relative;
+}
+
+.auth-modal h2 {
+  margin-bottom: 20px;
+  font-size: 24px;
+  text-align: center;
+}
+
+.auth-modal .close-btn {
+  position: absolute;
+  top: 15px; right: 15px;
+  background: transparent; border: none;
+  font-size: 24px; cursor: pointer; color: #666;
+}
+
+.auth-error {
+  color: var(--primary-red);
+  font-size: 13px;
+  text-align: center;
+  margin-bottom: 15px;
+  display: none;
+  background: #fdecec;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.auth-form input {
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.auth-form input:focus {
+  border-color: var(--primary-red);
+}
+
+.auth-form button {
+  background: var(--primary-red);
+  color: white;
+  border: none;
+  padding: 12px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+.auth-form button:hover {
+  background: var(--dark-red);
+}
+
+.auth-divider {
+  text-align: center;
+  margin: 20px 0;
+  position: relative;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: ""; position: absolute;
+  top: 50%; width: 40%; height: 1px; background: #ddd;
+}
+
+.auth-divider::before { left: 0; }
+.auth-divider::after { right: 0; }
+
+.auth-divider span {
+  background: white; padding: 0 10px; color: #666; font-size: 12px;
+}
+
+.google-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  background: white; color: #444; border: 1px solid #ccc;
+  padding: 12px; border-radius: 8px; font-weight: 600;
+  cursor: pointer; transition: 0.3s; width: 100%; text-decoration: none;
+}
+
+.google-btn:hover { background: #f4f4f4; }
+.google-btn img { width: 20px; }
+
+.auth-switch {
+  text-align: center; margin-top: 20px; font-size: 14px;
+}
+
+.auth-switch a {
+  color: var(--primary-red); font-weight: 600; cursor: pointer; text-decoration: none;
+}
 </style>
 </head>
 
@@ -268,12 +502,15 @@ footer {
   </div>
 
   <div class="nav-links">
+    <a href="index.html" class="active">Home</a>
     <a href="#about">About</a>
     <a href="services.html">Services</a>
     <a href="#ministries">Ministries</a>
+    <a href="events.html">Events</a>
     <a href="gallery.html">Gallery</a>
     <a href="blog.html">Blog</a>
-    <a href="events.html">Events</a>
+    <a href="#contact">Contact</a>
+    <div id="authSlot" class="auth-slot"></div>
   </div>
 </nav>
 
@@ -345,6 +582,244 @@ footer {
 <footer>
   © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
 </footer>
+
+<div id="authModal" class="modal-overlay">
+  <div class="auth-modal">
+    <button class="close-btn" onclick="closeAuthModal()">&times;</button>
+    <h2 id="authTitle">Login</h2>
+    <div id="authError" class="auth-error"></div>
+    <form id="authForm" class="auth-form">
+      <input type="text" id="authName" name="name" placeholder="Full Name" style="display:none;">
+      <input type="email" id="authEmail" name="email" placeholder="Email Address" required>
+      <input type="password" id="authPassword" name="password" placeholder="Password" required>
+      <button type="submit" id="authSubmitBtn">Login</button>
+    </form>
+    <div class="auth-divider"><span>OR</span></div>
+    <a id="googleLoginBtn" href="#" class="google-btn">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google">
+      Continue with Google
+    </a>
+    <div class="auth-switch">
+      <span id="authSwitchText">Don't have an account?</span>
+      <a onclick="toggleAuthMode()">Sign up</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const authSlot = document.getElementById("authSlot");
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+
+function buildBackendUrl(path) {
+  return new URL(path, backendOrigin).toString();
+}
+
+function buildLoginUrl() {
+  const returnTo = `${window.location.pathname}${window.location.search}`;
+  const loginUrl = new URL(buildBackendUrl("/auth/google"));
+  loginUrl.searchParams.set("returnTo", returnTo);
+  return loginUrl.toString();
+}
+
+function getInitials(name = "User") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0].toUpperCase())
+    .join("");
+}
+
+function getAvatarUrl(user) {
+  return user.avatarUrl || (user.photos && user.photos[0] ? user.photos[0].value : "");
+}
+
+function getFallbackAvatarMarkup(name) {
+  return `<span class="profile-fallback">${getInitials(name)}</span>`;
+}
+
+function closeProfileMenu() {
+  const menu = authSlot.querySelector(".profile-menu");
+  const toggle = authSlot.querySelector(".profile-toggle");
+
+  if (menu) {
+    menu.classList.remove("open");
+  }
+
+  if (toggle) {
+    toggle.setAttribute("aria-expanded", "false");
+  }
+}
+
+function renderLoggedOut() {
+  authSlot.innerHTML = `<button class="auth-link" onclick="openAuthModal()">Login</button>`;
+}
+
+function renderLoggedIn(user) {
+  const displayName = user.displayName || "My Profile";
+  const email = user.emails && user.emails[0] ? user.emails[0].value : "";
+  const photo = getAvatarUrl(user);
+  const avatarMarkup = photo
+    ? `<img class="profile-avatar" src="${photo}" alt="${displayName}" referrerpolicy="no-referrer">`
+    : getFallbackAvatarMarkup(displayName);
+
+  authSlot.innerHTML = `
+    <button class="profile-toggle" type="button" aria-expanded="false">
+      ${avatarMarkup}
+      <span class="profile-name">${displayName}</span>
+    </button>
+    <div class="profile-menu">
+      <div class="profile-menu-name">${displayName}</div>
+      <div class="profile-menu-email">${email}</div>
+      <button id="logoutButton" type="button">Logout</button>
+    </div>
+  `;
+
+  const toggle = authSlot.querySelector(".profile-toggle");
+  const menu = authSlot.querySelector(".profile-menu");
+  const logoutButton = document.getElementById("logoutButton");
+  const avatar = authSlot.querySelector(".profile-avatar");
+
+  if (avatar) {
+    avatar.addEventListener("error", () => {
+      avatar.outerHTML = getFallbackAvatarMarkup(displayName);
+    }, { once: true });
+  }
+
+  toggle.addEventListener("click", () => {
+    const isOpen = menu.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    try {
+      await fetch(buildBackendUrl("/api/auth/logout"), {
+        method: "GET",
+        credentials: "include"
+      });
+    } finally {
+      window.location.reload();
+    }
+  });
+}
+
+document.addEventListener("click", (event) => {
+  if (!authSlot.contains(event.target)) {
+    closeProfileMenu();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    closeProfileMenu();
+  }
+});
+
+let isLoginMode = true;
+
+function openAuthModal() {
+  document.getElementById('authModal').classList.add('open');
+  document.getElementById('googleLoginBtn').href = buildLoginUrl();
+}
+
+function closeAuthModal() {
+  document.getElementById('authModal').classList.remove('open');
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authForm').reset();
+}
+
+function toggleAuthMode() {
+  isLoginMode = !isLoginMode;
+  document.getElementById('authError').style.display = 'none';
+  document.getElementById('authForm').reset();
+  
+  if (isLoginMode) {
+    document.getElementById('authTitle').innerText = 'Login';
+    document.getElementById('authName').style.display = 'none';
+    document.getElementById('authName').required = false;
+    document.getElementById('authSubmitBtn').innerText = 'Login';
+    document.getElementById('authSwitchText').innerText = "Don't have an account?";
+    document.querySelector('.auth-switch a').innerText = 'Sign up';
+  } else {
+    document.getElementById('authTitle').innerText = 'Sign Up';
+    document.getElementById('authName').style.display = 'block';
+    document.getElementById('authName').required = true;
+    document.getElementById('authSubmitBtn').innerText = 'Create Account';
+    document.getElementById('authSwitchText').innerText = "Already have an account?";
+    document.querySelector('.auth-switch a').innerText = 'Log in';
+  }
+}
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('authEmail').value;
+  const password = document.getElementById('authPassword').value;
+  const name = document.getElementById('authName').value;
+  
+  const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
+  const payload = isLoginMode ? { email, password } : { name, email, password };
+  
+  try {
+    const response = await fetch(buildBackendUrl(endpoint), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      credentials: 'include'
+    });
+    
+    const result = await response.json().catch(() => ({}));
+    
+    if (!response.ok) {
+      document.getElementById('authError').innerText = result.error || result.message || 'Authentication failed';
+      document.getElementById('authError').style.display = 'block';
+    } else {
+      closeAuthModal();
+      window.location.reload();
+    }
+  } catch (err) {
+    document.getElementById('authError').innerText = 'Network error. Please try again.';
+    document.getElementById('authError').style.display = 'block';
+  }
+});
+
+async function loadAuthState() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/auth/user"), {
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      renderLoggedOut();
+      return;
+    }
+
+    const user = await response.json();
+    if (user && user.displayName) {
+      renderLoggedIn(user);
+      return;
+    }
+  } catch (error) {
+    console.error("Could not load auth state:", error);
+  }
+
+  renderLoggedOut();
+}
+
+loadAuthState();
+</script>
 
 </body>
 </html>

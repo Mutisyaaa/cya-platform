@@ -1,19 +1,27 @@
 require("dotenv").config({ path: __dirname + "/.env" });
+
 const express = require("express");
 const path = require("path");
-const pool = require("./db");
+const pool = require("../db");
 const multer = require("multer");
+const cors = require("cors");
 
 const app = express();
+
+// ✅ Enable CORS (VERY IMPORTANT)
+app.use(cors());
+
+// Middleware
 app.use(express.json());
 
-// 🔴 Serve frontend files
+// Serve frontend
 app.use(express.static(path.join(__dirname, "../client")));
 
-// ✅Serve upload images
+// Serve uploads
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// 🔵 Test API route
+
+// 🔵 TEST ROUTE
 app.get("/api", async (req, res) => {
   try {
     const result = await pool.query("SELECT NOW()");
@@ -26,7 +34,8 @@ app.get("/api", async (req, res) => {
   }
 });
 
-// 🟢 GET ALL BLOGS
+
+// BLOGS
 app.get("/api/blogs", async (req, res) => {
   try {
     const result = await pool.query(
@@ -38,27 +47,21 @@ app.get("/api/blogs", async (req, res) => {
   }
 });
 
-// 🟡 CREATE BLOG (for later admin use)
 app.post("/api/blogs", async (req, res) => {
   try {
     const { title, content } = req.body;
-
     const result = await pool.query(
       "INSERT INTO blogs (title, content) VALUES ($1, $2) RETURNING *",
       [title, content]
     );
-
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
-});
 
-// 🟣 GET ALL SERVICES
+// SERVICES
 app.get("/api/services", async (req, res) => {
   try {
     const result = await pool.query(
@@ -70,7 +73,8 @@ app.get("/api/services", async (req, res) => {
   }
 });
 
-// 🟠 GET ALL EVENTS
+
+// EVENTS
 app.get("/api/events", async (req, res) => {
   try {
     const result = await pool.query(
@@ -82,7 +86,8 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
-// 🔵 GET ALL GALLERY IMAGES
+
+// GALLERY GET
 app.get("/api/gallery", async (req, res) => {
   try {
     const result = await pool.query(
@@ -94,22 +99,27 @@ app.get("/api/gallery", async (req, res) => {
   }
 });
 
-// 🔵 Multer Storage Config
+
+// MULTER CONFIG
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination: (req, file, cb) => {
     cb(null, path.join(__dirname, "uploads"));
   },
-  filename: function (req, file, cb) {
+  filename: (req, file, cb) => {
     cb(null, Date.now() + "-" + file.originalname);
-  },
+  }
 });
 
 const upload = multer({ storage });
 
 
-// 🟣 UPLOAD IMAGE TO GALLERY
+// GALLERY UPLOAD
 app.post("/api/gallery", upload.single("image"), async (req, res) => {
+  console.log("UPLOAD ROUTE HIT"); 
   try {
+    console.log("BODY:", req.body);
+    console.log("FILE:", req.file);
+
     if (!req.file) {
       return res.status(400).json({ error: "No file uploaded" });
     }
@@ -132,6 +142,8 @@ app.post("/api/gallery", upload.single("image"), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+
 
 // ✅ ALWAYS LAST
 app.listen(3000, () => {

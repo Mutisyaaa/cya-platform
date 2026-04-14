@@ -1,7 +1,34 @@
 {
   "dependencies": {
-    "dotenv": "^17.3.1",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "express-session": "^1.18.1",
     "multer": "^2.1.1",
-    "pg": "^8.19.0"
-  }
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.20.0"
+  },
+  "name": "cya-platform",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Mutisyaaa/cya-platform.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Mutisyaaa/cya-platform/issues"
+  },
+  "homepage": "https://github.com/Mutisyaaa/cya-platform#readme"
 }

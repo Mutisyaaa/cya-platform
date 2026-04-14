@@ -1,39 +1,163 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Upload Gallery Image</title>
+  <title>Upload Media to Gallery</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 560px;
+      margin: 40px auto;
+      padding: 0 16px;
+      line-height: 1.5;
+    }
+
+    form {
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 20px;
+      background: #fafafa;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    input,
+    button {
+      width: 100%;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      box-sizing: border-box;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    #status {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    #status.success {
+      display: block;
+      background: #e8f7ea;
+      color: #1d5e2a;
+    }
+
+    #status.error {
+      display: block;
+      background: #fdecec;
+      color: #8a1f1f;
+    }
+  </style>
 </head>
 <body>
 
-<h2>Upload Image to Gallery</h2>
+<h2>Upload Media to Gallery</h2>
 
-<form id="uploadForm" enctype="multipart/form-data">
-  <input type="text" name="title" placeholder="Image Title" required><br><br>
-  <input type="file" name="image" accept="image/*" required><br><br>
-  <button type="submit">Upload</button>
+<div id="status" aria-live="polite"></div>
+
+<form
+  id="uploadForm"
+  enctype="multipart/form-data"
+  method="post"
+  action="/api/gallery"
+>
+  <label for="title">Media Title</label>
+  <input id="title" type="text" name="title" placeholder="Media Title" required>
+
+  <label for="media">Choose Media (Image/Video)</label>
+  <input id="media" type="file" name="media" accept="image/*,video/*" required>
+
+  <button id="submitButton" type="submit">Upload</button>
 </form>
 
 <script>
-document.getElementById("uploadForm").addEventListener("submit", async function(e) {
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+const form = document.getElementById("uploadForm");
+const statusBox = document.getElementById("status");
+const submitButton = document.getElementById("submitButton");
+const query = new URLSearchParams(window.location.search);
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+
+function buildBackendUrl(path) {
+  return new URL(path, backendOrigin).toString();
+}
+
+form.action = buildBackendUrl("/api/gallery");
+
+function showStatus(type, message) {
+  statusBox.className = type;
+  statusBox.textContent = message;
+}
+
+if (query.get("message")) {
+  showStatus("success", query.get("message"));
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
+if (query.get("error")) {
+  showStatus("error", query.get("error"));
+  window.history.replaceState({}, "", window.location.pathname);
+}
+
+form.addEventListener("submit", async function(e) {
   e.preventDefault();
 
   const formData = new FormData(this);
+  const action = this.action;
+  statusBox.className = "";
+  statusBox.textContent = "";
+  submitButton.disabled = true;
+  submitButton.textContent = "Uploading...";
 
   try {
-    const response = await fetch("/api/gallery", {
+    const response = await fetch(action, {
       method: "POST",
-      body: formData
+      body: formData,
+      credentials: "include",
+      headers: {
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      }
     });
 
+    const result = await response.json().catch(() => null);
+
     if (!response.ok) {
-      throw new Error("Upload failed");
+      throw new Error(result?.error || result?.message || "Upload failed");
     }
 
-    const result = await response.json();
-    alert(result.message);
+    showStatus("success", result.message || "Upload successful");
+    this.reset();
 
   } catch (err) {
-    alert("Something went wrong: " + err.message);
+    console.warn("Fetch upload failed, falling back to a normal form submit.", err);
+    showStatus("error", "Browser upload fallback in progress...");
+    HTMLFormElement.prototype.submit.call(this);
+    return;
+  } finally {
+    submitButton.disabled = false;
+    submitButton.textContent = "Upload";
   }
 });
 </script>

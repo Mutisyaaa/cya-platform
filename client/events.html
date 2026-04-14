@@ -144,6 +144,104 @@ nav {
   font-weight: 600;
 }
 
+/* CALENDAR */
+.section-title {
+  font-size: 28px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.calendar-container {
+  max-width: 1000px;
+  margin: 0 auto 60px auto;
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: var(--primary-red);
+  color: white;
+}
+
+.calendar-header button {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px 15px;
+  border-radius: 8px;
+  transition: 0.3s;
+}
+
+.calendar-header button:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+.calendar-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #f9f9f9;
+  text-align: center;
+  font-weight: 600;
+  padding: 15px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.calendar-cell {
+  min-height: 120px;
+  padding: 10px;
+  border-right: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.calendar-cell:nth-child(7n) {
+  border-right: none;
+}
+
+.calendar-cell.empty {
+  background: #fafafa;
+}
+
+.calendar-cell .date {
+  font-weight: bold;
+  color: #444;
+  font-size: 14px;
+}
+
+.calendar-cell .event-indicator {
+  background: #fee2e2;
+  color: var(--dark-red);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-left: 3px solid var(--primary-red);
+}
+
 /* FOOTER */
 footer {
   background: #111;
@@ -161,18 +259,20 @@ footer {
   <div class="logo-area">
     <img src="logo.png" alt="AIC Logo">
     <div class="church-name">
-      <h1>AIC Ziwani</h1>
+      <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
     </div>
   </div>
 
   <div class="nav-links">
     <a href="index.html">Home</a>
-    <a href="blog.html">Blog</a>
+    <a href="index.html#about">About</a>
     <a href="services.html">Services</a>
+    <a href="index.html#ministries">Ministries</a>
     <a href="events.html" class="active">Events</a>
     <a href="gallery.html">Gallery</a>
-    <a href="contact.html">Contact</a>
+    <a href="blog.html">Blog</a>
+    <a href="index.html#contact">Contact</a>
   </div>
 </nav>
 
@@ -182,6 +282,20 @@ footer {
 </section>
 
 <section class="events-section">
+  <h2 class="section-title">Events Calendar</h2>
+  <div class="calendar-container">
+    <div class="calendar-header">
+      <button id="prevMonth">&lt; Prev</button>
+      <h3 id="monthYear"></h3>
+      <button id="nextMonth">Next &gt;</button>
+    </div>
+    <div class="calendar-days">
+      <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <h2 class="section-title" style="margin-top: 60px;">Event Details</h2>
   <div class="events-grid" id="eventsContainer"></div>
 </section>
 
@@ -190,37 +304,98 @@ footer {
 </footer>
 
 <script>
+let allEvents = [];
+let currentMonth = new Date().getMonth();
+let currentYear = new Date().getFullYear();
+
 async function loadEvents() {
   try {
     const response = await fetch("/api/events");
-    const events = await response.json();
-    const container = document.getElementById("eventsContainer");
-    container.innerHTML = "";
-
-    const today = new Date();
-
-    events.forEach(event => {
-      const eventDate = new Date(event.event_date);
-      const isUpcoming = eventDate >= today;
-
-      const card = `
-        <div class="event-card">
-          ${isUpcoming ? '<div class="upcoming-badge">Upcoming</div>' : ''}
-          <h3>${event.title}</h3>
-          <div class="event-date">
-            ${eventDate.toDateString()} | ${event.event_time}
-          </div>
-          <p>${event.description}</p>
-        </div>
-      `;
-
-      container.innerHTML += card;
-    });
+    allEvents = await response.json();
+    
+    renderCalendar();
+    renderEventsList();
 
   } catch (error) {
     console.error("Error loading events:", error);
   }
 }
+
+function renderEventsList() {
+  const container = document.getElementById("eventsContainer");
+  container.innerHTML = "";
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Clear time for accurate upcoming comparison
+
+  allEvents.forEach(event => {
+    const eventDate = new Date(event.event_date);
+    const isUpcoming = eventDate >= today;
+
+    const card = `
+      <div class="event-card">
+        ${isUpcoming ? '<div class="upcoming-badge">Upcoming</div>' : ''}
+        <h3>${event.title}</h3>
+        <div class="event-date">
+          ${eventDate.toDateString()} | ${event.event_time ? event.event_time : ''}
+        </div>
+        <p>${event.description ? event.description : ''}</p>
+      </div>
+    `;
+
+    container.innerHTML += card;
+  });
+}
+
+function renderCalendar() {
+  const calendarGrid = document.getElementById("calendarGrid");
+  const monthYear = document.getElementById("monthYear");
+  calendarGrid.innerHTML = "";
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  const monthNames = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+  monthYear.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+  // Fill empty days at the start of the month
+  for (let i = 0; i < firstDay; i++) {
+    calendarGrid.innerHTML += `<div class="calendar-cell empty"></div>`;
+  }
+
+  // Fill actual days and populate their events
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayEvents = allEvents.filter(e => {
+      if (!e.event_date) return false;
+      const eDate = new Date(e.event_date);
+      return eDate.getFullYear() === currentYear && eDate.getMonth() === currentMonth && eDate.getDate() === day;
+    });
+
+    let eventsHtml = dayEvents.map(e => `<div class="event-indicator" title="${e.title}">${e.title}</div>`).join('');
+
+    calendarGrid.innerHTML += `
+      <div class="calendar-cell">
+        <div class="date">${day}</div>
+        ${eventsHtml}
+      </div>
+    `;
+  }
+}
+
+document.getElementById("prevMonth").addEventListener("click", () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+});
+
+document.getElementById("nextMonth").addEventListener("click", () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+});
 
 loadEvents();
 </script>
