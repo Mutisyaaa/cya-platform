@@ -218,6 +218,80 @@ footer {
   margin-top: 80px;
 }
 
+@media (max-width: 640px) {
+  nav {
+    padding: 12px 14px;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .logo-area {
+    width: 100%;
+  }
+
+  .logo-area img {
+    width: 46px;
+  }
+
+  .church-name h1 {
+    font-size: 17px;
+  }
+
+  .church-name span {
+    font-size: 11px;
+  }
+
+  .nav-links {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 10px 14px;
+  }
+
+  .page-header {
+    padding: 56px 16px;
+  }
+
+  .page-header h2 {
+    font-size: 32px;
+  }
+
+  .page-header p {
+    font-size: 16px;
+  }
+
+  .blog-section {
+    padding: 56px 16px;
+  }
+
+  .blog-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .blog-card {
+    padding: 24px 18px;
+  }
+
+  footer {
+    margin-top: 48px;
+    padding: 24px 16px;
+  }
+}
+
 </style>
 </head>
 

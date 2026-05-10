@@ -567,6 +567,124 @@ footer {
 .auth-switch a {
   color: var(--primary-red); font-weight: 600; cursor: pointer; text-decoration: none;
 }
+
+@media (max-width: 640px) {
+  nav {
+    padding: 12px 14px;
+    gap: 14px;
+    align-items: flex-start;
+  }
+
+  .logo-area {
+    width: 100%;
+  }
+
+  .logo-area img {
+    width: 46px;
+  }
+
+  .church-name h1 {
+    font-size: 17px;
+  }
+
+  .church-name span {
+    font-size: 11px;
+  }
+
+  .nav-links {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+  }
+
+  .nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-links a {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 10px 14px;
+  }
+
+  .auth-slot {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .profile-name {
+    max-width: 96px;
+  }
+
+  .profile-menu {
+    right: 0;
+    width: min(280px, 100vw - 28px);
+  }
+
+  .hero {
+    height: auto;
+    min-height: 72vh;
+    padding: 72px 16px 56px;
+  }
+
+  .hero-content h2 {
+    font-size: 34px;
+  }
+
+  .hero-content p {
+    font-size: 16px;
+  }
+
+  .hero-btn {
+    width: 100%;
+    max-width: 280px;
+    padding: 14px 20px;
+  }
+
+  .section {
+    padding: 64px 18px;
+  }
+
+  .section h2 {
+    font-size: 28px;
+  }
+
+  .cards,
+  .blog-cards,
+  .grid {
+    gap: 18px;
+    margin-top: 32px;
+  }
+
+  .card,
+  .blog-card {
+    width: 100%;
+    padding: 24px;
+  }
+
+  .contact-box {
+    padding: 26px 18px;
+    margin-top: 32px;
+  }
+
+  .modal-overlay {
+    padding: 16px;
+  }
+
+  .auth-modal {
+    margin: 0;
+    padding: 28px 18px;
+    max-width: none;
+  }
+
+  footer {
+    padding: 24px 16px;
+  }
+}
 </style>
 </head>
 
@@ -722,8 +840,7 @@ function getAvatarUrl(user) {
 }
 
 function isAdminUser(user) {
-  const email = user?.emails && user.emails[0] ? user.emails[0].value : "";
-  return Boolean(user?.isAdmin || email.toLowerCase() === "k3v1n.goof@gmail.com");
+  return Boolean(user?.isAdmin);
 }
 
 function redirectAdminToDashboardAfterLogin(user) {

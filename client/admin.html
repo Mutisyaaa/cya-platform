@@ -608,6 +608,80 @@ button.submit:hover {
     align-items: flex-start;
   }
 }
+
+@media (max-width: 640px) {
+  #dashboard {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    padding: 14px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: 0 4px 18px var(--shadow-color-light);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+  }
+
+  .sidebar h2,
+  .sidebar p {
+    display: none;
+  }
+
+  .sidebar button {
+    width: auto;
+    min-width: max-content;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 14px;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .card {
+    padding: 16px;
+  }
+
+  .status {
+    padding: 12px 14px;
+  }
+
+  .section-content-grid,
+  .section-stack,
+  .stats-grid,
+  .quick-actions-grid,
+  .entity-grid,
+  .item-grid {
+    gap: 16px;
+  }
+
+  .summary-tile strong {
+    font-size: 24px;
+  }
+
+  .table-shell,
+  #blogList,
+  #userList {
+    overflow-x: auto;
+  }
+
+  .data-table {
+    min-width: 620px;
+  }
+
+  #statsGraphs {
+    height: 260px !important;
+  }
+}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
