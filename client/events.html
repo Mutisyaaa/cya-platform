@@ -5,10 +5,42 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Events | AIC Ziwani</title>
 
+<script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <style>
 :root {
   --primary-red: #c8102e;
   --dark-red: #9e0d23;
+  --bg-primary: #f4f4f4;
+  --bg-secondary: white;
+  --bg-secondary-translucent: rgba(255, 255, 255, 0.96);
+  --text-primary: #222;
+  --text-secondary: gray;
+  --text-on-primary: white;
+  --border-color: #eee;
+  --shadow-color-light: rgba(0,0,0,0.05);
+  --shadow-color-heavy: rgba(0,0,0,0.06);
+  --shadow-color-hover: rgba(0,0,0,0.1);
+  --button-hover-bg: #f0f0f0; /* For calendar event indicator */
+}
+
+[data-theme="dark"] {
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-secondary-translucent: rgba(30, 30, 30, 0.96);
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #333;
+  --shadow-color-light: rgba(255,255,255,0.05);
+  --shadow-color-heavy: rgba(255,255,255,0.1);
+  --shadow-color-hover: rgba(255,255,255,0.15);
+  --button-hover-bg: #2a2a2a;
 }
 
 * {
@@ -19,70 +51,100 @@
 }
 
 body {
-  background: #f4f4f4;
-  color: #222;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* NAVBAR */
 nav {
-  background: white;
-  padding: 18px 60px;
+  background: var(--bg-secondary-translucent);
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px var(--shadow-color-light);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .logo-area img {
-  width: 60px;
+  width: 56px;
 }
 
 .church-name h1 {
   font-size: 20px;
   font-weight: 700;
-  color: black;
+  color: var(--text-primary);
 }
 
 .church-name span {
-  font-size: 13px;
-  color: black;
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  display: block;
 }
 
 .nav-links {
   display: flex;
-  gap: 15px;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .nav-links a {
   text-decoration: none;
-  padding: 8px 18px;
-  border-radius: 25px;
+  padding: 10px 18px;
+  border-radius: 999px;
   font-weight: 600;
-  transition: 0.3s ease;
-  color: black;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--text-primary);
 }
 
 .nav-links a:hover {
   background: var(--primary-red);
-  color: white;
-  transform: translateY(-3px);
+  color: var(--text-on-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
 }
 
 .nav-links a.active {
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
+}
+
+@media (max-width: 900px) {
+  nav {
+    padding: 14px 20px;
+  }
+
+  .church-name h1 {
+    font-size: 18px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* HEADER */
 .page-header {
   background: linear-gradient(135deg, #c8102e, #9e0d23);
-  color: white;
+  color: var(--text-on-primary);
   padding: 80px 20px;
   text-align: center;
 }
@@ -108,22 +170,22 @@ nav {
 }
 
 .event-card {
-  background: white;
+  background: var(--bg-secondary);
   padding: 35px;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-heavy);
   transition: 0.3s ease;
   position: relative;
 }
 
 .event-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 18px 40px var(--shadow-color-hover);
 }
 
 .event-date {
   font-size: 14px;
-  color: gray;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
@@ -137,11 +199,54 @@ nav {
   top: 20px;
   right: 20px;
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
   padding: 5px 12px;
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
+}
+
+.event-countdown {
+  font-weight: bold;
+  margin-top: 15px;
+  color: var(--dark-red);
+}
+
+.event-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+}
+
+.rsvp-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.rsvp-btn {
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rsvp-btn.going {
+  background: #4caf50; /* A green color to indicate success */
+}
+
+.rsvp-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  background: var(--text-secondary);
 }
 
 /* CALENDAR */
@@ -154,9 +259,9 @@ nav {
 .calendar-container {
   max-width: 1000px;
   margin: 0 auto 60px auto;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-heavy);
   overflow: hidden;
 }
 
@@ -166,13 +271,13 @@ nav {
   align-items: center;
   padding: 20px;
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
 }
 
 .calendar-header button {
   background: rgba(255,255,255,0.2);
   border: none;
-  color: white;
+  color: var(--text-on-primary);
   font-size: 14px;
   font-weight: bold;
   cursor: pointer;
@@ -193,11 +298,11 @@ nav {
 .calendar-days {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  background: #f9f9f9;
+  background: var(--bg-primary);
   text-align: center;
   font-weight: 600;
   padding: 15px 0;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .calendar-grid {
@@ -208,8 +313,8 @@ nav {
 .calendar-cell {
   min-height: 120px;
   padding: 10px;
-  border-right: 1px solid #eee;
-  border-bottom: 1px solid #eee;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -220,17 +325,17 @@ nav {
 }
 
 .calendar-cell.empty {
-  background: #fafafa;
+  background: var(--bg-primary); /* Or a slightly different shade if desired */
 }
 
 .calendar-cell .date {
   font-weight: bold;
-  color: #444;
+  color: var(--text-primary);
   font-size: 14px;
 }
 
 .calendar-cell .event-indicator {
-  background: #fee2e2;
+  background: var(--button-hover-bg); /* Using a button hover bg for a subtle indicator */
   color: var(--dark-red);
   font-size: 12px;
   font-weight: 600;
@@ -244,8 +349,8 @@ nav {
 
 /* FOOTER */
 footer {
-  background: #111;
-  color: white;
+  background: #1e1e1e;
+  color: var(--text-on-primary);
   padding: 30px;
   text-align: center;
   margin-top: 80px;
@@ -266,9 +371,7 @@ footer {
 
   <div class="nav-links">
     <a href="index.html">Home</a>
-    <a href="index.html#about">About</a>
-    <a href="services.html">Services</a>
-    <a href="index.html#ministries">Ministries</a>
+    <a href="fellowship.html">Fellowship</a>
     <a href="events.html" class="active">Events</a>
     <a href="gallery.html">Gallery</a>
     <a href="blog.html">Blog</a>
@@ -304,100 +407,271 @@ footer {
 </footer>
 
 <script>
-let allEvents = [];
-let currentMonth = new Date().getMonth();
-let currentYear = new Date().getFullYear();
+  let allEvents = [];
+  let currentMonth = new Date().getMonth();
+  let currentYear = new Date().getFullYear();
+  let countdownIntervals = [];
+  let currentUser = null;
 
-async function loadEvents() {
-  try {
-    const response = await fetch("/api/events");
-    allEvents = await response.json();
-    
-    renderCalendar();
-    renderEventsList();
+  const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
 
-  } catch (error) {
-    console.error("Error loading events:", error);
-  }
-}
+  function getBackendOrigin() {
+    const { protocol, hostname, port, origin } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
 
-function renderEventsList() {
-  const container = document.getElementById("eventsContainer");
-  container.innerHTML = "";
+    if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+      return origin;
+    }
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0); // Clear time for accurate upcoming comparison
-
-  allEvents.forEach(event => {
-    const eventDate = new Date(event.event_date);
-    const isUpcoming = eventDate >= today;
-
-    const card = `
-      <div class="event-card">
-        ${isUpcoming ? '<div class="upcoming-badge">Upcoming</div>' : ''}
-        <h3>${event.title}</h3>
-        <div class="event-date">
-          ${eventDate.toDateString()} | ${event.event_time ? event.event_time : ''}
-        </div>
-        <p>${event.description ? event.description : ''}</p>
-      </div>
-    `;
-
-    container.innerHTML += card;
-  });
-}
-
-function renderCalendar() {
-  const calendarGrid = document.getElementById("calendarGrid");
-  const monthYear = document.getElementById("monthYear");
-  calendarGrid.innerHTML = "";
-
-  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
-  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-
-  const monthNames = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-  ];
-  monthYear.innerText = `${monthNames[currentMonth]} ${currentYear}`;
-
-  // Fill empty days at the start of the month
-  for (let i = 0; i < firstDay; i++) {
-    calendarGrid.innerHTML += `<div class="calendar-cell empty"></div>`;
+    return LOCAL_BACKEND_ORIGIN;
   }
 
-  // Fill actual days and populate their events
-  for (let day = 1; day <= daysInMonth; day++) {
-    const dayEvents = allEvents.filter(e => {
-      if (!e.event_date) return false;
-      const eDate = new Date(e.event_date);
-      return eDate.getFullYear() === currentYear && eDate.getMonth() === currentMonth && eDate.getDate() === day;
+  const backendOrigin = getBackendOrigin();
+
+  function buildBackendUrl(path) {
+    return new URL(path, backendOrigin).toString();
+  }
+
+  async function loadAuthState() {
+    try {
+      const response = await fetch(buildBackendUrl("/api/auth/user"), {
+        credentials: "include"
+      });
+      if (!response.ok) return null;
+      const user = await response.json();
+      return (user && user.displayName) ? user : null;
+    } catch (error) {
+      console.error("Could not load auth state:", error);
+      return null;
+    }
+  }
+
+  async function loadEvents() {
+    try {
+      const response = await fetch(buildBackendUrl("/api/events"), { credentials: 'include' });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      allEvents = await response.json();
+      
+      renderCalendar();
+      renderEventsList();
+      startCountdowns();
+
+    } catch (error) {
+      console.error("Error loading events:", error);
+      document.getElementById("eventsContainer").innerHTML = `<p style="color: red; text-align: center; grid-column: 1 / -1;">Failed to load events. Please try again later.</p>`;
+    }
+  }
+
+  function getLocalDateFromISO(isoDateString) {
+    if (!isoDateString) return new Date();
+    const parts = isoDateString.split('T')[0].split('-');
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
+
+  function renderEventsList() {
+    const container = document.getElementById("eventsContainer");
+    container.innerHTML = "";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const monthlyEvents = allEvents.filter(event => {
+      const eventDate = getLocalDateFromISO(event.event_date);
+      return eventDate.getFullYear() === currentYear && eventDate.getMonth() === currentMonth;
     });
 
-    let eventsHtml = dayEvents.map(e => `<div class="event-indicator" title="${e.title}">${e.title}</div>`).join('');
+    if (monthlyEvents.length === 0) {
+      container.innerHTML = "<p style='grid-column: 1 / -1; text-align: center;'>No events scheduled for this month.</p>";
+      return;
+    }
 
-    calendarGrid.innerHTML += `
-      <div class="calendar-cell">
-        <div class="date">${day}</div>
-        ${eventsHtml}
-      </div>
-    `;
+    monthlyEvents.forEach(event => {
+      const eventDate = getLocalDateFromISO(event.event_date);
+      const isUpcoming = eventDate >= today;
+
+      let rsvpButton = '';
+      if (isUpcoming) {
+        if (currentUser) {
+          if (event.user_rsvpd) {
+            rsvpButton = `<button class="rsvp-btn going" data-event-id="${event.id}">✓ Going</button>`;
+          } else {
+            rsvpButton = `<button class="rsvp-btn" data-event-id="${event.id}">RSVP</button>`;
+          }
+        } else {
+          rsvpButton = `<button class="rsvp-btn" disabled title="You must be logged in to RSVP">RSVP</button>`;
+        }
+      }
+
+      const card = `
+        <div class="event-card">
+          ${isUpcoming ? '<div class="upcoming-badge">Upcoming</div>' : ''}
+          <h3>${event.title}</h3>
+          <div class="event-date">
+            ${eventDate.toDateString()} | ${event.event_time ? event.event_time.substring(0, 5) : 'All Day'}
+          </div>
+          <p>${event.description ? event.description : ''}</p>
+          <div class="event-countdown" data-event-date="${event.event_date}" data-event-time="${event.event_time || ''}"></div>
+          <div class="event-actions">
+            <div class="rsvp-info">${event.rsvp_count || 0} going</div>
+            ${rsvpButton}
+          </div>
+        </div>
+      `;
+
+      container.innerHTML += card;
+    });
   }
-}
 
-document.getElementById("prevMonth").addEventListener("click", () => {
-  currentMonth--;
-  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
-  renderCalendar();
-});
+  function renderCalendar() {
+    const calendarGrid = document.getElementById("calendarGrid");
+    const monthYear = document.getElementById("monthYear");
+    calendarGrid.innerHTML = "";
 
-document.getElementById("nextMonth").addEventListener("click", () => {
-  currentMonth++;
-  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-  renderCalendar();
-});
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-loadEvents();
+    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    monthYear.innerText = `${monthNames[currentMonth]} ${currentYear}`;
+
+    for (let i = 0; i < firstDay; i++) {
+      calendarGrid.innerHTML += `<div class="calendar-cell empty"></div>`;
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayEvents = allEvents.filter(e => {
+        if (!e.event_date) return false;
+        const eDate = getLocalDateFromISO(e.event_date);
+        return eDate.getFullYear() === currentYear && eDate.getMonth() === currentMonth && eDate.getDate() === day;
+      });
+
+      let eventsHtml = dayEvents.map(e => `<div class="event-indicator" title="${e.title}">${e.title}</div>`).join('');
+
+      calendarGrid.innerHTML += `
+        <div class="calendar-cell">
+          <div class="date">${day}</div>
+          ${eventsHtml}
+        </div>
+      `;
+    }
+  }
+
+  function startCountdowns() {
+    countdownIntervals.forEach(clearInterval);
+    countdownIntervals = [];
+
+    const countdownElements = document.querySelectorAll('.event-countdown');
+
+    countdownElements.forEach(element => {
+      const { eventDate, eventTime } = element.dataset;
+      if (!eventDate) return;
+
+      const dateOnly = eventDate.split('T')[0];
+      const targetDate = new Date(`${dateOnly}T${eventTime || '00:00:00'}`);
+
+      let intervalId;
+      const updateCountdown = () => {
+        const now = new Date().getTime();
+        const distance = targetDate - now;
+
+        if (distance < 0) {
+          if (intervalId) clearInterval(intervalId);
+          const endOfDay = new Date(targetDate);
+          endOfDay.setHours(23, 59, 59, 999);
+          element.innerHTML = new Date().getTime() > endOfDay.getTime() ? "This event has passed." : (eventTime ? "This event has passed." : "This event is today.");
+          return;
+        }
+
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+        let countdownText = "";
+        if (days > 0) countdownText += `${days}d `;
+        if (hours > 0 || days > 0) countdownText += `${hours}h `;
+        if (minutes > 0 || hours > 0 || days > 0) countdownText += `${minutes}m `;
+        countdownText += `${seconds}s`;
+
+        element.innerHTML = `Time Left: ${countdownText}`;
+      };
+
+      updateCountdown();
+      intervalId = setInterval(updateCountdown, 1000);
+      countdownIntervals.push(intervalId);
+    });
+  }
+
+  window.addEventListener('beforeunload', () => {
+    countdownIntervals.forEach(clearInterval);
+  });
+
+  document.getElementById("prevMonth").addEventListener("click", () => {
+    currentMonth--;
+    if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+    renderCalendar();
+    renderEventsList();
+  });
+
+  document.getElementById("nextMonth").addEventListener("click", () => {
+    currentMonth++;
+    if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+    renderCalendar();
+    renderEventsList();
+  });
+
+  document.getElementById('eventsContainer').addEventListener('click', async (e) => {
+    if (e.target.matches('.rsvp-btn')) {
+      if (!currentUser) {
+        alert("Please log in to RSVP for events.");
+        return;
+      }
+
+      const button = e.target;
+      const eventId = button.dataset.eventId;
+      const isRsvpd = button.classList.contains('going');
+
+      button.disabled = true;
+
+      try {
+        const method = isRsvpd ? 'DELETE' : 'POST';
+        const response = await fetch(buildBackendUrl(`/api/events/${eventId}/rsvp`), {
+          method: method,
+          credentials: 'include'
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Something went wrong.');
+        }
+
+        const rsvpInfo = button.parentElement.querySelector('.rsvp-info');
+        let currentCount = parseInt(rsvpInfo.textContent);
+
+        if (isRsvpd) {
+          button.classList.remove('going');
+          button.textContent = 'RSVP';
+          rsvpInfo.textContent = `${currentCount - 1} going`;
+        } else {
+          button.classList.add('going');
+          button.textContent = '✓ Going';
+          rsvpInfo.textContent = `${currentCount + 1} going`;
+        }
+      } catch (error) {
+        alert(`Error: ${error.message}`);
+      } finally {
+        button.disabled = false;
+      }
+    }
+  });
+
+  async function initializePage() {
+    currentUser = await loadAuthState();
+    await loadEvents();
+  }
+
+  initializePage();
 </script>
 
 </body>

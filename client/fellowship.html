@@ -1,0 +1,1182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fellowship Hub | AIC Ziwani</title>
+
+<script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+  --primary-gold: #d7a548;
+  --male-accent: #1d4ed8;
+  --female-accent: #be185d;
+  --shared-accent: #0f766e;
+  --bg-primary: #f5f1ec;
+  --bg-secondary: #fffdf9;
+  --bg-panel: rgba(255, 255, 255, 0.92);
+  --text-primary: #201815;
+  --text-secondary: #74655c;
+  --text-on-primary: #fff;
+  --border-color: rgba(104, 82, 71, 0.14);
+  --shadow-light: rgba(67, 40, 28, 0.08);
+  --shadow-heavy: rgba(67, 40, 28, 0.14);
+}
+
+[data-theme="dark"] {
+  --primary-red: #ef4444;
+  --dark-red: #c81e1e;
+  --primary-gold: #f3c96b;
+  --male-accent: #60a5fa;
+  --female-accent: #f472b6;
+  --shared-accent: #34d399;
+  --bg-primary: #110d0b;
+  --bg-secondary: #1b1512;
+  --bg-panel: rgba(27, 21, 18, 0.9);
+  --text-primary: #f5ede5;
+  --text-secondary: #baa99c;
+  --text-on-primary: #fff;
+  --border-color: rgba(255, 255, 255, 0.08);
+  --shadow-light: rgba(0, 0, 0, 0.22);
+  --shadow-heavy: rgba(0, 0, 0, 0.3);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(215, 165, 72, 0.16), transparent 28%),
+    radial-gradient(circle at top right, rgba(200, 16, 46, 0.12), transparent 30%),
+    linear-gradient(180deg, var(--bg-primary), #efe5dc 140%);
+  color: var(--text-primary);
+}
+
+nav {
+  background: rgba(255, 253, 249, 0.88);
+  backdrop-filter: blur(12px);
+  padding: 16px 32px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 10px 30px var(--shadow-light);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+[data-theme="dark"] nav {
+  background: rgba(17, 13, 11, 0.9);
+}
+
+.logo-area {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+}
+
+.logo-area img {
+  width: 56px;
+}
+
+.church-name h1 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.church-name span {
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  display: block;
+}
+
+.nav-links {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+.nav-links a {
+  text-decoration: none;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--text-primary);
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
+}
+
+.hero {
+  padding: 80px 24px 36px;
+}
+
+.hero-shell {
+  max-width: 1240px;
+  margin: 0 auto;
+  background:
+    linear-gradient(135deg, rgba(200, 16, 46, 0.95), rgba(120, 24, 42, 0.96)),
+    linear-gradient(135deg, #c8102e, #7a1629);
+  color: var(--text-on-primary);
+  border-radius: 28px;
+  padding: 44px;
+  box-shadow: 0 22px 48px rgba(104, 22, 38, 0.24);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-shell::after {
+  content: "";
+  position: absolute;
+  inset: auto -60px -80px auto;
+  width: 280px;
+  height: 280px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.08);
+}
+
+.hero h2 {
+  margin: 0;
+  font-size: clamp(32px, 5vw, 54px);
+  line-height: 1.05;
+  max-width: 720px;
+}
+
+.hero p {
+  margin: 18px 0 0;
+  max-width: 720px;
+  font-size: 17px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.86);
+}
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.hero-stat {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 18px;
+  padding: 18px 20px;
+}
+
+.hero-stat span {
+  display: block;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.72);
+}
+
+.hero-stat strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 28px;
+}
+
+.page-shell {
+  max-width: 1380px;
+  margin: 0 auto;
+  padding: 0 24px 80px;
+}
+
+.hub-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.95fr) minmax(280px, 0.72fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 16px 34px var(--shadow-light);
+}
+
+.panel h3,
+.panel h4 {
+  margin: 0;
+}
+
+.panel-copy {
+  margin: 10px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.status-banner {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.status-copy strong {
+  display: block;
+  font-size: 18px;
+}
+
+.status-copy p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(200, 16, 46, 0.08);
+  color: var(--primary-red);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.composer-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field-span {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 14px 15px;
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  border: none;
+  border-radius: 14px;
+  padding: 13px 18px;
+  cursor: pointer;
+}
+
+.submit-btn {
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  font-weight: 700;
+}
+
+.submit-btn:hover {
+  background: var(--dark-red);
+}
+
+.ghost-card {
+  border: 1px dashed var(--border-color);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(255,255,255,0.28);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .ghost-card {
+  background: rgba(255,255,255,0.03);
+}
+
+.boards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 24px;
+}
+
+.board {
+  border-radius: 24px;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  min-height: 320px;
+}
+
+.board-men {
+  background: linear-gradient(180deg, rgba(29, 78, 216, 0.08), var(--bg-panel));
+}
+
+.board-women {
+  background: linear-gradient(180deg, rgba(190, 24, 93, 0.08), var(--bg-panel));
+}
+
+.board-shared {
+  background: linear-gradient(180deg, rgba(15, 118, 110, 0.08), var(--bg-panel));
+}
+
+.board-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.board-header p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.board-count {
+  min-width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: rgba(255,255,255,0.72);
+  color: var(--text-primary);
+}
+
+.post-stack {
+  display: grid;
+  gap: 16px;
+}
+
+.post-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px var(--shadow-light);
+}
+
+.post-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.post-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.chip-discussion {
+  background: rgba(200, 16, 46, 0.1);
+  color: var(--primary-red);
+}
+
+.chip-planning {
+  background: rgba(215, 165, 72, 0.18);
+  color: #8b5a06;
+}
+
+[data-theme="dark"] .chip-planning {
+  color: #f3c96b;
+}
+
+.post-time {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.post-card h5 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.post-meta {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.post-content {
+  margin: 14px 0 0;
+  color: var(--text-primary);
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.comments-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.comments-title {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.comment-list {
+  display: grid;
+  gap: 10px;
+}
+
+.comment-item {
+  background: rgba(200, 16, 46, 0.04);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+[data-theme="dark"] .comment-item {
+  background: rgba(255,255,255,0.04);
+}
+
+.comment-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.comment-item span {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.comment-item p {
+  margin: 8px 0 0;
+  line-height: 1.5;
+}
+
+.comment-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.comment-form textarea {
+  min-height: 88px;
+}
+
+.comment-form button {
+  justify-self: start;
+  background: var(--primary-gold);
+  color: #2f1e0f;
+  font-weight: 700;
+}
+
+.comment-form button:hover {
+  filter: brightness(0.96);
+}
+
+.empty-board {
+  border: 1px dashed var(--border-color);
+  border-radius: 18px;
+  padding: 18px;
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.3);
+}
+
+[data-theme="dark"] .empty-board {
+  background: rgba(255,255,255,0.02);
+}
+
+.side-stack {
+  display: grid;
+  gap: 20px;
+}
+
+.rail-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.rail-item {
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.rail-item h5 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.rail-item p {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.rail-meta {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.utility-note {
+  margin-top: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.hub-status {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: rgba(15, 118, 110, 0.08);
+  color: #0f766e;
+}
+
+.hub-status.error {
+  background: rgba(190, 24, 93, 0.1);
+  color: #be185d;
+}
+
+[data-theme="dark"] .hub-status {
+  background: rgba(52, 211, 153, 0.1);
+  color: #6ee7b7;
+}
+
+[data-theme="dark"] .hub-status.error {
+  background: rgba(244, 114, 182, 0.1);
+  color: #f9a8d4;
+}
+
+footer {
+  background: #1e1e1e;
+  color: var(--text-on-primary);
+  padding: 30px;
+  text-align: center;
+  margin-top: 80px;
+}
+
+@media (max-width: 1100px) {
+  .hub-grid,
+  .boards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  nav {
+    padding: 14px 20px;
+  }
+
+  .church-name h1 {
+    font-size: 18px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-shell {
+    padding: 30px 24px;
+  }
+
+  .hero-stats,
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <div class="logo-area">
+    <img src="logo.png" alt="AIC Logo">
+    <div class="church-name">
+      <h1>AIC Ziwani CYA</h1>
+      <span>Africa Inland Church</span>
+    </div>
+  </div>
+
+  <div class="nav-links">
+    <a href="index.html">Home</a>
+    <a href="fellowship.html" class="active">Fellowship</a>
+    <a href="events.html">Events</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="blog.html">Blog</a>
+    <a href="index.html#contact">Contact</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-shell">
+    <h2>Fellowship Hub For Real Conversations And Shared Planning</h2>
+    <p>The fellowship page is now centered on discussion, gender-specific spaces, and a shared planning board so men and women can raise matters that affect them, respond to one another, and organize the next steps together.</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <span>Discussion Posts</span>
+        <strong id="heroPostCount">0</strong>
+      </div>
+      <div class="hero-stat">
+        <span>Upcoming Plans</span>
+        <strong id="heroEventCount">0</strong>
+      </div>
+      <div class="hero-stat">
+        <span>Active Fellowships</span>
+        <strong id="heroFellowshipCount">0</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="page-shell">
+  <div class="hub-grid">
+    <section>
+      <div class="panel">
+        <div class="status-banner">
+          <div class="status-copy">
+            <strong id="identityTitle">Loading fellowship access...</strong>
+            <p id="identityBody">Checking your profile so the right discussion and planning spaces can open up.</p>
+          </div>
+          <span id="identityPill" class="pill">Fellowship</span>
+        </div>
+
+        <div id="composerHost"></div>
+
+        <div id="hubStatus" class="hub-status" style="display:none;"></div>
+      </div>
+
+      <div class="boards-grid" id="boardsHost"></div>
+    </section>
+
+    <aside class="side-stack">
+      <div class="panel">
+        <h3>Upcoming Fellowship Plans</h3>
+        <p class="panel-copy">Recent and upcoming events stay visible here so discussions can turn into actual plans.</p>
+        <div id="eventRail" class="rail-list"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Active Fellowship Spaces</h3>
+        <p class="panel-copy">These are the fellowships currently configured for the community.</p>
+        <div id="fellowshipRail" class="rail-list"></div>
+      </div>
+    </aside>
+  </div>
+</main>
+
+<footer>
+  © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
+</footer>
+
+<script>
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+const TARGET_ORDER = ["male", "female", "all"];
+const TARGET_LABELS = {
+  male: "Men's Room",
+  female: "Women's Room",
+  all: "Shared Planning"
+};
+const BOARD_COPY = {
+  male: "A focused space for men's matters, questions, and accountability conversations.",
+  female: "A focused space for women's matters, encouragement, and practical support.",
+  all: "A shared board for planning events, follow-ups, and ideas that involve the wider fellowship."
+};
+const CATEGORY_LABELS = {
+  discussion: "Discussion",
+  planning: "Planning"
+};
+
+let currentUser = null;
+let allPosts = [];
+let allEvents = [];
+let allFellowships = [];
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+
+function buildBackendUrl(path) {
+  return new URL(path, backendOrigin).toString();
+}
+
+function escapeHtml(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function showHubStatus(message, isError = false) {
+  const hubStatus = document.getElementById("hubStatus");
+  hubStatus.textContent = message;
+  hubStatus.className = `hub-status${isError ? " error" : ""}`;
+  hubStatus.style.display = "block";
+}
+
+function clearHubStatus() {
+  const hubStatus = document.getElementById("hubStatus");
+  hubStatus.textContent = "";
+  hubStatus.style.display = "none";
+}
+
+async function fetchJson(path, options = {}) {
+  const response = await fetch(buildBackendUrl(path), {
+    credentials: "include",
+    ...options
+  });
+
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || payload.message || "Request failed.");
+  }
+
+  return payload;
+}
+
+async function loadCurrentUser() {
+  const response = await fetch(buildBackendUrl("/api/auth/user"), {
+    credentials: "include"
+  });
+
+  if (response.status === 401) {
+    return null;
+  }
+
+  if (!response.ok) {
+    throw new Error("Could not load your profile.");
+  }
+
+  return response.json();
+}
+
+function formatRelativeTime(value) {
+  const date = new Date(value);
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.round(diffMs / 60000);
+
+  if (diffMinutes < 1) {
+    return "just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}m ago`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return `${diffHours}h ago`;
+  }
+
+  const diffDays = Math.round(diffHours / 24);
+  if (diffDays < 7) {
+    return `${diffDays}d ago`;
+  }
+
+  return date.toLocaleDateString();
+}
+
+function canUseTarget(target) {
+  if (!currentUser) {
+    return false;
+  }
+
+  if (currentUser.isAdmin) {
+    return true;
+  }
+
+  if (target === "all") {
+    return true;
+  }
+
+  return currentUser.gender === target;
+}
+
+function getVisibleBoardTargets() {
+  if (!currentUser) {
+    return ["all"];
+  }
+
+  if (currentUser.isAdmin) {
+    return ["male", "female", "all"];
+  }
+
+  if (currentUser.gender === "male") {
+    return ["male", "all"];
+  }
+
+  if (currentUser.gender === "female") {
+    return ["female", "all"];
+  }
+
+  return ["all"];
+}
+
+function updateIdentity() {
+  const title = document.getElementById("identityTitle");
+  const body = document.getElementById("identityBody");
+  const pill = document.getElementById("identityPill");
+
+  if (!currentUser) {
+    title.textContent = "Browse the fellowship hub, then log in to join in.";
+    body.textContent = "You can read what is happening here, but posting and commenting open up once you are signed in.";
+    pill.textContent = "Guest";
+    return;
+  }
+
+  const genderLabel = currentUser.gender === "male"
+    ? "Men's fellowship"
+    : currentUser.gender === "female"
+      ? "Women's fellowship"
+      : "Shared fellowship";
+
+  title.textContent = `Welcome, ${currentUser.displayName || "Community Member"}.`;
+  body.textContent = `You can contribute to ${genderLabel.toLowerCase()} spaces and the shared planning board from this page.`;
+  pill.textContent = currentUser.isAdmin ? "Admin" : genderLabel;
+}
+
+function renderComposer() {
+  const host = document.getElementById("composerHost");
+
+  if (!currentUser) {
+    host.innerHTML = `
+      <div class="ghost-card">
+        Sign in to start a discussion, raise a matter affecting your fellowship, or add a planning note for the next event.
+      </div>
+    `;
+    return;
+  }
+
+  const targetOptions = TARGET_ORDER
+    .filter((target) => canUseTarget(target))
+    .map((target) => `<option value="${target}">${TARGET_LABELS[target]}</option>`)
+    .join("");
+
+  host.innerHTML = `
+    <form id="postComposer" class="composer-form">
+      <div class="form-grid">
+        <div class="field field-span">
+          <label for="postTitle">Title</label>
+          <input id="postTitle" name="title" type="text" placeholder="What should the fellowship talk about next?" required>
+        </div>
+        <div class="field">
+          <label for="postCategory">Post Type</label>
+          <select id="postCategory" name="category">
+            <option value="discussion">Discussion</option>
+            <option value="planning">Planning</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="postTarget">Space</label>
+          <select id="postTarget" name="target_gender">
+            ${targetOptions}
+          </select>
+        </div>
+        <div class="field field-span">
+          <label for="postContent">Message</label>
+          <textarea id="postContent" name="content" placeholder="Share the matter, suggestion, burden, idea, or practical next step." required></textarea>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn">Post To Fellowship</button>
+    </form>
+  `;
+
+  document.getElementById("postComposer").addEventListener("submit", handlePostSubmit);
+}
+
+function updateHeroStats() {
+  document.getElementById("heroPostCount").textContent = allPosts.length;
+  document.getElementById("heroEventCount").textContent = allEvents.length;
+  document.getElementById("heroFellowshipCount").textContent = allFellowships.length;
+}
+
+function renderEventRail() {
+  const host = document.getElementById("eventRail");
+
+  if (!allEvents.length) {
+    host.innerHTML = `<div class="ghost-card">No upcoming fellowship events are available right now.</div>`;
+    return;
+  }
+
+  host.innerHTML = allEvents.slice(0, 5).map((event) => `
+    <div class="rail-item">
+      <h5>${escapeHtml(event.title)}</h5>
+      <div class="rail-meta">${escapeHtml(new Date(event.event_date).toLocaleDateString())}${event.event_time ? ` at ${escapeHtml(event.event_time.substring(0, 5))}` : ""}</div>
+      <p>${escapeHtml(event.description || "No extra description has been added yet.")}</p>
+    </div>
+  `).join("");
+}
+
+function renderFellowshipRail() {
+  const host = document.getElementById("fellowshipRail");
+
+  if (!allFellowships.length) {
+    host.innerHTML = `<div class="ghost-card">No fellowship groups have been configured yet.</div>`;
+    return;
+  }
+
+  host.innerHTML = allFellowships.map((item) => {
+    const schedule = [item.service_day, item.service_time].filter(Boolean).join(" | ") || "Schedule to be confirmed";
+    return `
+      <div class="rail-item">
+        <h5>${escapeHtml(item.name)}</h5>
+        <div class="rail-meta">${escapeHtml(schedule)}</div>
+        <p>${escapeHtml(item.description || "This fellowship space is ready for discussion and planning.")}</p>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderCommentForm(postId, targetGender) {
+  if (!canUseTarget(targetGender)) {
+    return "";
+  }
+
+  return `
+    <form class="comment-form" data-post-id="${postId}">
+      <textarea name="content" placeholder="Add a thoughtful response or a practical next step" required></textarea>
+      <button type="submit">Reply</button>
+    </form>
+  `;
+}
+
+function renderComments(comments) {
+  if (!comments.length) {
+    return `<div class="ghost-card">No replies yet. Start the conversation.</div>`;
+  }
+
+  return `
+    <div class="comment-list">
+      ${comments.map((comment) => `
+        <div class="comment-item">
+          <strong>${escapeHtml(comment.author_display_name || comment.author_name)}</strong>
+          <span>${escapeHtml(formatRelativeTime(comment.created_at))}</span>
+          <p>${escapeHtml(comment.content)}</p>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function renderPostCard(post) {
+  return `
+    <article class="post-card">
+      <div class="post-topline">
+        <span class="post-chip ${post.category === "planning" ? "chip-planning" : "chip-discussion"}">${CATEGORY_LABELS[post.category] || "Discussion"}</span>
+        <span class="post-time">${escapeHtml(formatRelativeTime(post.created_at))}</span>
+      </div>
+      <h5>${escapeHtml(post.title)}</h5>
+      <p class="post-meta">By ${escapeHtml(post.author_display_name || post.author_name)}</p>
+      <div class="post-content">${escapeHtml(post.content)}</div>
+      <div class="comments-wrap">
+        <div class="comments-title">Replies</div>
+        ${renderComments(post.comments || [])}
+        ${renderCommentForm(post.id, post.target_gender)}
+      </div>
+    </article>
+  `;
+}
+
+function renderBoard(target) {
+  const posts = allPosts.filter((post) => post.target_gender === target);
+  const boardClass = target === "male" ? "board-men" : target === "female" ? "board-women" : "board-shared";
+
+  return `
+    <section class="board ${boardClass}">
+      <div class="board-header">
+        <div>
+          <h3>${TARGET_LABELS[target]}</h3>
+          <p>${BOARD_COPY[target]}</p>
+        </div>
+        <span class="board-count">${posts.length}</span>
+      </div>
+      <div class="post-stack">
+        ${posts.length
+          ? posts.map(renderPostCard).join("")
+          : `<div class="empty-board">Nothing has been posted here yet. Use the composer above to open the first discussion or planning note.</div>`}
+      </div>
+    </section>
+  `;
+}
+
+function renderBoards() {
+  const host = document.getElementById("boardsHost");
+  host.innerHTML = getVisibleBoardTargets()
+    .map((target) => renderBoard(target))
+    .join("");
+}
+
+async function handlePostSubmit(event) {
+  event.preventDefault();
+  clearHubStatus();
+
+  const form = event.target;
+  const formData = new FormData(form);
+  const payload = Object.fromEntries(formData);
+
+  try {
+    await fetchJson("/api/fellowship/posts", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+
+    form.reset();
+    await refreshPosts();
+    showHubStatus("Your fellowship post is live.");
+  } catch (error) {
+    showHubStatus(error.message, true);
+  }
+}
+
+async function handleCommentSubmit(event) {
+  event.preventDefault();
+  clearHubStatus();
+
+  const form = event.target;
+  const postId = form.dataset.postId;
+  const content = new FormData(form).get("content");
+
+  try {
+    await fetchJson(`/api/fellowship/posts/${postId}/comments`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ content })
+    });
+
+    await refreshPosts();
+    showHubStatus("Your reply has been added.");
+  } catch (error) {
+    showHubStatus(error.message, true);
+  }
+}
+
+async function refreshPosts() {
+  allPosts = await fetchJson("/api/fellowship/posts");
+  updateHeroStats();
+  renderBoards();
+}
+
+async function initializePage() {
+  try {
+    const [user, fellowships, events, posts] = await Promise.all([
+      loadCurrentUser(),
+      fetchJson("/api/services"),
+      fetchJson("/api/events"),
+      fetchJson("/api/fellowship/posts")
+    ]);
+
+    currentUser = user;
+    allFellowships = fellowships;
+    allEvents = events;
+    allPosts = posts;
+
+    updateIdentity();
+    renderComposer();
+    updateHeroStats();
+    renderEventRail();
+    renderFellowshipRail();
+    renderBoards();
+  } catch (error) {
+    console.error("Could not initialize fellowship hub:", error);
+    showHubStatus(error.message || "Could not load the fellowship hub.", true);
+  }
+}
+
+document.getElementById("boardsHost").addEventListener("submit", (event) => {
+  if (event.target.matches(".comment-form")) {
+    handleCommentSubmit(event);
+  }
+});
+
+document.addEventListener("DOMContentLoaded", initializePage);
+</script>
+
+</body>
+</html>

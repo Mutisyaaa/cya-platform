@@ -30,5 +30,8 @@
   "bugs": {
     "url": "https://github.com/Mutisyaaa/cya-platform/issues"
   },
-  "homepage": "https://github.com/Mutisyaaa/cya-platform#readme"
+  "homepage": "https://github.com/Mutisyaaa/cya-platform#readme",
+  "engines": {
+    "node": ">=18"
+  }
 }

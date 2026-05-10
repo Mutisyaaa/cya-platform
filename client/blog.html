@@ -5,10 +5,38 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog | AIC Ziwani</title>
 
+<script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <style>
 :root {
   --primary-red: #c8102e;
   --dark-red: #9e0d23;
+  --bg-primary: #f4f4f4;
+  --bg-secondary: white;
+  --bg-secondary-translucent: rgba(255, 255, 255, 0.96);
+  --text-primary: #222;
+  --text-secondary: gray;
+  --text-on-primary: white;
+  --shadow-color-light: rgba(0,0,0,0.05);
+  --shadow-color-heavy: rgba(0,0,0,0.06);
+  --shadow-color-hover: rgba(0,0,0,0.1);
+}
+
+[data-theme="dark"] {
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-secondary-translucent: rgba(30, 30, 30, 0.96);
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --shadow-color-light: rgba(255,255,255,0.05);
+  --shadow-color-heavy: rgba(255,255,255,0.1);
+  --shadow-color-hover: rgba(255,255,255,0.15);
 }
 
 * {
@@ -19,70 +47,100 @@
 }
 
 body {
-  background: #f4f4f4;
-  color: #222;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 /* NAVBAR */
 nav {
-  background: white;
-  padding: 18px 60px;
+  background: var(--bg-secondary-translucent);
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px var(--shadow-color-light);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 }
 
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .logo-area img {
-  width: 60px;
+  width: 56px;
 }
 
 .church-name h1 {
   font-size: 20px;
   font-weight: 700;
-  color: black;
+  color: var(--text-primary);
 }
 
 .church-name span {
-  font-size: 13px;
-  color: black;
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  display: block;
 }
 
 .nav-links {
   display: flex;
-  gap: 15px;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .nav-links a {
   text-decoration: none;
-  padding: 8px 18px;
-  border-radius: 25px;
+  padding: 10px 18px;
+  border-radius: 999px;
   font-weight: 600;
-  transition: 0.3s ease;
-  color: black;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--text-primary);
 }
 
 .nav-links a:hover {
   background: var(--primary-red);
-  color: white;
-  transform: translateY(-3px);
+  color: var(--text-on-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
 }
 
 .nav-links a.active {
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
+}
+
+@media (max-width: 900px) {
+  nav {
+    padding: 14px 20px;
+  }
+
+  .church-name h1 {
+    font-size: 18px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* PAGE HEADER */
 .page-header {
   background: linear-gradient(135deg, #c8102e, #9e0d23);
-  color: white;
+  color: var(--text-on-primary);
   padding: 80px 20px;
   text-align: center;
 }
@@ -108,16 +166,16 @@ nav {
 }
 
 .blog-card {
-  background: white;
+  background: var(--bg-secondary);
   padding: 35px;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-heavy);
   transition: 0.3s ease;
 }
 
 .blog-card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 18px 40px var(--shadow-color-hover);
 }
 
 .blog-card h3 {
@@ -126,7 +184,7 @@ nav {
 
 .blog-card .meta {
   font-size: 14px;
-  color: gray;
+  color: var(--text-secondary);
   margin-bottom: 15px;
 }
 
@@ -138,7 +196,7 @@ nav {
 .read-more {
   display: inline-block;
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
   padding: 8px 20px;
   border-radius: 25px;
   font-weight: 600;
@@ -153,8 +211,8 @@ nav {
 
 /* FOOTER */
 footer {
-  background: #111;
-  color: white;
+  background: #1e1e1e;
+  color: var(--text-on-primary);
   padding: 30px;
   text-align: center;
   margin-top: 80px;
@@ -169,17 +227,18 @@ footer {
   <div class="logo-area">
     <img src="logo.png" alt="AIC Logo">
     <div class="church-name">
-      <h1>AIC Ziwani</h1>
+      <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
     </div>
   </div>
 
   <div class="nav-links">
     <a href="index.html">Home</a>
-    <a href="blog.html" class="active">Blog</a>
+    <a href="fellowship.html">Fellowship</a>
     <a href="events.html">Events</a>
     <a href="gallery.html">Gallery</a>
-    <a href="contact.html">Contact</a>
+    <a href="blog.html" class="active">Blog</a>
+    <a href="index.html#contact">Contact</a>
   </div>
 </nav>
 
@@ -218,6 +277,71 @@ footer {
 <footer>
   © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
 </footer>
+
+<script>
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+
+function buildBackendUrl(path) {
+  return new URL(path, backendOrigin).toString();
+}
+
+async function loadBlogs() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/blogs"));
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const blogs = await response.json();
+
+    const container = document.querySelector(".blog-grid");
+    container.innerHTML = ""; // Clear existing static content
+
+    if (blogs.length === 0) {
+      container.innerHTML = "<p style='text-align: center; grid-column: 1 / -1;'>No blog posts available yet.</p>";
+      return;
+    }
+
+    blogs.forEach(blog => {
+      const createdAt = new Date(blog.created_at).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const card = `
+        <div class="blog-card">
+          <h3>${blog.title}</h3>
+          <div class="meta">By Admin | ${createdAt}</div>
+          <p>${blog.content.substring(0, 150)}${blog.content.length > 150 ? '...' : ''}</p>
+          <a href="blog-post.html?id=${blog.id}" class="read-more">Read More</a>
+        </div>
+      `;
+      container.innerHTML += card;
+    });
+
+  } catch (error) {
+    console.error("Error loading blogs:", error);
+    const container = document.querySelector(".blog-grid");
+    container.innerHTML = "<p style='color: red; text-align: center; grid-column: 1 / -1;'>Failed to load blog posts. Please try again later.</p>";
+  }
+}
+
+// Load blogs when the page content is fully loaded
+document.addEventListener('DOMContentLoaded', loadBlogs);
+</script>
 
 </body>
 </html>

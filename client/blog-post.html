@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gallery | AIC Ziwani</title>
+<title>Blog Post | AIC Ziwani</title>
 
 <script>
   (function() {
@@ -21,15 +21,13 @@
   --text-primary: #222;
   --text-secondary: gray;
   --text-on-primary: white;
-  --border-color: #ddd;
+  --border-color: #eee;
   --shadow-color-light: rgba(0,0,0,0.05);
-  --shadow-color-heavy: rgba(0,0,0,0.08);
-  --shadow-color-hover: rgba(0,0,0,0.12);
+  --shadow-color-heavy: rgba(0,0,0,0.06);
   --button-bg: #f0f0f0;
   --button-border: #ddd;
   --button-hover-bg: #e0e0e0;
 }
-
 
 [data-theme="dark"] {
   --primary-red: #e53935;
@@ -41,8 +39,7 @@
   --text-secondary: #a0a0a0;
   --border-color: #333;
   --shadow-color-light: rgba(255,255,255,0.05);
-  --shadow-color-heavy: rgba(0,0,0,0.2);
-  --shadow-color-hover: rgba(0,0,0,0.3);
+  --shadow-color-heavy: rgba(255,255,255,0.1);
   --button-bg: #2a2a2a;
   --button-border: #444;
   --button-hover-bg: #3a3a3a;
@@ -131,145 +128,36 @@ nav {
   box-shadow: 0 10px 24px rgba(200,16,46,0.18);
 }
 
-@media (max-width: 900px) {
-  nav {
-    padding: 14px 20px;
-  }
-
-  .church-name h1 {
-    font-size: 18px;
-  }
-
-  .nav-links {
-    width: 100%;
-    justify-content: center;
-  }
-}
-
-/* HEADER */
-.page-header {
-  background: linear-gradient(135deg, #c8102e, #9e0d23);
-  color: var(--text-on-primary);
-  padding: 80px 20px;
-  text-align: center;
-}
-
-.page-header h2 {
-  font-size: 42px;
-}
-
-.page-header p {
-  margin-top: 15px;
-  font-size: 18px;
-}
-
-/* GALLERY SECTION */
-.gallery-section {
-  padding: 100px 60px;
-}
-
-.gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 25px;
-}
-
-.gallery-item {
-  position: relative;
-  overflow: hidden;
-  border-radius: 18px;
-  box-shadow: 0 12px 30px var(--shadow-color-heavy);
-  cursor: pointer;
-  transition: 0.3s ease;
-}
-
-.gallery-item img {
-  width: 100%;
-  height: 280px;
-  object-fit: cover;
-  transition: 0.4s ease;
-}
-
-.gallery-item:hover img {
-  transform: scale(1.1);
-}
-
-.gallery-title {
-  position: absolute;
-  bottom: 0;
-  background: rgba(0,0,0,0.6);
-  color: white;
-  width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  text-align: center;
-}
-
-/* MODAL STYLES */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.8);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 2000;
-  padding: 20px;
-}
-
-.modal-overlay.open {
-  display: flex;
-}
-
-.modal-content {
+/* BLOG POST SECTION */
+.blog-post-section {
+  max-width: 800px;
+  margin: 80px auto;
+  padding: 40px;
   background: var(--bg-secondary);
   border-radius: 18px;
-  max-width: 900px;
-  width: 100%;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  position: relative;
+  box-shadow: 0 12px 30px var(--shadow-color-heavy);
 }
 
-.modal-close {
-  position: absolute;
-  top: 10px;
-  right: 20px;
+.blog-post-section h1 {
   font-size: 36px;
+  margin-bottom: 15px;
+}
+
+.blog-post-section .meta {
+  font-size: 14px;
   color: var(--text-secondary);
-  background: none;
-  border: none;
-  cursor: pointer;
-  z-index: 1;
+  margin-bottom: 30px;
 }
 
-#modalBody {
-  padding: 30px;
-  overflow-y: auto;
+.blog-post-section .content {
+  line-height: 1.7;
+  font-size: 16px;
+  white-space: pre-wrap; /* To respect newlines from textarea */
 }
 
-#modalBody .media-container {
-  text-align: center;
-  margin-bottom: 20px;
-}
-
-#modalBody img, #modalBody video {
-  max-width: 100%;
-  max-height: 60vh;
-  border-radius: 12px;
-}
-
-#modalBody h3 {
-  font-size: 24px;
-  margin-bottom: 20px;
-}
-
+/* POST ACTIONS (LIKES) */
 .post-actions {
-  margin-top: 20px;
+  margin-top: 40px;
   display: flex;
   align-items: center;
   gap: 15px;
@@ -289,6 +177,7 @@ nav {
 
 #likeButton:hover {
   background: var(--button-hover-bg);
+  transform: translateY(-1px);
 }
 
 #likeButton:disabled {
@@ -301,13 +190,14 @@ nav {
   color: var(--text-secondary);
 }
 
+/* COMMENTS SECTION */
 .comments-section {
-  margin-top: 30px;
+  margin-top: 40px;
   border-top: 1px solid var(--border-color);
-  padding-top: 20px;
+  padding-top: 30px;
 }
 
-.comments-section h4 {
+.comments-section h3 {
   margin-bottom: 20px;
 }
 
@@ -330,7 +220,7 @@ nav {
 }
 
 #commentForm textarea {
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
 }
 
@@ -381,6 +271,7 @@ footer {
   text-align: center;
   margin-top: 80px;
 }
+
 </style>
 </head>
 
@@ -399,29 +290,16 @@ footer {
     <a href="index.html">Home</a>
     <a href="fellowship.html">Fellowship</a>
     <a href="events.html">Events</a>
-    <a href="gallery.html" class="active">Gallery</a>
-    <a href="blog.html">Blog</a>
+    <a href="gallery.html">Gallery</a>
+    <a href="blog.html" class="active">Blog</a>
     <a href="index.html#contact">Contact</a>
   </div>
 </nav>
 
-<section class="page-header">
-  <h2>Church Gallery</h2>
-  <p>Moments from worship, fellowship, and outreach.</p>
+<section id="blogPostContainer" class="blog-post-section">
+  <!-- Dynamic content will be loaded here -->
+  <h1>Loading post...</h1>
 </section>
-
-<section class="gallery-section">
-  <div class="gallery-grid" id="galleryContainer"></div>
-</section>
-
-<div id="galleryModal" class="modal-overlay">
-  <div class="modal-content">
-    <button class="modal-close">&times;</button>
-    <div id="modalBody">
-      <!-- Dynamic content will be loaded here -->
-    </div>
-  </div>
-</div>
 
 <footer>
   © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
@@ -447,110 +325,80 @@ function buildBackendUrl(path) {
   return new URL(path, backendOrigin).toString();
 }
 
-async function loadGallery() {
+async function loadBlogPost() {
+  const container = document.getElementById("blogPostContainer");
   try {
-    const response = await fetch(buildBackendUrl("/api/gallery"));
-    const images = await response.json();
+    const params = new URLSearchParams(window.location.search);
+    const blogId = params.get('id');
 
-    const container = document.getElementById("galleryContainer");
-    container.innerHTML = "";
+    if (!blogId) {
+      container.innerHTML = "<h1>Blog post not found.</h1><p>No ID was provided.</p>";
+      return;
+    }
 
-    images.forEach(item => {
-      const fileUrl = buildBackendUrl(item.image_url);
-      const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
-      
-      let mediaMarkup = "";
-      if (isVideo) {
-        mediaMarkup = `<video src="${fileUrl}" style="width: 100%; height: 280px; object-fit: cover; pointer-events: none;"></video>`;
-      } else {
-        mediaMarkup = `<img src="${fileUrl}" alt="${item.title}">`;
+    const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}`));
+    if (!response.ok) {
+      let errorMessage = `HTTP error! Status: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.error) {
+          errorMessage = errorData.error; // Use the specific error message from the server
+        }
+      } catch (jsonError) {
+        console.warn("Server error response was not JSON:", jsonError);
       }
+      throw new Error(errorMessage);
+    }
+    const blog = await response.json();
 
-      const card = `
-        <div class="gallery-item" data-id="${item.id}">
-          ${mediaMarkup}
-          <div class="gallery-title">${item.title}</div>
-        </div>
-      `;
-      container.innerHTML += card;
+    document.title = `${blog.title} | AIC Ziwani Blog`;
+
+    const createdAt = new Date(blog.created_at).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
 
-    document.querySelectorAll('.gallery-item').forEach(item => {
-      item.addEventListener('click', () => openGalleryModal(item.dataset.id));
-    });
-
-  } catch (error) {
-    console.error("Error loading gallery:", error);
-  }
-}
-
-const modal = document.getElementById('galleryModal');
-const modalBody = document.getElementById('modalBody');
-const modalClose = document.querySelector('.modal-close');
-
-modalClose.addEventListener('click', closeGalleryModal);
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) {
-    closeGalleryModal();
-  }
-});
-
-function closeGalleryModal() {
-  modal.classList.remove('open');
-  modalBody.innerHTML = '';
-}
-
-async function openGalleryModal(itemId) {
-  modalBody.innerHTML = '<h3>Loading...</h3>';
-  modal.classList.add('open');
-
-  try {
-    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}`));
-    if (!response.ok) throw new Error('Failed to load gallery item.');
-    const item = await response.json();
-
-    const fileUrl = buildBackendUrl(item.image_url);
-    const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
-    const mediaMarkup = isVideo
-      ? `<video src="${fileUrl}" controls></video>`
-      : `<img src="${fileUrl}" alt="${item.title}">`;
-
-    modalBody.innerHTML = `
-      <div class="media-container">${mediaMarkup}</div>
-      <h3>${item.title}</h3>
+    container.innerHTML = `
+      <h1>${blog.title}</h1>
+      <div class="meta">By Admin | ${createdAt}</div>
+      <div class="content">${blog.content}</div>      
       <div class="post-actions">
-        <button id="likeButton" title="Like this item">❤️ Like</button>
-        <span id="likeCount">${item.likes} likes</span>
+        <button id="likeButton" title="Like this post">❤️ Like</button>
+        <span id="likeCount">${blog.likes} likes</span>
       </div>
       <div class="comments-section">
-        <h4><span id="commentCount">${item.comments.length}</span> Comments</h4>
+        <h3><span id="commentCount">${blog.comments.length}</span> Comments</h3>
         <form id="commentForm">
           <input type="text" id="authorName" placeholder="Your Name" required>
           <textarea id="commentContent" placeholder="Write a comment..." required></textarea>
           <button type="submit">Post Comment</button>
         </form>
-        <div id="commentsList"></div>
+        <div id="commentsList">
+          <!-- Comments will be loaded here -->
+        </div>
       </div>
     `;
 
-    renderGalleryComments(item.comments);
+    renderComments(blog.comments);
 
     const likeButton = document.getElementById('likeButton');
-    if (localStorage.getItem(`liked_gallery_${item.id}`) === 'true') {
+    if (localStorage.getItem(`liked_${blog.id}`) === 'true') {
       likeButton.disabled = true;
       likeButton.textContent = 'Liked!';
     } else {
-      likeButton.addEventListener('click', () => handleGalleryLike(item.id));
+      likeButton.addEventListener('click', () => handleLike(blog.id));
     }
 
-    document.getElementById('commentForm').addEventListener('submit', (e) => handleGalleryCommentSubmit(e, item.id));
+    document.getElementById('commentForm').addEventListener('submit', (e) => handleCommentSubmit(e, blog.id));
 
   } catch (error) {
-    modalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
+    console.error("Error loading blog post:", error);
+    container.innerHTML = `<h1>Error</h1><p>${error.message || "Could not load the blog post. It may have been deleted or the link is incorrect."}</p>`;
   }
 }
 
-function renderGalleryComments(comments) {
+function renderComments(comments) {
   const commentsList = document.getElementById('commentsList');
   commentsList.innerHTML = '';
 
@@ -560,7 +408,9 @@ function renderGalleryComments(comments) {
   }
 
   comments.forEach(comment => {
-    const commentDate = new Date(comment.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    const commentDate = new Date(comment.created_at).toLocaleString('en-US', {
+      year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+    });
     const commentEl = document.createElement('div');
     commentEl.className = 'comment';
     commentEl.innerHTML = `
@@ -574,58 +424,68 @@ function renderGalleryComments(comments) {
   });
 }
 
-async function handleGalleryLike(itemId) {
+async function handleLike(blogId) {
   const likeButton = document.getElementById('likeButton');
   const likeCountSpan = document.getElementById('likeCount');
   likeButton.disabled = true;
 
   try {
-    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/like`), { method: 'POST' });
+    const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}/like`), {
+      method: 'POST',
+    });
+
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to like item.');
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to like post.');
+    }
 
     likeCountSpan.textContent = `${result.likes} likes`;
     likeButton.textContent = 'Liked!';
-    localStorage.setItem(`liked_gallery_${itemId}`, 'true');
+    localStorage.setItem(`liked_${blogId}`, 'true');
   } catch (error) {
     alert(error.message);
     likeButton.disabled = false;
   }
 }
 
-async function handleGalleryCommentSubmit(event, itemId) {
+async function handleCommentSubmit(event, blogId) {
   event.preventDefault();
   const form = event.target;
-  const authorName = form.querySelector('#authorName').value;
-  const content = form.querySelector('#commentContent').value;
+  const authorName = document.getElementById('authorName').value;
+  const content = document.getElementById('commentContent').value;
   const submitButton = form.querySelector('button');
 
   submitButton.disabled = true;
   submitButton.textContent = 'Posting...';
 
   try {
-    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/comments`), {
+    const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}/comments`), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ author_name: authorName, content }),
     });
-    const newComment = await response.json();
-    if (!response.ok) throw new Error(newComment.error || 'Failed to post comment.');
 
-    // Refresh the comments list and count
-    const commentsList = document.getElementById('commentsList');
-    if (commentsList.querySelector('p')?.textContent.startsWith('No comments yet')) {
-      commentsList.innerHTML = '';
+    const newComment = await response.json();
+
+    if (!response.ok) {
+      throw new Error(newComment.error || 'Failed to post comment.');
     }
+
+    const commentsList = document.getElementById('commentsList');
     const commentCountSpan = document.getElementById('commentCount');
-    commentCountSpan.textContent = parseInt(commentCountSpan.textContent, 10) + 1;
     
+    if (commentsList.querySelector('p')) {
+        commentsList.innerHTML = '';
+    }
+
     const commentDate = new Date(newComment.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
     const commentEl = document.createElement('div');
     commentEl.className = 'comment';
     commentEl.innerHTML = `<p class="comment-author">${newComment.author_name}<span class="comment-date">${commentDate}</span></p><p class="comment-content">${newComment.content}</p>`;
     commentsList.prepend(commentEl);
 
+    commentCountSpan.textContent = parseInt(commentCountSpan.textContent, 10) + 1;
     form.reset();
   } catch (error) {
     alert(error.message);
@@ -635,7 +495,7 @@ async function handleGalleryCommentSubmit(event, itemId) {
   }
 }
 
-loadGallery();
+document.addEventListener('DOMContentLoaded', loadBlogPost);
 </script>
 
 </body>

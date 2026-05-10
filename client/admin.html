@@ -5,17 +5,47 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Admin Dashboard</title>
 
+<script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <style>
 :root {
   --primary-red: #c8102e;
   --dark-red: #9e0d23;
+  --bg-primary: #f4f4f4;
+  --bg-secondary: white;
+  --text-primary: #222;
+  --text-secondary: #666;
+  --text-on-primary: white;
+  --border-color: #e5e5e5;
+  --shadow-color-light: rgba(0,0,0,0.05);
+  --shadow-color-heavy: rgba(0,0,0,0.08);
+  --button-hover-bg: #f0f0f0;
+  --input-bg: #f9f9f9;
+}
+
+[data-theme="dark"] {
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #333;
+  --shadow-color-light: rgba(255,255,255,0.05);
+  --shadow-color-heavy: rgba(255,255,255,0.12);
+  --button-hover-bg: #2a2a2a;
+  --input-bg: #2a2a2a;
 }
 
 body {
   margin: 0;
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
-  color: #222;
+  background: var(--bg-primary);
+  color: var(--text-primary);
 }
 
 #dashboard {
@@ -26,10 +56,10 @@ body {
 
 .sidebar {
   width: 250px;
-  background: #ffffff;
+  background: var(--bg-secondary);
   padding: 20px;
-  box-shadow: 4px 0 20px rgba(0,0,0,0.05);
-  border-right: 1px solid #e5e5e5;
+  box-shadow: 4px 0 20px var(--shadow-color-light);
+  border-right: 1px solid var(--border-color);
 }
 
 .sidebar h2 {
@@ -39,7 +69,7 @@ body {
 
 .sidebar p {
   margin: 0 0 24px;
-  color: #666;
+  color: var(--text-secondary);
   font-size: 14px;
   line-height: 1.5;
 }
@@ -50,7 +80,7 @@ body {
   padding: 12px;
   margin-bottom: 10px;
   background: transparent;
-  color: #333;
+  color: var(--text-primary);
   border: none;
   text-align: left;
   cursor: pointer;
@@ -59,7 +89,7 @@ body {
 }
 
 .sidebar button:hover {
-  background: #f0f0f0;
+  background: var(--button-hover-bg);
 }
 
 .sidebar button.active {
@@ -84,32 +114,202 @@ body {
   display: none;
 }
 
-.active {
+.section.active {
   display: block;
 }
 
 .card {
-  background: #ffffff;
+  background: var(--bg-secondary);
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 20px;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 10px 28px var(--shadow-color-light);
+}
+
+.section-content-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.95fr) minmax(420px, 1.35fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.section-stack {
+  display: grid;
+  gap: 22px;
+}
+
+.panel-intro {
+  margin-bottom: 18px;
+}
+
+.panel-intro h2 {
+  margin: 0 0 6px;
+}
+
+.admin-form {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.field-group {
+  display: grid;
+  gap: 6px;
+}
+
+.field-group label {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.field-span {
+  grid-column: 1 / -1;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-tile {
+  background: linear-gradient(180deg, var(--bg-secondary), var(--bg-primary));
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.summary-tile span {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.summary-tile strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 28px;
+  line-height: 1;
+  color: var(--primary-red);
+}
+
+.summary-tile small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.table-shell {
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.empty-state {
+  padding: 28px 22px;
+  border: 1px dashed var(--border-color);
+  border-radius: 14px;
+  color: var(--text-secondary);
+  background: linear-gradient(180deg, transparent, var(--bg-primary));
+}
+
+.primary-cell {
+  display: grid;
+  gap: 6px;
+}
+
+.primary-cell strong {
+  font-size: 15px;
+}
+
+.cell-subtext {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 92px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tag-all {
+  background: rgba(15, 118, 110, 0.12);
+  color: #0f766e;
+}
+
+.tag-male {
+  background: rgba(37, 99, 235, 0.12);
+  color: #2563eb;
+}
+
+.tag-female {
+  background: rgba(190, 24, 93, 0.12);
+  color: #be185d;
+}
+
+.tag-neutral {
+  background: var(--button-hover-bg);
+  color: var(--text-secondary);
+}
+
+.actions-cell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.actions-cell .delete-btn {
+  margin-top: 0;
+}
+
+.muted-value {
+  color: var(--text-secondary);
+  font-style: italic;
 }
 
 input,
 textarea,
+select,
 button {
-  width: 100%;
   padding: 10px;
   margin-top: 10px;
   border-radius: 6px;
   border: none;
+  font-family: inherit;
+  font-size: 1rem;
 }
 
 input,
-textarea {
-  background: #f9f9f9;
-  color: #333;
-  border: 1px solid #ddd;
+textarea,
+select {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+select {
+  appearance: none;
 }
 
 button.submit {
@@ -125,49 +325,120 @@ button.submit:hover {
 
 .item-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 25px;
   margin-top: 25px;
 }
 
 .grid-item {
-  background: #ffffff;
+  background: var(--bg-secondary);
   padding: 16px;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
+  gap: 14px;
+  box-shadow: 0 4px 12px var(--shadow-color-light);
+  border: 1px solid var(--border-color);
   transition: 0.3s ease;
+  overflow: hidden;
 }
 
 .grid-item:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px var(--shadow-color-heavy);
   transform: translateY(-4px);
 }
 
 .grid-item img, .grid-item video {
   width: 100%;
-  height: 180px;
+  height: 220px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 12px;
+  background: var(--bg-primary);
 }
 
 .grid-item-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .grid-item-header h4 {
   margin: 0;
   font-size: 16px;
-  color: #222;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 65%;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.grid-item-meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.entity-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.entity-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px var(--shadow-color-light);
+  display: grid;
+  gap: 14px;
+}
+
+.entity-card h4 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.entity-card p {
+  margin: 0;
+}
+
+.entity-meta-list {
+  display: grid;
+  gap: 8px;
+}
+
+.entity-meta-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.entity-meta-row strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.entity-description {
+  color: var(--text-secondary);
+  line-height: 1.55;
+  font-size: 14px;
+  min-height: 66px;
+}
+
+.entity-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
+
+.entity-actions .delete-btn {
+  margin-top: 0;
 }
 
 .item-list {
@@ -178,39 +449,38 @@ button.submit:hover {
 }
 
 .list-item {
-  background: #ffffff;
+  background: var(--bg-secondary);
   padding: 24px;
   border-radius: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-  border: 1px solid #f0f0f0;
+  box-shadow: 0 4px 12px var(--shadow-color-light);
+  border: 1px solid var(--border-color);
   transition: 0.3s ease;
 }
 
 .list-item:hover {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+  box-shadow: 0 8px 24px var(--shadow-color-heavy);
   transform: translateY(-3px);
 }
 
 .list-item h4 {
-  margin: 0 0 8px 0;
+  margin: 0 0 8px;
   font-size: 18px;
-  color: #222;
+  color: var(--text-primary);
 }
 
 .list-item p {
   margin: 0;
   font-size: 14px;
-  color: #777;
+  color: var(--text-secondary);
 }
 
 .delete-btn {
   background: #fee2e2;
   color: #ef4444;
   border: none;
-  padding: 8px 12px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
@@ -221,97 +491,304 @@ button.submit:hover {
   color: white;
 }
 
-.user-table {
+.data-table {
   width: 100%;
   border-collapse: collapse;
+  margin-top: 20px;
 }
 
-.user-table th, .user-table td {
-  padding: 12px;
+.data-table th, .data-table td {
+  padding: 12px 15px;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
 }
 
-.user-table th {
-  background: #fafafa;
+.data-table td:last-child, .data-table th:last-child {
+  text-align: right;
+  width: 1%;
+  white-space: nowrap;
+}
+
+.data-table td {
+  font-size: 14px;
+}
+
+.data-table th {
+  background: var(--bg-primary);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-item {
+  background: var(--bg-primary);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+}
+
+.stat-item h3 {
+  margin-top: 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.stat-item p {
+  font-size: 24px;
+  font-weight: bold;
+  color: var(--primary-red);
+  margin-bottom: 0;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.quick-action-btn {
+  background: var(--button-hover-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  padding: 20px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.quick-action-btn:hover {
+  background: var(--border-color);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px var(--shadow-color-light);
+}
+
+.quick-action-btn span {
+  font-size: 1.5rem;
+}
+
+@media (max-width: 1080px) {
+  .section-content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .form-grid,
+  .summary-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 18px;
+  }
+
+  .data-table th:nth-child(4),
+  .data-table td:nth-child(4) {
+    display: none;
+  }
+
+  .entity-meta-row,
+  .entity-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
 <body>
-
 <div id="dashboard">
 <div class="sidebar">
   <h2>Admin</h2>
-  <p>This page is standalone. It will stay on its own URL and talk to the backend on port 3000.</p>
-
+  <button onclick="showSection('overview')">Overview</button>
   <button onclick="showSection('gallery')">Gallery</button>
   <button onclick="showSection('blogs')">Blogs</button>
   <button onclick="showSection('ministries')">Ministries</button>
   <button onclick="showSection('events')">Events</button>
   <button onclick="showSection('users')">Users</button>
-
   <button onclick="logout()">Logout</button>
 </div>
 
 <div class="main">
-  <div id="statusBox" class="status">Admin page loaded. No automatic redirect is active.</div>
+  <div id="statusBox" class="status">Admin dashboard ready.</div>
 
-  <div id="gallery" class="section active">
-    <div class="card">
-      <h2>Upload Media (Image/Video)</h2>
-      <form id="uploadForm" enctype="multipart/form-data">
-        <input type="text" name="title" placeholder="Media Title" required>
-        <input type="file" name="media" accept="image/*,video/*" required>
-        <button class="submit" type="submit">Upload</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Existing Media</h2>
-      <div id="galleryList" class="item-grid"></div>
+  <div id="gallery" class="section">
+    <div class="section-stack">
+      <div class="card">
+        <h2>Upload Media (Image/Video)</h2>
+        <form id="uploadForm" enctype="multipart/form-data">
+          <input type="text" name="title" placeholder="Media Title" required>
+          <input type="file" name="media" accept="image/*,video/*" required>
+          <button class="submit" type="submit">Upload</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Existing Media</h2>
+        <div id="galleryList" class="item-grid"></div>
+      </div>
     </div>
   </div>
 
   <div id="blogs" class="section">
-    <div class="card">
-      <h2>Create Blog</h2>
-      <form id="blogForm">
-        <input type="text" name="title" placeholder="Title" required>
-        <textarea name="content" placeholder="Content" required></textarea>
-        <button class="submit" type="submit">Post Blog</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Existing Posts</h2>
-      <div id="blogList" class="item-list"></div>
+    <div class="section-content-grid">
+      <div class="card">
+        <h2>Create Blog</h2>
+        <form id="blogForm">
+          <input type="text" name="title" placeholder="Title" required>
+          <textarea name="content" placeholder="Content" required></textarea>
+          <button class="submit" type="submit">Post Blog</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Existing Posts</h2>
+        <div id="blogList"></div>
+      </div>
     </div>
   </div>
 
   <div id="ministries" class="section">
-    <div class="card">
-      <h2>Add Ministry</h2>
-      <form id="ministryForm">
-        <input type="text" name="name" placeholder="Ministry Name" required>
-        <textarea name="description" placeholder="Description"></textarea>
-        <button class="submit" type="submit">Save</button>
-      </form>
+    <div class="section-stack">
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Ministry Setup</h2>
+        </div>
+        <form id="ministryForm" class="admin-form">
+          <div class="form-grid">
+            <div class="field-group field-span">
+              <label for="ministry_name">Ministry Name</label>
+              <input id="ministry_name" type="text" name="name" placeholder="e.g. Young Adults Fellowship" required>
+            </div>
+            <div class="field-group">
+              <label for="ministry_day">Service Day</label>
+              <input id="ministry_day" type="text" name="service_day" placeholder="e.g. Thursday">
+            </div>
+            <div class="field-group">
+              <label for="ministry_time">Service Time</label>
+              <input id="ministry_time" type="time" name="service_time">
+            </div>
+            <div class="field-group field-span">
+              <label for="target_gender">Target Fellowship</label>
+              <select name="target_gender" id="target_gender" required>
+                <option value="all">All (Men and Women)</option>
+                <option value="male">Men Only</option>
+                <option value="female">Women Only</option>
+              </select>
+            </div>
+            <div class="field-group field-span">
+              <label for="ministry_description">Description</label>
+              <textarea id="ministry_description" name="description" placeholder="What is this ministry about?"></textarea>
+            </div>
+          </div>
+          <button class="submit" type="submit">Save</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Ministry Overview</h2>
+        </div>
+        <div class="summary-strip">
+          <div class="summary-tile">
+            <span>Total Ministries</span>
+            <strong id="ministryCount">0</strong>
+            <small>All fellowships currently configured</small>
+          </div>
+          <div class="summary-tile">
+            <span>Focused Groups</span>
+            <strong id="ministryFocusedCount">0</strong>
+            <small>Ministries for a specific audience</small>
+          </div>
+          <div class="summary-tile">
+            <span>Scheduled</span>
+            <strong id="ministryScheduledCount">0</strong>
+            <small>Fellowships with a visible day or time</small>
+          </div>
+        </div>
+        <div id="ministryList"></div>
+      </div>
     </div>
   </div>
 
   <div id="events" class="section">
-    <div class="card">
-      <h2>Create Event</h2>
-      <form id="eventForm">
-        <input type="text" name="title" placeholder="Event Title" required>
-        <input type="date" name="date" required>
-        <input type="time" name="time">
-        <textarea name="description" placeholder="Event Description"></textarea>
-        <button class="submit" type="submit">Create Event</button>
-      </form>
-    </div>
-    <div class="card">
-      <h2>Existing Events</h2>
-      <div id="eventList" class="item-list"></div>
+    <div class="section-stack">
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Event Planner</h2>
+        </div>
+        <form id="eventForm" class="admin-form">
+          <div class="form-grid">
+            <div class="field-group field-span">
+              <label for="event_title">Event Title</label>
+              <input id="event_title" type="text" name="title" placeholder="e.g. Worship Night" required>
+            </div>
+            <div class="field-group">
+              <label for="event_date">Event Date</label>
+              <input id="event_date" type="date" name="date" required>
+            </div>
+            <div class="field-group">
+              <label for="event_time">Event Time</label>
+              <input id="event_time" type="time" name="time">
+            </div>
+            <div class="field-group field-span">
+              <label for="event_fellowship_id">Associated Fellowship</label>
+              <select name="fellowship_id" id="event_fellowship_id">
+                <option value="">None (General Event)</option>
+              </select>
+            </div>
+            <div class="field-group field-span">
+              <label for="event_target_gender">Target Gender for Event</label>
+              <select name="target_gender" id="event_target_gender" required>
+                <option value="all">All (Men and Women)</option>
+                <option value="male">Men Only</option>
+                <option value="female">Women Only</option>
+              </select>
+            </div>
+            <div class="field-group field-span">
+              <label for="event_description">Event Description</label>
+              <textarea id="event_description" name="description" placeholder="Add a short event description or key details"></textarea>
+            </div>
+          </div>
+          <button class="submit" type="submit">Create Event</button>
+        </form>
+      </div>
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Event Overview</h2>
+        </div>
+        <div class="summary-strip">
+          <div class="summary-tile">
+            <span>Total Events</span>
+            <strong id="eventCount">0</strong>
+            <small>All published events in the system</small>
+          </div>
+          <div class="summary-tile">
+            <span>Upcoming</span>
+            <strong id="eventUpcomingCount">0</strong>
+            <small>Events scheduled for today or later</small>
+          </div>
+          <div class="summary-tile">
+            <span>Total RSVPs</span>
+            <strong id="eventRsvpCount">0</strong>
+            <small>Combined responses across upcoming events</small>
+          </div>
+        </div>
+        <div id="eventList"></div>
+      </div>
     </div>
   </div>
 
@@ -319,6 +796,51 @@ button.submit:hover {
     <div class="card">
       <h2>Registered Users</h2>
       <div id="userList"></div>
+    </div>
+  </div>
+
+  <div id="overview" class="section">
+    <div class="card">
+      <h2>Quick Actions</h2>
+      <div class="quick-actions-grid">
+        <button class="quick-action-btn" onclick="showSection('blogs'); document.querySelector('#blogForm input[name=\'title\']').focus();">
+          <span>✍️</span> New Blog Post
+        </button>
+        <button class="quick-action-btn" onclick="showSection('gallery'); document.querySelector('#uploadForm input[type=\'file\']').click();">
+          <span>🖼️</span> Upload Media
+        </button>
+        <button class="quick-action-btn" onclick="showSection('events'); document.querySelector('#eventForm input[name=\'title\']').focus();">
+          <span>🗓️</span> Create Event
+        </button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Overall Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-item">
+          <h3>Total Users</h3>
+          <p id="totalUsers">Loading...</p>
+        </div>
+        <div class="stat-item">
+          <h3>Total Events</h3>
+          <p id="totalEvents">Loading...</p>
+        </div>
+        <div class="stat-item">
+          <h3>Total Media Uploaded</h3>
+          <p id="totalGalleryItems">Loading...</p>
+        </div>
+        <div class="stat-item">
+          <h3>Total Blogs</h3>
+          <p id="totalBlogs">Loading...</p>
+        </div>
+        <div class="stat-item">
+          <h3>Total Ministries</h3>
+          <p id="totalMinistries">Loading...</p>
+        </div>
+      </div>
+      <div id="statsGraphs" style="margin-top: 30px; position: relative; height: 350px;">
+        <canvas id="overviewChart"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -344,6 +866,60 @@ function buildBackendUrl(path) {
   return new URL(path, backendOrigin).toString();
 }
 
+function renderEmptyState(message) {
+  return `<div class="empty-state">${message}</div>`;
+}
+
+function getTargetMeta(target) {
+  const map = {
+    male: { label: "Men Only", className: "tag tag-male" },
+    female: { label: "Women Only", className: "tag tag-female" },
+    all: { label: "Everyone", className: "tag tag-all" }
+  };
+
+  return map[target] || map.all;
+}
+
+function formatEventDateTime(eventDate, eventTime) {
+  const formattedDate = new Date(eventDate).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+
+  if (!eventTime) {
+    return formattedDate;
+  }
+
+  return `${formattedDate} at ${eventTime.substring(0, 5)}`;
+}
+
+function updateEventSummary(items) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const upcomingCount = items.filter((item) => {
+    const eventDate = new Date(item.event_date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  }).length;
+
+  const totalRsvps = items.reduce((sum, item) => sum + (parseInt(item.rsvp_count, 10) || 0), 0);
+
+  document.getElementById("eventCount").textContent = items.length;
+  document.getElementById("eventUpcomingCount").textContent = upcomingCount;
+  document.getElementById("eventRsvpCount").textContent = totalRsvps;
+}
+
+function updateMinistrySummary(items) {
+  const focusedCount = items.filter((item) => item.target_gender && item.target_gender !== "all").length;
+  const scheduledCount = items.filter((item) => item.service_day || item.service_time).length;
+
+  document.getElementById("ministryCount").textContent = items.length;
+  document.getElementById("ministryFocusedCount").textContent = focusedCount;
+  document.getElementById("ministryScheduledCount").textContent = scheduledCount;
+}
+
 function showStatus(message, isError = false) {
   statusBox.textContent = message;
   statusBox.style.background = isError ? "#450a0a" : "#172554";
@@ -355,11 +931,14 @@ async function ensureOk(response, actionLabel) {
     return response;
   }
 
-  const payload = await response.json().catch(() => null);
-  const message = payload?.error || payload?.message || `${actionLabel} failed`;
-
-  if (response.status === 401) {
-    throw new Error(`Your session expired. Please log in again.`);
+  let message = `${actionLabel} failed`;
+  let payload = null;
+  try {
+    payload = await response.json();
+    message = payload?.error || payload?.message || message;
+  } catch (jsonError) {
+    console.warn(`Failed to parse JSON from error response for ${actionLabel} (Status: ${response.status}):`, await response.text().catch(() => 'No response text available.'));
+    message = `Server responded with non-JSON error for ${actionLabel} (Status: ${response.status}). Check server logs.`;
   }
 
   throw new Error(message);
@@ -381,33 +960,43 @@ async function showSection(id) {
   else if (id === 'blogs') await loadBlogs();
   else if (id === 'users') await loadUsers();
   else if (id === 'events') await loadEvents();
+  else if (id === 'ministries') await loadMinistries();
+  else if (id === 'overview') await loadStats();
 }
 
 async function loadGallery() {
   const container = document.getElementById('galleryList');
   try {
     const response = await fetch(buildBackendUrl('/api/gallery'));
-    const items = await response.json();
-    if (response.ok) {
-      container.innerHTML = items.map(item => {
-        const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
-        const mediaTag = isVideo
-          ? `<video src="${buildBackendUrl(item.image_url)}" muted></video>`
-          : `<img src="${buildBackendUrl(item.image_url)}" alt="${item.title}">`;
-        
-        return `
-          <div class="grid-item">
-            ${mediaTag}
-            <div class="grid-item-header">
-              <h4 title="${item.title}">${item.title}</h4>
-              <button class="delete-btn" data-id="${item.id}" data-type="gallery">Delete</button>
-            </div>
-          </div>
-        `;
-      }).join('');
+    const items = await (await ensureOk(response, "Loading gallery")).json();
+
+    if (items.length === 0) {
+      container.innerHTML = renderEmptyState('No media has been uploaded yet.');
+      return;
     }
+
+    container.innerHTML = items.map(item => {
+      const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
+      const mediaTag = isVideo
+        ? `<video src="${buildBackendUrl(item.image_url)}" muted></video>`
+        : `<img src="${buildBackendUrl(item.image_url)}" alt="${item.title}">`;
+      
+      return `
+        <div class="grid-item">
+          ${mediaTag}
+          <div class="grid-item-header">
+            <div>
+              <h4 title="${item.title}">${item.title}</h4>
+              <div class="grid-item-meta">Added ${new Date(item.created_at).toLocaleDateString()}</div>
+            </div>
+            <button class="delete-btn" data-id="${item.id}" data-type="gallery">Delete</button>
+          </div>
+        </div>
+      `;
+    }).join('');
   } catch (error) {
-    container.innerHTML = `<p style="color: red;">Failed to load gallery items.</p>`;
+    showStatus(error.message, true);
+    container.innerHTML = renderEmptyState('Failed to load gallery items.');
   }
 }
 
@@ -415,41 +1004,159 @@ async function loadBlogs() {
   const container = document.getElementById('blogList');
   try {
     const response = await fetch(buildBackendUrl('/api/blogs'));
-    const items = await response.json();
-    if (response.ok) {
-      container.innerHTML = items.map(item => `
-        <div class="list-item">
-          <div>
-            <h4>${item.title}</h4>
-            <p>Created: ${new Date(item.created_at).toLocaleDateString()}</p>
-          </div>
-          <button class="delete-btn" data-id="${item.id}" data-type="blogs">Delete</button>
-        </div>
-      `).join('');
+    const items = await (await ensureOk(response, "Loading blogs")).json();
+
+    if (items.length === 0) {
+      container.innerHTML = '<p>No blog posts have been created yet.</p>';
+      return;
     }
+
+    let table = `<table class="data-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+    table += items.map(item => `
+      <tr>
+        <td>${item.title}</td>
+        <td>${new Date(item.created_at).toLocaleDateString()}</td>
+        <td><button class="delete-btn" data-id="${item.id}" data-type="blogs">Delete</button></td>
+      </tr>
+    `).join('');
+
+    table += `</tbody></table>`;
+    container.innerHTML = table;
   } catch (error) {
+    showStatus(error.message, true);
     container.innerHTML = `<p style="color: red;">Failed to load blogs.</p>`;
   }
 }
 
+let allFellowships = [];
+async function fetchFellowshipsForDropdown() {
+  try {
+    const response = await fetch(buildBackendUrl('/api/services'), {
+      credentials: 'include'
+    });
+    allFellowships = await (await ensureOk(response, "Loading fellowships for dropdown")).json();
+    const select = document.getElementById('event_fellowship_id');
+    select.innerHTML = '<option value="">None (General Event)</option>'; // Keep the "None" option
+    allFellowships.forEach(f => {
+      const targetLabel = getTargetMeta(f.target_gender).label;
+      select.innerHTML += `<option value="${f.id}">${f.name} - ${targetLabel}</option>`;
+    });
+  } catch (error) {
+    console.error("Error loading fellowships for event form:", error);
+  }
+}
 async function loadEvents() {
   const container = document.getElementById('eventList');
   try {
-    const response = await fetch(buildBackendUrl('/api/events'));
-    const items = await response.json();
-    if (response.ok) {
-      container.innerHTML = items.map(item => `
-        <div class="list-item">
-          <div>
-            <h4>${item.title}</h4>
-            <p>Date: ${new Date(item.event_date).toLocaleDateString()} ${item.event_time ? ' at ' + item.event_time : ''}</p>
-          </div>
-          <button class="delete-btn" data-id="${item.id}" data-type="events">Delete</button>
-        </div>
-      `).join('');
+    const response = await fetch(buildBackendUrl('/api/events'), {
+      credentials: 'include'
+    });
+    const items = await (await ensureOk(response, "Loading events")).json();
+    updateEventSummary(items);
+
+    if (items.length === 0) {
+      container.innerHTML = renderEmptyState('No events have been created yet.');
+      return;
     }
+
+    container.innerHTML = `<div class="entity-grid">${items.map(item => {
+        const targetMeta = getTargetMeta(item.target_gender);
+        const description = item.description || 'No event description added yet.';
+        const fellowshipLabel = item.fellowship_name || 'General event';
+        const rsvpCount = parseInt(item.rsvp_count, 10) || 0;
+
+        return `
+          <article class="entity-card">
+            <div class="primary-cell">
+              <strong>${item.title}</strong>
+              <span class="cell-subtext">${description}</span>
+            </div>
+            <div class="entity-meta-list">
+              <div class="entity-meta-row">
+                <span>Date</span>
+                <strong>${formatEventDateTime(item.event_date, item.event_time)}</strong>
+              </div>
+              <div class="entity-meta-row">
+                <span>Fellowship</span>
+                <strong>${fellowshipLabel}</strong>
+              </div>
+              <div class="entity-meta-row">
+                <span>Audience</span>
+                <span class="${targetMeta.className}">${targetMeta.label}</span>
+              </div>
+            </div>
+            <div class="entity-actions">
+              <span class="grid-item-meta">${rsvpCount} RSVP${rsvpCount === 1 ? '' : 's'}</span>
+              <button class="delete-btn" data-id="${item.id}" data-type="events">Delete</button>
+            </div>
+          </article>
+        `;
+    }).join('')}</div>`;
   } catch (error) {
-    container.innerHTML = `<p style="color: red;">Failed to load events.</p>`;
+    showStatus(error.message, true);
+    container.innerHTML = renderEmptyState('Failed to load events.');
+  }
+}
+
+function formatServiceSchedule(item) {
+  const parts = [item.service_day, item.service_time].filter(Boolean);
+  return parts.length ? parts.join(' | ') : 'Schedule not set';
+}
+
+async function loadMinistries() {
+  const container = document.getElementById('ministryList');
+  try {
+    const response = await fetch(buildBackendUrl('/api/services'), {
+      credentials: 'include'
+    });
+    const items = await (await ensureOk(response, "Loading ministries")).json();
+    updateMinistrySummary(items);
+
+    if (items.length === 0) {
+      container.innerHTML = renderEmptyState('No ministries have been added yet.');
+      return;
+    }
+
+    container.innerHTML = `<div class="entity-grid">${items.map(item => {
+      const targetMeta = getTargetMeta(item.target_gender);
+      const description = item.description || 'No description added yet.';
+
+      return `
+        <article class="entity-card">
+          <div class="primary-cell">
+            <strong>${item.name}</strong>
+            <span class="cell-subtext">${description}</span>
+          </div>
+          <div class="entity-meta-list">
+            <div class="entity-meta-row">
+              <span>Schedule</span>
+              <strong>${formatServiceSchedule(item)}</strong>
+            </div>
+            <div class="entity-meta-row">
+              <span>Audience</span>
+              <span class="${targetMeta.className}">${targetMeta.label}</span>
+            </div>
+          </div>
+          <p class="entity-description" title="${description}">${description}</p>
+          <div class="entity-actions">
+            <span class="grid-item-meta">Configured fellowship</span>
+            <button class="delete-btn" data-id="${item.id}" data-type="services">Delete</button>
+          </div>
+        </article>
+      `;
+    }).join('')}</div>`;
+  } catch (error) {
+    showStatus(error.message, true);
+    container.innerHTML = renderEmptyState('Failed to load ministries.');
   }
 }
 
@@ -457,9 +1164,14 @@ async function loadUsers() {
   const container = document.getElementById('userList');
   try {
     const response = await fetch(buildBackendUrl('/api/users'), { credentials: 'include' });
-    if (response.ok) {
-      const items = await response.json();
-      let table = `<table class="user-table">
+    const items = await (await ensureOk(response, "Loading users")).json();
+
+    if (items.length === 0) {
+      container.innerHTML = '<p>No users have registered yet.</p>';
+      return;
+    }
+
+    let table = `<table class="data-table">
         <thead>
           <tr>
             <th>ID</th>
@@ -470,7 +1182,7 @@ async function loadUsers() {
           </tr>
         </thead>
         <tbody>`;
-      table += items.map(item => `
+    table += items.map(item => `
         <tr>
           <td>${item.id}</td>
           <td>${item.name}</td>
@@ -479,17 +1191,90 @@ async function loadUsers() {
           <td>${new Date(item.created_at).toLocaleDateString()}</td>
         </tr>
       `).join('');
-      table += `</tbody></table>`;
-      container.innerHTML = table;
-    } else {
-      const data = await response.json().catch(() => null);
-      container.innerHTML = `<p style="color: red;">${data?.error || 'Unauthorized to view users. Please login.'}</p>`;
-    }
+    table += `</tbody></table>`;
+    container.innerHTML = table;
   } catch (error) {
-    container.innerHTML = `<p style="color: red;">Network error while loading users.</p>`;
+    showStatus(error.message, true);
+    container.innerHTML = `<p style="color: red;">Failed to load users.</p>`;
   }
 }
 
+let overviewChartInstance = null;
+
+function updateChart(data) {
+  const ctx = document.getElementById('overviewChart').getContext('2d');
+  
+  if (overviewChartInstance) {
+    overviewChartInstance.destroy();
+  }
+  
+  overviewChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Users', 'Events', 'Gallery Items', 'Blogs', 'Ministries'],
+      datasets: [{
+        label: 'Platform Statistics',
+        data: [data.users, data.events, data.gallery, data.blogs, data.ministries],
+        backgroundColor: [
+          'rgba(200, 16, 46, 0.7)',
+          'rgba(54, 162, 235, 0.7)',
+          'rgba(255, 206, 86, 0.7)',
+          'rgba(75, 192, 192, 0.7)',
+          'rgba(153, 102, 255, 0.7)'
+        ],
+        borderColor: [
+          'rgba(200, 16, 46, 1)',
+          'rgba(54, 162, 235, 1)',
+          'rgba(255, 206, 86, 1)',
+          'rgba(75, 192, 192, 1)',
+          'rgba(153, 102, 255, 1)'
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            stepSize: 1
+          }
+        }
+      }
+    }
+  });
+}
+
+async function loadStats() {
+  try {
+    const response = await fetch(buildBackendUrl('/api/admin/overview'), {
+      credentials: 'include'
+    });
+    const overview = await (await ensureOk(response, "Loading dashboard overview")).json();
+
+    document.getElementById('totalUsers').textContent = overview.users;
+    document.getElementById('totalEvents').textContent = overview.events;
+    document.getElementById('totalGalleryItems').textContent = overview.gallery;
+    document.getElementById('totalBlogs').textContent = overview.blogs;
+    document.getElementById('totalMinistries').textContent = overview.ministries;
+
+    updateChart(overview);
+  } catch (error) {
+    console.error("Error loading stats:", error);
+    const isFetchFailure = error instanceof TypeError && error.message === "Failed to fetch";
+    const message = isFetchFailure
+      ? "Could not load dashboard overview. If you are using Brave Shields or an ad blocker, refresh after this update or disable blocking for this admin page."
+      : error.message;
+    showStatus(message, true);
+    document.getElementById('totalUsers').textContent = 'N/A';
+    document.getElementById('totalEvents').textContent = 'N/A';
+    document.getElementById('totalGalleryItems').textContent = 'N/A';
+    document.getElementById('totalBlogs').textContent = 'N/A';
+    document.getElementById('totalMinistries').textContent = 'N/A';
+  }
+}
 document.getElementById("uploadForm").addEventListener("submit", async function(e) {
   e.preventDefault();
   const formData = new FormData(this);
@@ -558,7 +1343,36 @@ document.getElementById("eventForm").addEventListener("submit", async function(e
     await ensureOk(response, "Event creation");
     showStatus("Event created successfully. Refreshing list...");
     this.reset();
+    document.getElementById("event_target_gender").value = "all";
+    document.getElementById("event_fellowship_id").value = "";
     await loadEvents();
+  } catch (error) {
+    showStatus(error.message, true);
+  }
+});
+
+document.getElementById("ministryForm").addEventListener("submit", async function(e) {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(this));
+
+  try {
+    const response = await fetch(buildBackendUrl("/api/services"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "X-Requested-With": "fetch"
+      },
+      body: JSON.stringify(data),
+      credentials: "include"
+    });
+
+    await ensureOk(response, "Ministry creation");
+    showStatus("Ministry saved successfully. Refreshing list...");
+    this.reset();
+    document.getElementById("target_gender").value = "all";
+    await loadMinistries();
+    await fetchFellowshipsForDropdown();
   } catch (error) {
     showStatus(error.message, true);
   }
@@ -579,7 +1393,13 @@ document.querySelector('.main').addEventListener('click', async (e) => {
   if (e.target.matches('.delete-btn')) {
     const id = e.target.dataset.id;
     const type = e.target.dataset.type;
-    const typeName = type === 'gallery' ? 'media' : (type === 'events' ? 'event' : 'blog post');
+    const typeNames = {
+      gallery: 'media',
+      events: 'event',
+      blogs: 'blog post',
+      services: 'ministry'
+    };
+    const typeName = typeNames[type] || 'item';
     
     if (!confirm(`Are you sure you want to delete this ${typeName}?`)) return;
 
@@ -593,17 +1413,40 @@ document.querySelector('.main').addEventListener('click', async (e) => {
         }
       });
       await ensureOk(response, 'Delete');
-      showStatus(`${typeName.charAt(0).toUpperCase() + typeName.slice(1)} deleted successfully.`);
-      e.target.closest('.list-item, .grid-item').remove();
+      showStatus(`${typeName.charAt(0).toUpperCase() + typeName.slice(1)} deleted successfully. Refreshing list...`);
+      
+      // Instead of DOM manipulation, just reload the content for the section.
+      switch(type) {
+        case 'gallery':
+          await loadGallery();
+          break;
+        case 'events':
+          await loadEvents();
+          break;
+        case 'blogs':
+          await loadBlogs();
+          break;
+        case 'services':
+          await loadMinistries();
+          await fetchFellowshipsForDropdown(); // Also refresh dependent dropdowns
+          break;
+      }
     } catch (error) {
       showStatus(error.message, true);
     }
   }
 });
 
-document.addEventListener('DOMContentLoaded', () => {
-  showSection('gallery');
-});
+async function initializeDashboard() {
+  try {
+    await fetchFellowshipsForDropdown();
+    await showSection('overview');
+  } catch (error) {
+    showStatus(error.message || 'Could not initialize admin dashboard.', true);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initializeDashboard);
 </script>
 
 </body>

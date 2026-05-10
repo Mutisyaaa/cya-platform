@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 
 const rootEnvPath = path.join(__dirname, ".env");
 const fallbackEnvPath = path.join(__dirname, "server", ".env");
@@ -24,6 +25,7 @@ pool.query(`
     email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255), 
     google_id VARCHAR(255) UNIQUE, 
+    gender VARCHAR(50),
     avatar_url TEXT, 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -43,13 +45,32 @@ pool.query(`
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 
-  CREATE TABLE IF NOT EXISTS events (
+  CREATE TABLE IF NOT EXISTS blog_comments (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    event_date DATE NOT NULL,
-    event_time TIME,
+    blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
+    author_name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS blog_likes (
+    blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
+    user_ip VARCHAR(45) NOT NULL,
+    PRIMARY KEY (blog_id, user_ip)
+  );
+
+  CREATE TABLE IF NOT EXISTS gallery_comments (
+    id SERIAL PRIMARY KEY,
+    gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
+    author_name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS gallery_likes (
+    gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
+    user_ip VARCHAR(45) NOT NULL,
+    PRIMARY KEY (gallery_id, user_ip)
   );
 
   CREATE TABLE IF NOT EXISTS services (
@@ -57,34 +78,120 @@ pool.query(`
     name VARCHAR(255) NOT NULL,
     description TEXT,
     service_day VARCHAR(50),
-    service_time TIME
+    service_time TIME,
+    target_gender VARCHAR(10) DEFAULT 'all'
   );
+
+  CREATE TABLE IF NOT EXISTS events (
+    id SERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    event_date DATE NOT NULL,
+    event_time TIME, 
+    fellowship_id INTEGER REFERENCES services(id) ON DELETE SET NULL,
+    target_gender VARCHAR(10) DEFAULT 'all',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS event_rsvps (
+    event_id INTEGER NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (event_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS fellowship_posts (
+    id SERIAL PRIMARY KEY,
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    author_name VARCHAR(255) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(20) NOT NULL DEFAULT 'discussion',
+    target_gender VARCHAR(10) NOT NULL DEFAULT 'all',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS fellowship_comments (
+    id SERIAL PRIMARY KEY,
+    post_id INTEGER NOT NULL REFERENCES fellowship_posts(id) ON DELETE CASCADE,
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    author_name VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  ALTER TABLE gallery
+    ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS storage_public_id TEXT,
+    ADD COLUMN IF NOT EXISTS storage_resource_type VARCHAR(50);
 `).catch(err => console.error("Could not create tables:", err));
 
 const app = express();
+app.set('trust proxy', true); // To ensure req.ip is reliable behind a proxy
 const PORT = process.env.PORT || 3000;
 const clientDir = path.join(__dirname, "client");
 const uploadsDir = path.join(__dirname, "server", "uploads");
 const allowLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
+const isProduction = process.env.NODE_ENV === "production";
 
 fs.mkdirSync(uploadsDir, { recursive: true });
+
+function parseCsvEnv(value) {
+  return String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+const allowedOrigins = new Set(parseCsvEnv(process.env.CORS_ALLOWED_ORIGINS));
+
+if (process.env.APP_ORIGIN) {
+  allowedOrigins.add(process.env.APP_ORIGIN.trim());
+}
+
+if (process.env.RENDER_EXTERNAL_HOSTNAME) {
+  allowedOrigins.add(`https://${process.env.RENDER_EXTERNAL_HOSTNAME}`);
+}
 
 app.use(session({
   secret: process.env.SESSION_SECRET || "keyboardcat",
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: isProduction,
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  },
 }));
 
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Unconditionally ensure Passport can serialize users for local sessions
 passport.serializeUser((user, done) => {
-  done(null, user);
+  done(null, user.id);
 });
 
-passport.deserializeUser((user, done) => {
-  done(null, user);
+passport.deserializeUser(async (id, done) => {
+  try {
+    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
+    if (result.rows.length === 0) {
+      return done(null, false, { message: 'User not found.' });
+    }
+    const dbUser = result.rows[0];
+    const user = {
+      id: dbUser.id,
+      displayName: dbUser.name,
+      emails: [{ value: dbUser.email }],
+      avatarUrl: dbUser.avatar_url,
+      gender: dbUser.gender,
+      provider: dbUser.google_id ? 'google' : 'local',
+      isAdmin: dbUser.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set consistently
+    };
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
 });
 
 let authInitError = null;
@@ -101,6 +208,77 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   console.warn("Google Auth disabled: Google OAuth environment variables are missing.");
 }
 
+// Ensure authenticated for admin routes
+function ensureUserAuthenticated(req, res, next) {
+  if (req.isAuthenticated() && req.user) {
+    return next();
+  }
+  // Using a different error message for user-facing actions
+  res.status(401).json({ error: "You must be logged in to perform this action." });
+}
+
+// New middleware for admin access
+function ensureAdmin(req, res, next) {
+  if (!process.env.ADMIN_EMAIL) {
+    console.error("ADMIN_EMAIL environment variable is not set. Admin access is disabled.");
+    return res.status(500).json({ error: "Server configuration error: Admin email not set." });
+  }
+
+  if (req.isAuthenticated() && req.user) {
+    const userEmail = req.user.emails?.[0]?.value;
+    if (userEmail === process.env.ADMIN_EMAIL) {
+      return next(); // User is admin, proceed
+    }
+  }
+  return res.status(403).json({ error: "Forbidden: You do not have administrative privileges." });
+}
+
+function isValidTargetGender(targetGender) {
+  return ["all", "male", "female"].includes(targetGender);
+}
+
+function isValidFellowshipCategory(category) {
+  return ["discussion", "planning"].includes(category);
+}
+
+function canContributeToFellowshipTarget(user, targetGender) {
+  if (!user) {
+    return false;
+  }
+
+  if (user.isAdmin) {
+    return true;
+  }
+
+  if (targetGender === "all") {
+    return true;
+  }
+
+  return user.gender === targetGender;
+}
+
+async function getDashboardOverview(req, res) {
+  try {
+    const [usersResult, eventsResult, galleryResult, blogsResult, servicesResult] = await Promise.all([
+      pool.query("SELECT COUNT(*) FROM users"),
+      pool.query("SELECT COUNT(*) FROM events"),
+      pool.query("SELECT COUNT(*) FROM gallery"),
+      pool.query("SELECT COUNT(*) FROM blogs"),
+      pool.query("SELECT COUNT(*) FROM services"),
+    ]);
+
+    res.json({
+      users: parseInt(usersResult.rows[0].count, 10),
+      events: parseInt(eventsResult.rows[0].count, 10),
+      gallery: parseInt(galleryResult.rows[0].count, 10),
+      blogs: parseInt(blogsResult.rows[0].count, 10),
+      ministries: parseInt(servicesResult.rows[0].count, 10),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 function isGoogleAuthReady() {
   return Boolean(
     process.env.GOOGLE_CLIENT_ID &&
@@ -110,6 +288,22 @@ function isGoogleAuthReady() {
 
 function getAuthUnavailableMessage() {
   return authInitError?.message || "Google auth is not available on this server.";
+}
+
+function normalizeEmail(email) {
+  return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function isAdminEmail(email) {
+  return normalizeEmail(email) === normalizeEmail(process.env.ADMIN_EMAIL);
+}
+
+function getPostLoginRedirect(user, fallback = "/") {
+  if (isAdminEmail(user?.emails?.[0]?.value)) {
+    return "/admin.html";
+  }
+
+  return getSafeReturnTo(fallback);
 }
 
 function getSafeReturnTo(value) {
@@ -142,7 +336,12 @@ function getSafeReturnTo(value) {
 
 app.use(cors({
   origin(origin, callback) {
-    if (!origin || origin === "null" || allowLocalOrigin.test(origin)) {
+    if (
+      !origin ||
+      origin === "null" ||
+      allowLocalOrigin.test(origin) ||
+      allowedOrigins.has(origin)
+    ) {
       return callback(null, true);
     }
 
@@ -155,6 +354,112 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(clientDir));
 app.use("/uploads", express.static(uploadsDir));
+
+function isCloudinaryConfigured() {
+  return Boolean(
+    process.env.CLOUDINARY_CLOUD_NAME &&
+    process.env.CLOUDINARY_API_KEY &&
+    process.env.CLOUDINARY_API_SECRET
+  );
+}
+
+function getCloudinaryFolder() {
+  return process.env.CLOUDINARY_FOLDER?.trim() || "cya-platform/gallery";
+}
+
+function buildCloudinarySignature(params, apiSecret) {
+  const stringToSign = Object.entries(params)
+    .filter(([, value]) => value !== undefined && value !== null && value !== "")
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&");
+
+  return crypto
+    .createHash("sha1")
+    .update(`${stringToSign}${apiSecret}`)
+    .digest("hex");
+}
+
+function getCloudinaryResourceType(file) {
+  if (file?.mimetype?.startsWith("video/")) {
+    return "video";
+  }
+
+  if (file?.mimetype?.startsWith("image/")) {
+    return "image";
+  }
+
+  return "raw";
+}
+
+async function uploadToCloudinary(file) {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const resourceType = getCloudinaryResourceType(file);
+  const folder = getCloudinaryFolder();
+  const signature = buildCloudinarySignature(
+    { folder, timestamp },
+    process.env.CLOUDINARY_API_SECRET
+  );
+  const formData = new FormData();
+
+  formData.append(
+    "file",
+    new Blob([file.buffer], { type: file.mimetype || "application/octet-stream" }),
+    file.originalname || `upload-${Date.now()}`
+  );
+  formData.append("api_key", process.env.CLOUDINARY_API_KEY);
+  formData.append("timestamp", String(timestamp));
+  formData.append("folder", folder);
+  formData.append("signature", signature);
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data?.error?.message || "Cloudinary upload failed.");
+  }
+
+  return {
+    imageUrl: data.secure_url,
+    publicId: data.public_id,
+    resourceType: data.resource_type || resourceType,
+  };
+}
+
+async function destroyCloudinaryAsset(publicId, resourceType = "image") {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const invalidate = "true";
+  const signature = buildCloudinarySignature(
+    { invalidate, public_id: publicId, timestamp },
+    process.env.CLOUDINARY_API_SECRET
+  );
+  const body = new URLSearchParams({
+    public_id: publicId,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    timestamp: String(timestamp),
+    invalidate,
+    signature,
+  });
+
+  const response = await fetch(
+    `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/destroy`,
+    {
+      method: "POST",
+      body,
+    }
+  );
+  const data = await response.json();
+
+  if (!response.ok || data.result === "not found") {
+    throw new Error(data?.error?.message || `Cloudinary destroy failed for ${publicId}.`);
+  }
+}
 
 app.get("/auth/google", (req, res, next) => {
   if (!isGoogleAuthReady()) {
@@ -179,7 +484,7 @@ app.get("/auth/google/callback", (req, res, next) => {
     failureRedirect: "/",
   })(req, res, next);
 }, (req, res) => {
-  const returnTo = getSafeReturnTo(req.session?.returnTo);
+  const returnTo = getPostLoginRedirect(req.user, req.session?.returnTo);
 
   if (req.session) {
     delete req.session.returnTo;
@@ -200,6 +505,135 @@ app.get("/api/auth/logout", (req, res) => {
   req.logout(() => {
     res.json({ message: "Logged out" });
   });
+});
+
+app.get("/api/fellowship/posts", async (req, res) => {
+  try {
+    const postsResult = await pool.query(
+      `SELECT
+         fp.*,
+         COALESCE(u.name, fp.author_name) AS author_display_name
+       FROM fellowship_posts fp
+       LEFT JOIN users u ON fp.author_id = u.id
+       ORDER BY fp.created_at DESC`
+    );
+
+    const commentsResult = await pool.query(
+      `SELECT
+         fc.*,
+         COALESCE(u.name, fc.author_name) AS author_display_name
+       FROM fellowship_comments fc
+       LEFT JOIN users u ON fc.author_id = u.id
+       ORDER BY fc.created_at ASC`
+    );
+
+    const commentsByPostId = commentsResult.rows.reduce((map, comment) => {
+      if (!map.has(comment.post_id)) {
+        map.set(comment.post_id, []);
+      }
+      map.get(comment.post_id).push(comment);
+      return map;
+    }, new Map());
+
+    const posts = postsResult.rows.map((post) => ({
+      ...post,
+      comments: commentsByPostId.get(post.id) || []
+    }));
+
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/fellowship/posts", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { title, content, category, target_gender } = req.body;
+    const normalizedCategory = typeof category === "string" ? category.trim().toLowerCase() : "discussion";
+    const normalizedTargetGender = typeof target_gender === "string" ? target_gender.trim().toLowerCase() : "all";
+
+    if (!title || !content) {
+      return res.status(400).json({ error: "Title and content are required." });
+    }
+
+    if (!isValidFellowshipCategory(normalizedCategory)) {
+      return res.status(400).json({ error: "Invalid fellowship category." });
+    }
+
+    if (!isValidTargetGender(normalizedTargetGender)) {
+      return res.status(400).json({ error: "Invalid target group." });
+    }
+
+    if (!canContributeToFellowshipTarget(req.user, normalizedTargetGender)) {
+      return res.status(403).json({ error: "You can only post to your own fellowship space or the shared board." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO fellowship_posts (author_id, author_name, title, content, category, target_gender)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [
+        req.user.id,
+        req.user.displayName || "Community Member",
+        title.trim(),
+        content.trim(),
+        normalizedCategory,
+        normalizedTargetGender
+      ]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/fellowship/posts/:id/comments", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required." });
+    }
+
+    const postResult = await pool.query(
+      "SELECT id, target_gender FROM fellowship_posts WHERE id = $1",
+      [id]
+    );
+
+    if (postResult.rows.length === 0) {
+      return res.status(404).json({ error: "Fellowship post not found." });
+    }
+
+    const post = postResult.rows[0];
+
+    if (!canContributeToFellowshipTarget(req.user, post.target_gender)) {
+      return res.status(403).json({ error: "You can only comment in your own fellowship space or the shared board." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO fellowship_comments (post_id, author_id, author_name, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, req.user.id, req.user.displayName || "Community Member", content.trim()]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/users", ensureAdmin, async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, name, email, google_id, created_at FROM users ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 function wantsJson(req) {
@@ -227,9 +661,9 @@ function sendGalleryUploadResponse(req, res, statusCode, payload) {
 
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "Name, email, and password are required." });
+    const { name, email, password, gender } = req.body;
+    if (!name || !email || !password || !gender) {
+      return res.status(400).json({ error: "Name, email, password, and gender are required." });
     }
 
     const userCheck = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
@@ -239,8 +673,8 @@ app.post("/api/auth/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3) RETURNING id, name, email",
-      [name, email, passwordHash]
+      "INSERT INTO users (name, email, password_hash, gender) VALUES ($1, $2, $3, $4) RETURNING id, name, email, gender",
+      [name, email, passwordHash, gender]
     );
 
     const row = result.rows[0];
@@ -248,12 +682,18 @@ app.post("/api/auth/register", async (req, res) => {
       id: row.id,
       displayName: row.name,
       emails: [{ value: row.email }],
-      provider: "local"
+      gender: row.gender,
+      provider: "local",
+      isAdmin: row.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set on registration
     };
 
     req.login(newUser, (err) => {
       if (err) return res.status(500).json({ error: "Login failed after registration." });
-      res.status(201).json({ message: "Account created successfully!", user: newUser });
+      res.status(201).json({
+        message: "Account created successfully!",
+        user: newUser,
+        redirectTo: getPostLoginRedirect(newUser),
+      });
     });
   } catch (error) {
     console.error("Registration Error:", error);
@@ -275,25 +715,25 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const user = { id: row.id, displayName: row.name, emails: [{ value: row.email }], provider: "local" };
+    const user = {
+      id: row.id,
+      displayName: row.name,
+      emails: [{ value: row.email }],
+      gender: row.gender,
+      provider: "local",
+      isAdmin: row.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set on local login
+    };
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: "Internal server error during login." });
-      res.status(200).json({ message: "Login successful", user });
+      res.status(200).json({
+        message: "Login successful",
+        user,
+        redirectTo: getPostLoginRedirect(user),
+      });
     });
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ error: "Internal server error during login." });
-  }
-});
-
-app.get("/api/users", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT id, name, email, google_id, created_at FROM users ORDER BY created_at DESC"
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 
@@ -312,7 +752,33 @@ app.get("/api/blogs", async (req, res) => {
   }
 });
 
-app.post("/api/blogs", async (req, res) => {
+app.get("/api/blogs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const blogResult = await pool.query("SELECT * FROM blogs WHERE id = $1", [id]);
+
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    const blog = blogResult.rows[0];
+
+    const [commentsResult, likesResult] = await Promise.all([
+      pool.query("SELECT * FROM blog_comments WHERE blog_id = $1 ORDER BY created_at DESC", [id]),
+      pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id])
+    ]);
+
+    blog.comments = commentsResult.rows;
+    blog.likes = parseInt(likesResult.rows[0].count, 10);
+
+    res.json(blog);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/blogs", ensureAdmin, async (req, res) => {
   try {
     const { title, content } = req.body;
 
@@ -327,7 +793,7 @@ app.post("/api/blogs", async (req, res) => {
   }
 });
 
-app.delete("/api/blogs/:id", async (req, res) => {
+app.delete("/api/blogs/:id", ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM blogs WHERE id = $1", [id]);
@@ -342,33 +808,18 @@ app.delete("/api/blogs/:id", async (req, res) => {
   }
 });
 
-app.get("/api/services", async (req, res) => {
+app.post("/api/blogs/:id/comments", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM services");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+    const { id } = req.params;
+    const { author_name, content } = req.body;
 
-app.get("/api/events", async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT * FROM events ORDER BY event_date ASC"
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post("/api/events", async (req, res) => {
-  try {
-    const { title, date, time, description } = req.body;
+    if (!author_name || !content) {
+      return res.status(400).json({ error: "Author name and content are required." });
+    }
 
     const result = await pool.query(
-      "INSERT INTO events (title, event_date, event_time, description) VALUES ($1, $2, $3, $4) RETURNING *",
-      [title, date, time || null, description]
+      "INSERT INTO blog_comments (blog_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
+      [id, author_name, content]
     );
 
     res.status(201).json(result.rows[0]);
@@ -377,7 +828,149 @@ app.post("/api/events", async (req, res) => {
   }
 });
 
-app.delete("/api/events/:id", async (req, res) => {
+app.post("/api/blogs/:id/like", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userIp = req.ip;
+
+    await pool.query(
+      "INSERT INTO blog_likes (blog_id, user_ip) VALUES ($1, $2)",
+      [id, userIp]
+    );
+    
+    const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]);
+    const likeCount = parseInt(likesResult.rows[0].count, 10);
+
+    res.status(201).json({ likes: likeCount });
+  } catch (err) {
+    if (err.code === '23505') { // unique_violation
+      return res.status(409).json({ error: "You have already liked this post." });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/services", async (req, res) => {
+  try {
+    const userGender = req.user?.gender;
+    const isAdminRequest = Boolean(req.user?.isAdmin);
+
+    let query;
+    let params = [];
+
+    if (isAdminRequest) {
+      query = "SELECT * FROM services ORDER BY name ASC";
+    } else if (userGender && (userGender === 'male' || userGender === 'female')) {
+      query = "SELECT * FROM services WHERE target_gender = 'all' OR target_gender = $1 ORDER BY name ASC";
+      params = [userGender];
+    } else {
+      // For guests or users without gender set
+      query = "SELECT * FROM services WHERE target_gender = 'all' ORDER BY name ASC";
+    }
+
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/services", ensureAdmin, async (req, res) => {
+  try {
+    const { name, description, service_day, service_time, target_gender } = req.body;
+    const result = await pool.query(
+      "INSERT INTO services (name, description, service_day, service_time, target_gender) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, description || null, service_day || null, service_time || null, target_gender || 'all']
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/services/:id", ensureAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("DELETE FROM services WHERE id = $1", [id]);
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: "Ministry/Service not found." });
+    }
+    res.status(200).json({ message: "Ministry/Service deleted successfully." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/events", async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    const userGender = req.user?.gender;
+    const isAdminRequest = Boolean(req.user?.isAdmin);
+    let result;
+
+    let baseQuery = `
+      SELECT 
+        e.*, 
+        s.name AS fellowship_name,
+        (SELECT COUNT(*) FROM event_rsvps er WHERE er.event_id = e.id) as rsvp_count
+      FROM events e
+      LEFT JOIN services s ON e.fellowship_id = s.id
+      WHERE e.event_date >= CURRENT_DATE
+    `;
+    const queryParams = [];
+    let paramIndex = 1;
+
+    // Filter by user gender for events not specifically tied to a fellowship
+    if (isAdminRequest) {
+      // Admin can review all upcoming events regardless of target gender.
+    } else if (userGender && (userGender === 'male' || userGender === 'female')) {
+      baseQuery += ` AND (e.target_gender = 'all' OR e.target_gender = $${paramIndex++})`;
+      queryParams.push(userGender);
+    } else {
+      // For guests or users without gender set, only show 'all' gender events
+      baseQuery += ` AND e.target_gender = 'all'`;
+    }
+
+    baseQuery += ` ORDER BY e.event_date ASC, e.event_time ASC`;
+
+    if (userId) {
+      result = await pool.query(
+        `SELECT *, EXISTS(SELECT 1 FROM event_rsvps er WHERE er.event_id = e.id AND er.user_id = $${paramIndex++}) as user_rsvpd FROM (${baseQuery}) AS e`,
+        [...queryParams, userId]
+      );
+    } else {
+      result = await pool.query(
+        `SELECT *, false as user_rsvpd FROM (${baseQuery}) AS e`,
+        queryParams
+      );
+    }
+    
+    const events = result.rows.map(event => ({
+      ...event,
+      rsvp_count: parseInt(event.rsvp_count, 10)
+    }));
+    res.json(events);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/events", ensureAdmin, async (req, res) => {
+  try {
+    const { title, date, time, description, fellowship_id, target_gender } = req.body;
+
+    const result = await pool.query(
+      "INSERT INTO events (title, event_date, event_time, description, fellowship_id, target_gender) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
+      [title, date, time || null, description, fellowship_id || null, target_gender || 'all']
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/events/:id", ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM events WHERE id = $1", [id]);
@@ -392,6 +985,41 @@ app.delete("/api/events/:id", async (req, res) => {
   }
 });
 
+app.post("/api/events/:id/rsvp", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const userId = req.user.id;
+
+    await pool.query(
+      "INSERT INTO event_rsvps (event_id, user_id) VALUES ($1, $2)",
+      [eventId, userId]
+    );
+    
+    res.status(201).json({ message: "RSVP successful." });
+  } catch (err) {
+    if (err.code === '23505') { // unique_violation
+      return res.status(409).json({ error: "You have already RSVP'd to this event." });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/events/:id/rsvp", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id: eventId } = req.params;
+    const userId = req.user.id;
+
+    const result = await pool.query(
+      "DELETE FROM event_rsvps WHERE event_id = $1 AND user_id = $2",
+      [eventId, userId]
+    );
+
+    res.status(200).json({ message: "RSVP canceled successfully." });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadsDir);
@@ -401,7 +1029,9 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage: isCloudinaryConfigured() ? multer.memoryStorage() : storage,
+});
 
 app.get("/api/gallery", async (req, res) => {
   try {
@@ -416,6 +1046,7 @@ app.get("/api/gallery", async (req, res) => {
 
 app.post(
   "/api/gallery",
+  ensureAdmin,
   (req, res, next) => {
     upload.single("media")(req, res, (err) => {
       if (err) {
@@ -432,11 +1063,30 @@ app.post(
       }
 
       const { title } = req.body;
-      const media_url = `/uploads/${req.file.filename}`;
+      let mediaUrl;
+      let storageProvider = "local";
+      let storagePublicId = null;
+      let storageResourceType = null;
+
+      if (isCloudinaryConfigured()) {
+        const uploadedAsset = await uploadToCloudinary(req.file);
+        mediaUrl = uploadedAsset.imageUrl;
+        storageProvider = "cloudinary";
+        storagePublicId = uploadedAsset.publicId;
+        storageResourceType = uploadedAsset.resourceType;
+      } else {
+        mediaUrl = `/uploads/${req.file.filename}`;
+      }
 
       const result = await pool.query(
-        "INSERT INTO gallery (title, image_url) VALUES ($1, $2) RETURNING *",
-        [title, media_url]
+        `INSERT INTO gallery (
+          title,
+          image_url,
+          storage_provider,
+          storage_public_id,
+          storage_resource_type
+        ) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
+        [title, mediaUrl, storageProvider, storagePublicId, storageResourceType]
       );
 
       return sendGalleryUploadResponse(req, res, 201, {
@@ -450,30 +1100,155 @@ app.post(
   }
 );
 
-app.delete("/api/gallery/:id", async (req, res) => {
+app.delete("/api/gallery/:id", ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
-    const fileResult = await pool.query("SELECT image_url FROM gallery WHERE id = $1", [id]);
+    const fileResult = await pool.query(
+      `SELECT image_url, storage_provider, storage_public_id, storage_resource_type
+       FROM gallery
+       WHERE id = $1`,
+      [id]
+    );
 
     if (fileResult.rows.length === 0) {
       return res.status(404).json({ error: "Gallery item not found." });
     }
 
-    const imageUrl = fileResult.rows[0].image_url;
-    const filename = path.basename(imageUrl);
-    const filePath = path.join(uploadsDir, filename);
+    const {
+      image_url: imageUrl,
+      storage_provider: storageProvider,
+      storage_public_id: storagePublicId,
+      storage_resource_type: storageResourceType,
+    } = fileResult.rows[0];
 
     await pool.query("DELETE FROM gallery WHERE id = $1", [id]);
 
-    fs.unlink(filePath, (err) => {
-      if (err) console.error(`Failed to delete file: ${filePath}`, err);
-    });
+    if (storageProvider === "cloudinary" && storagePublicId && isCloudinaryConfigured()) {
+      try {
+        await destroyCloudinaryAsset(storagePublicId, storageResourceType || "image");
+      } catch (err) {
+        console.error(`Failed to delete Cloudinary asset: ${storagePublicId}`, err);
+      }
+    } else if (imageUrl?.startsWith("/uploads/")) {
+      const filename = path.basename(imageUrl);
+      const filePath = path.join(uploadsDir, filename);
+
+      fs.unlink(filePath, (err) => {
+        if (err) console.error(`Failed to delete file: ${filePath}`, err);
+      });
+    }
 
     res.status(200).json({ message: "Gallery item deleted successfully." });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
+app.get("/api/gallery/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const itemResult = await pool.query("SELECT * FROM gallery WHERE id = $1", [id]);
+
+    if (itemResult.rows.length === 0) {
+      return res.status(404).json({ error: "Gallery item not found." });
+    }
+
+    const item = itemResult.rows[0];
+
+    const [commentsResult, likesResult] = await Promise.all([
+      pool.query("SELECT * FROM gallery_comments WHERE gallery_id = $1 ORDER BY created_at DESC", [id]),
+      pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id])
+    ]);
+
+    item.comments = commentsResult.rows;
+    item.likes = parseInt(likesResult.rows[0].count, 10);
+
+    res.json(item);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/gallery/:id/like", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userIp = req.ip;
+
+    await pool.query(
+      "INSERT INTO gallery_likes (gallery_id, user_ip) VALUES ($1, $2)",
+      [id, userIp]
+    );
+    
+    const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]);
+    const likeCount = parseInt(likesResult.rows[0].count, 10);
+
+    res.status(201).json({ likes: likeCount });
+  } catch (err) {
+    if (err.code === '23505') { // unique_violation
+      return res.status(409).json({ error: "You have already liked this item." });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/gallery/:id/comments", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { author_name, content } = req.body;
+
+    if (!author_name || !content) {
+      return res.status(400).json({ error: "Author name and content are required." });
+    }
+
+    const result = await pool.query(
+      "INSERT INTO gallery_comments (gallery_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
+      [id, author_name, content]
+    );
+
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/admin/overview", ensureAdmin, getDashboardOverview);
+
+app.get("/api/stats/users", ensureAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM users");
+    res.json({ total: parseInt(result.rows[0].count) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/stats/events", ensureAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM events");
+    res.json({ total: parseInt(result.rows[0].count) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/stats/gallery", ensureAdmin, async (req, res) => {
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM gallery");
+    res.json({ total: parseInt(result.rows[0].count) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Catch-all for 404 Not Found for API routes
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: `API endpoint not found: ${req.path}` });
+  }
+  next(); // Let other middleware handle non-API 404s (e.g., static files)
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

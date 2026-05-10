@@ -5,10 +5,46 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AIC Ziwani CYA</title>
 
+<script>
+  (function() {
+    const theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  })();
+</script>
 <style>
 :root {
   --primary-red: #c8102e;
   --dark-red: #9e0d23;
+  --bg-primary: #f4f4f4;
+  --bg-secondary: white;
+  --bg-secondary-translucent: rgba(255, 255, 255, 0.96);
+  --text-primary: #222;
+  --text-secondary: #666;
+  --text-on-primary: white;
+  --border-color: #ddd;
+  --shadow-color-light: rgba(0,0,0,0.05);
+  --shadow-color-heavy: rgba(0,0,0,0.12);
+  --auth-form-bg: #fdecec;
+  --button-bg: #f6f6f6;
+  --button-hover-bg: #f0d7dc;
+  --button-hover-text: var(--dark-red);
+}
+
+[data-theme="dark"] {
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-secondary-translucent: rgba(30, 30, 30, 0.96);
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #333;
+  --shadow-color-light: rgba(255,255,255,0.05);
+  --shadow-color-heavy: rgba(0,0,0,0.2);
+  --auth-form-bg: #2a1a1a;
+  --button-bg: #2a2a2a;
+  --button-hover-bg: #3a3a3a;
+  --button-hover-text: var(--primary-red);
 }
 
 * {
@@ -19,19 +55,21 @@
 }
 
 body {
-  background: #f4f4f4;
-  color: #222;
+  background: var(--bg-primary);
+  color: var(--text-primary);
   scroll-behavior: smooth;
 }
 
 /* ================= NAVBAR ================= */
 nav {
-  background: white;
-  padding: 18px 60px;
+  background: var(--bg-secondary-translucent);
+  padding: 16px 32px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  gap: 24px;
+  flex-wrap: wrap;
+  box-shadow: 0 4px 20px var(--shadow-color-light);
   position: sticky;
   top: 0;
   z-index: 1000;
@@ -40,52 +78,63 @@ nav {
 .logo-area {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 14px;
+  flex-shrink: 0;
 }
 
 .logo-area img {
-  width: 60px;
+  width: 56px;
 }
 
 .church-name h1 {
   font-size: 20px;
   font-weight: 700;
-  color: black;
+  color: var(--text-primary);
 }
 
 .church-name span {
-  font-size: 13px;
-  color: black;
-  letter-spacing: 1px;
+  font-size: 12px;
+  color: var(--text-primary);
+  letter-spacing: 0.08em;
+  display: block;
 }
 
 .nav-links {
   display: flex;
-  gap: 15px;
+  gap: 10px;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .nav-links a {
   text-decoration: none;
-  padding: 8px 18px;
-  border-radius: 25px;
+  padding: 10px 18px;
+  border-radius: 999px;
   font-weight: 600;
-  transition: 0.3s ease;
-  background: transparent;
-  color: black;
+  line-height: 1;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--text-primary);
 }
 
 /* upgraded navbar buttons */
 .nav-links a:hover {
   background: var(--primary-red);
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(200,16,46,0.25);
+  color: var(--text-on-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
+}
+
+.nav-links a.active {
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
 }
 
 .nav-links a.btn-contact {
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
 }
 
 .nav-links a.btn-contact:hover {
@@ -94,47 +143,49 @@ nav {
 
 .auth-slot {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .auth-link {
   text-decoration: none;
-  padding: 8px 18px;
-  border-radius: 25px;
+  padding: 10px 18px;
+  border-radius: 999px;
   font-weight: 600;
-  transition: 0.3s ease;
-  background: transparent;
-  color: black;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  color: var(--text-primary);
   display: inline-flex;
   align-items: center;
   border: none;
-  font-size: 16px;
+  font-size: 15px;
+  line-height: 1;
   cursor: pointer;
   font-family: inherit;
 }
 
 .auth-link:hover {
   background: var(--primary-red);
-  color: white;
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(200,16,46,0.25);
+  color: var(--text-on-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(200,16,46,0.18);
 }
 
 .profile-toggle {
   border: none;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 999px;
-  padding: 6px 12px 6px 6px;
+  padding: 6px;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   cursor: pointer;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-  transition: 0.3s ease;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 8px 20px var(--shadow-color-heavy);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .profile-toggle:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 24px rgba(0,0,0,0.12);
+  box-shadow: 0 12px 24px var(--shadow-color-heavy);
 }
 
 .profile-avatar,
@@ -147,7 +198,7 @@ nav {
   align-items: center;
   justify-content: center;
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
   font-weight: 700;
 }
 
@@ -156,8 +207,23 @@ nav {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-weight: 700;
-  color: #222;
+  font-weight: 700;  
+  color: var(--text-primary);
+}
+
+@media (max-width: 900px) {
+  nav {
+    padding: 14px 20px;
+  }
+
+  .church-name h1 {
+    font-size: 18px;
+  }
+
+  .nav-links {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .profile-menu {
@@ -165,9 +231,9 @@ nav {
   right: 0;
   top: calc(100% + 12px);
   width: 220px;
-  background: white;
+  background: var(--bg-secondary);
   border-radius: 16px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+  box-shadow: 0 16px 40px var(--shadow-color-heavy);
   padding: 12px;
   display: none;
 }
@@ -183,7 +249,7 @@ nav {
 
 .profile-menu-email {
   font-size: 13px;
-  color: #666;
+  color: var(--text-secondary);
   margin-bottom: 12px;
   word-break: break-word;
 }
@@ -191,18 +257,19 @@ nav {
 .profile-menu button {
   width: 100%;
   border: none;
-  background: #f6f6f6;
-  color: #222;
+  background: var(--button-bg);
+  color: var(--text-primary);
   padding: 10px 14px;
   border-radius: 12px;
   font-weight: 700;
   cursor: pointer;
   transition: 0.2s ease;
+  margin-top: 8px;
 }
 
 .profile-menu button:hover {
-  background: #f0d7dc;
-  color: var(--dark-red);
+  background: var(--button-hover-bg);
+  color: var(--button-hover-text);
 }
 
 /* ================= HERO ================= */
@@ -212,8 +279,8 @@ nav {
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  color: white;
+  text-align: center;  
+  color: var(--text-on-primary);
   padding: 20px;
 }
 
@@ -230,7 +297,7 @@ nav {
 .hero-btn {
   margin-top: 30px;
   display: inline-block;
-  background: white;
+  background: var(--bg-secondary);
   color: var(--primary-red);
   padding: 14px 32px;
   border-radius: 30px;
@@ -266,7 +333,7 @@ nav {
 }
 
 .light {
-  background: white;
+  background: var(--bg-secondary);
 }
 
 /* ================= CARDS ================= */
@@ -279,17 +346,17 @@ nav {
 }
 
 .card {
-  background: white;
+  background: var(--bg-secondary);
   padding: 35px;
   width: 280px;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-light);
   transition: 0.3s ease;
 }
 
 .card:hover {
   transform: translateY(-10px);
-  box-shadow: 0 18px 40px rgba(0,0,0,0.1);
+  box-shadow: 0 18px 40px var(--shadow-color-heavy);
 }
 
 /* ================= GALLERY GRID ================= */
@@ -302,7 +369,7 @@ nav {
 
 .grid-box {
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
   padding: 60px 20px;
   border-radius: 18px;
   font-weight: 600;
@@ -324,11 +391,11 @@ nav {
 }
 
 .blog-card {
-  background: white;
+  background: var(--bg-secondary);
   padding: 35px;
   width: 330px;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-light);
   text-align: left;
   transition: 0.3s ease;
 }
@@ -351,18 +418,18 @@ nav {
 
 /* ================= CONTACT ================= */
 .contact-box {
-  background: white;
+  background: var(--bg-secondary);
   padding: 50px;
   border-radius: 18px;
-  box-shadow: 0 12px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 12px 30px var(--shadow-color-light);
   max-width: 600px;
   margin: 50px auto 0;
 }
 
 /* ================= FOOTER ================= */
 footer {
-  background: #111;
-  color: white;
+  background: #1e1e1e;
+  color: var(--text-on-primary);
   padding: 30px;
   text-align: center;
   font-size: 14px;
@@ -384,12 +451,12 @@ footer {
 }
 
 .auth-modal {
-  background: white;
+  background: var(--bg-secondary);
   padding: 40px;
   border-radius: 18px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 16px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 16px 40px var(--shadow-color-heavy);
   position: relative;
 }
 
@@ -401,9 +468,9 @@ footer {
 
 .auth-modal .close-btn {
   position: absolute;
-  top: 15px; right: 15px;
-  background: transparent; border: none;
-  font-size: 24px; cursor: pointer; color: #666;
+  top: 15px; right: 15px;  
+  background: transparent; border: none; font-size: 24px;
+  cursor: pointer; color: var(--text-secondary);
 }
 
 .auth-error {
@@ -411,8 +478,8 @@ footer {
   font-size: 13px;
   text-align: center;
   margin-bottom: 15px;
-  display: none;
-  background: #fdecec;
+  display: none;  
+  background: var(--auth-form-bg);
   padding: 10px;
   border-radius: 8px;
 }
@@ -423,21 +490,34 @@ footer {
   gap: 15px;
 }
 
-.auth-form input {
+.auth-form input,
+.auth-form select {
   padding: 12px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   border-radius: 8px;
   font-size: 14px;
   outline: none;
 }
 
-.auth-form input:focus {
+.auth-form select:invalid {
+  color: var(--text-secondary);
+}
+
+.auth-form option {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.auth-form input:focus,
+.auth-form select:focus {
   border-color: var(--primary-red);
 }
 
 .auth-form button {
   background: var(--primary-red);
-  color: white;
+  color: var(--text-on-primary);
   border: none;
   padding: 12px;
   border-radius: 8px;
@@ -459,20 +539,20 @@ footer {
 
 .auth-divider::before,
 .auth-divider::after {
-  content: ""; position: absolute;
-  top: 50%; width: 40%; height: 1px; background: #ddd;
+  content: ""; position: absolute; top: 50%;
+  width: 40%; height: 1px; background: var(--border-color);
 }
 
 .auth-divider::before { left: 0; }
 .auth-divider::after { right: 0; }
 
 .auth-divider span {
-  background: white; padding: 0 10px; color: #666; font-size: 12px;
+  background: var(--bg-secondary); padding: 0 10px; color: var(--text-secondary); font-size: 12px;
 }
 
 .google-btn {
   display: flex; align-items: center; justify-content: center; gap: 10px;
-  background: white; color: #444; border: 1px solid #ccc;
+  background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color);
   padding: 12px; border-radius: 8px; font-weight: 600;
   cursor: pointer; transition: 0.3s; width: 100%; text-decoration: none;
 }
@@ -503,9 +583,7 @@ footer {
 
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
-    <a href="#about">About</a>
-    <a href="services.html">Services</a>
-    <a href="#ministries">Ministries</a>
+    <a href="fellowship.html">Fellowship</a>
     <a href="events.html">Events</a>
     <a href="gallery.html">Gallery</a>
     <a href="blog.html">Blog</a>
@@ -515,10 +593,10 @@ footer {
 </nav>
 
 <section class="hero">
-  <div class="hero-content">
-    <h2>Welcome to AIC Ziwani CYA</h2>
-    <p>Growing in faith. Serving with love. Building a Christ-centered community.</p>
-    <a href="#services" class="hero-btn">Join Our Services</a>
+  <div id="heroContent" class="hero-content">
+    <h2 id="heroTitle">Welcome to AIC Ziwani CYA</h2>
+    <p id="heroSubtitle">Growing in faith. Serving with love. Building a Christ-centered community.</p>
+    <a href="#services" id="heroBtn" class="hero-btn">Join Our Services</a>
   </div>
 </section>
 
@@ -557,17 +635,8 @@ footer {
 
 <section id="blog" class="section">
   <h2>Latest From Our Blog</h2>
-  <div class="blog-cards">
-    <div class="blog-card">
-      <h3>Walking in Faith</h3>
-      <p>A reflection on trusting God in every season.</p>
-      <a href="#">Read More →</a>
-    </div>
-    <div class="blog-card">
-      <h3>Serving with Purpose</h3>
-      <p>Why community service is central to our calling.</p>
-      <a href="#">Read More →</a>
-    </div>
+  <div class="blog-cards" id="blogCardsContainer">
+    <!-- Dynamic blog posts will be loaded here -->
   </div>
 </section>
 
@@ -590,6 +659,11 @@ footer {
     <div id="authError" class="auth-error"></div>
     <form id="authForm" class="auth-form">
       <input type="text" id="authName" name="name" placeholder="Full Name" style="display:none;">
+      <select id="authGender" name="gender" style="display:none;">
+        <option value="" disabled selected>Select your gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
       <input type="email" id="authEmail" name="email" placeholder="Email Address" required>
       <input type="password" id="authPassword" name="password" placeholder="Password" required>
       <button type="submit" id="authSubmitBtn">Login</button>
@@ -647,6 +721,20 @@ function getAvatarUrl(user) {
   return user.avatarUrl || (user.photos && user.photos[0] ? user.photos[0].value : "");
 }
 
+function isAdminUser(user) {
+  const email = user?.emails && user.emails[0] ? user.emails[0].value : "";
+  return Boolean(user?.isAdmin || email.toLowerCase() === "k3v1n.goof@gmail.com");
+}
+
+function redirectAdminToDashboardAfterLogin(user) {
+  if (!isAdminUser(user)) {
+    return false;
+  }
+
+  window.location.href = "admin.html";
+  return true;
+}
+
 function getFallbackAvatarMarkup(name) {
   return `<span class="profile-fallback">${getInitials(name)}</span>`;
 }
@@ -679,11 +767,11 @@ function renderLoggedIn(user) {
   authSlot.innerHTML = `
     <button class="profile-toggle" type="button" aria-expanded="false">
       ${avatarMarkup}
-      <span class="profile-name">${displayName}</span>
     </button>
     <div class="profile-menu">
       <div class="profile-menu-name">${displayName}</div>
       <div class="profile-menu-email">${email}</div>
+      <button id="themeToggleBtn" type="button">Toggle Theme</button>
       <button id="logoutButton" type="button">Logout</button>
     </div>
   `;
@@ -691,6 +779,7 @@ function renderLoggedIn(user) {
   const toggle = authSlot.querySelector(".profile-toggle");
   const menu = authSlot.querySelector(".profile-menu");
   const logoutButton = document.getElementById("logoutButton");
+  const themeToggleBtn = document.getElementById("themeToggleBtn");
   const avatar = authSlot.querySelector(".profile-avatar");
 
   if (avatar) {
@@ -703,6 +792,8 @@ function renderLoggedIn(user) {
     const isOpen = menu.classList.toggle("open");
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
+
+  themeToggleBtn.addEventListener("click", toggleTheme);
 
   logoutButton.addEventListener("click", async () => {
     try {
@@ -728,6 +819,18 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+}
+
+function toggleTheme() {
+  const currentTheme = document.documentElement.getAttribute('data-theme');
+  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  applyTheme(newTheme);
+  closeProfileMenu();
+}
+
 let isLoginMode = true;
 
 function openAuthModal() {
@@ -750,6 +853,8 @@ function toggleAuthMode() {
     document.getElementById('authTitle').innerText = 'Login';
     document.getElementById('authName').style.display = 'none';
     document.getElementById('authName').required = false;
+    document.getElementById('authGender').style.display = 'none';
+    document.getElementById('authGender').required = false;
     document.getElementById('authSubmitBtn').innerText = 'Login';
     document.getElementById('authSwitchText').innerText = "Don't have an account?";
     document.querySelector('.auth-switch a').innerText = 'Sign up';
@@ -757,6 +862,8 @@ function toggleAuthMode() {
     document.getElementById('authTitle').innerText = 'Sign Up';
     document.getElementById('authName').style.display = 'block';
     document.getElementById('authName').required = true;
+    document.getElementById('authGender').style.display = 'block';
+    document.getElementById('authGender').required = true;
     document.getElementById('authSubmitBtn').innerText = 'Create Account';
     document.getElementById('authSwitchText').innerText = "Already have an account?";
     document.querySelector('.auth-switch a').innerText = 'Log in';
@@ -768,9 +875,10 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
   const email = document.getElementById('authEmail').value;
   const password = document.getElementById('authPassword').value;
   const name = document.getElementById('authName').value;
+  const gender = document.getElementById('authGender').value;
   
   const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
-  const payload = isLoginMode ? { email, password } : { name, email, password };
+  const payload = isLoginMode ? { email, password } : { name, email, password, gender };
   
   try {
     const response = await fetch(buildBackendUrl(endpoint), {
@@ -787,7 +895,13 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       document.getElementById('authError').style.display = 'block';
     } else {
       closeAuthModal();
-      window.location.reload();
+      if (result.redirectTo) {
+        window.location.href = result.redirectTo;
+      } else if (redirectAdminToDashboardAfterLogin(result.user)) {
+        return;
+      } else {
+        window.location.reload();
+      }
     }
   } catch (err) {
     document.getElementById('authError').innerText = 'Network error. Please try again.';
@@ -795,30 +909,131 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
   }
 });
 
-async function loadAuthState() {
+let heroCountdownInterval = null;
+
+function startHeroCountdown(targetDate) {
+  if (heroCountdownInterval) clearInterval(heroCountdownInterval);
+
+  const heroSubtitle = document.getElementById('heroSubtitle');
+  
+  const updateCountdown = () => {
+      const now = new Date().getTime();
+      const distance = targetDate.getTime() - now;
+
+      if (distance < 0) {
+          heroSubtitle.textContent = `This event has passed. Check out other events!`;
+          clearInterval(heroCountdownInterval);
+          return;
+      }
+
+      const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+      let countdownText = "Starts in: ";
+      if (days > 0) countdownText += `${days}d `;
+      countdownText += `${hours}h ${minutes}m ${seconds}s`;
+
+      heroSubtitle.textContent = countdownText;
+  };
+
+  heroCountdownInterval = setInterval(updateCountdown, 1000);
+  updateCountdown();
+}
+
+async function loadHeroContent() {
+    const heroTitle = document.getElementById('heroTitle');
+    const heroBtn = document.getElementById('heroBtn');
+
+    try {
+        const response = await fetch(buildBackendUrl('/api/events'));
+        if (!response.ok) return;
+        const events = await response.json();
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const upcomingEvent = events.find(event => {
+            if (!event.event_date) return false;
+            const parts = event.event_date.split('T')[0].split('-');
+            const eventDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            return eventDate >= today;
+        });
+
+        if (upcomingEvent) {
+            const dateOnly = upcomingEvent.event_date.split('T')[0];
+            const targetDate = new Date(`${dateOnly}T${upcomingEvent.event_time || '00:00:00'}`);
+            
+            heroTitle.innerHTML = `Next Event: ${upcomingEvent.title}`;
+            heroBtn.textContent = 'View Event Details';
+            heroBtn.href = 'events.html';
+
+            startHeroCountdown(targetDate);
+        }
+    } catch (error) {
+        console.error("Could not load hero content:", error);
+    }
+}
+
+async function loadRecentBlogs() {
+    const container = document.getElementById('blogCardsContainer');
+    if (!container) return;
+
+    try {
+        const response = await fetch(buildBackendUrl('/api/blogs'));
+        if (!response.ok) throw new Error('Failed to fetch blogs');
+        const blogs = await response.json();
+
+        if (blogs.length > 0) {
+            container.innerHTML = ''; // Clear static content
+            const recentBlogs = blogs.slice(0, 2);
+
+            recentBlogs.forEach(blog => {
+                const card = `
+                    <div class="blog-card">
+                        <h3>${blog.title}</h3>
+                        <p>${blog.content.substring(0, 100)}${blog.content.length > 100 ? '...' : ''}</p>
+                        <a href="blog-post.html?id=${blog.id}">Read More →</a>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        } else {
+            container.innerHTML = '<p>No blog posts yet. Check back soon!</p>';
+        }
+    } catch (error) {
+        console.error("Could not load recent blogs:", error);
+        container.innerHTML = '<p>Could not load recent blog posts.</p>';
+    }
+}
+
+async function initializePage() {
   try {
     const response = await fetch(buildBackendUrl("/api/auth/user"), {
       credentials: "include"
     });
 
-    if (!response.ok) {
+    if (response.ok) {
+      const user = await response.json();
+      if (user && user.displayName) {
+        renderLoggedIn(user);
+      } else {
+        renderLoggedOut();
+      }
+    } else {
       renderLoggedOut();
-      return;
-    }
-
-    const user = await response.json();
-    if (user && user.displayName) {
-      renderLoggedIn(user);
-      return;
     }
   } catch (error) {
     console.error("Could not load auth state:", error);
+    renderLoggedOut();
   }
 
-  renderLoggedOut();
+  await loadHeroContent();
+  await loadRecentBlogs();
 }
 
-loadAuthState();
+document.addEventListener('DOMContentLoaded', initializePage);
 </script>
 
 </body>

@@ -60,6 +60,47 @@ app.post("/api/blogs", async (req, res) => {
   }
 });
 
+app.get("/api/blogs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await pool.query("SELECT * FROM blogs WHERE id = $1", [id]);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/blogs/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const blogResult = await pool.query("SELECT * FROM blogs WHERE id = $1", [id]);
+
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    const blog = blogResult.rows[0];
+
+    const [commentsResult, likesResult] = await Promise.all([
+      pool.query("SELECT * FROM blog_comments WHERE blog_id = $1 ORDER BY created_at DESC", [id]),
+      pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id])
+    ]);
+
+    blog.comments = commentsResult.rows;
+    blog.likes = parseInt(likesResult.rows[0].count, 10);
+
+    res.json(blog);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 // SERVICES
 app.get("/api/services", async (req, res) => {
