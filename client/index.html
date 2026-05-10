@@ -7,6 +7,17 @@
 
 <script>
   (function() {
+    const { protocol, hostname, port, pathname, search, hash } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+      window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+    }
+  })();
+</script>
+
+<script>
+  (function() {
     const theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
@@ -276,31 +287,99 @@ nav {
 
 /* ================= HERO ================= */
 .hero {
-  background: linear-gradient(135deg, #c8102e, #9e0d23);
-  height: 80vh;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)),
+    linear-gradient(135deg, #050505 0%, #1a0a0f 24%, #8c112b 58%, #140508 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;  
   color: var(--text-on-primary);
-  padding: 20px;
+  padding: 52px 32px 60px;
+  position: relative;
+}
+
+.hero-content {
+  width: min(1220px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.78fr);
+  gap: 28px;
+  align-items: stretch;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-copy {
+  text-align: left;
+  color: var(--text-on-primary);
+  padding: 18px 6px 18px 0;
+}
+
+.theme-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.88);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.theme-kicker::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #a78bfa;
 }
 
 .hero-content h2 {
-  font-size: 48px;
+  margin-top: 20px;
+  font-size: clamp(38px, 5.4vw, 68px);
+  line-height: 1;
+  max-width: 700px;
+}
+
+.hero-theme-line {
+  display: block;
+  color: #b9a7ff;
+}
+
+.theme-scripture {
+  margin-top: 18px;
+  max-width: 620px;
+  font-size: 18px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.9);
+}
+
+.theme-scripture strong {
+  color: #d7cdfd;
 }
 
 .hero-content p {
-  margin-top: 20px;
-  font-size: 18px;
-  max-width: 650px;
+  margin-top: 16px;
+  font-size: 17px;
+  max-width: 620px;
+  color: rgba(255,255,255,0.72);
+  line-height: 1.65;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 30px;
 }
 
 .hero-btn {
-  margin-top: 30px;
   display: inline-block;
-  background: var(--bg-secondary);
-  color: var(--primary-red);
+  background: #ffffff;
+  color: #111111;
   padding: 14px 32px;
   border-radius: 30px;
   font-weight: 700;
@@ -311,6 +390,116 @@ nav {
 .hero-btn:hover {
   transform: translateY(-5px);
   box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.hero-btn.secondary {
+  background: transparent;
+  color: var(--text-on-primary);
+  border: 1px solid rgba(185, 167, 255, 0.42);
+}
+
+.hero-btn.secondary:hover {
+  background: rgba(185, 167, 255, 0.1);
+}
+
+.theme-footnote {
+  margin-top: 20px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.58);
+}
+
+.event-spotlight {
+  background: linear-gradient(180deg, rgba(24, 10, 14, 0.94), rgba(14, 6, 9, 0.98));
+  color: #f5f2f4;
+  border-radius: 22px;
+  padding: 24px 22px;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 100%;
+}
+
+.event-spotlight-label {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: rgba(185, 167, 255, 0.12);
+  color: #c9bbff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.event-spotlight h3 {
+  margin: 16px 0 8px;
+  font-size: 26px;
+  line-height: 1.12;
+}
+
+.event-copy {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.72);
+}
+
+.event-meta {
+  margin-top: 22px;
+  display: grid;
+  gap: 10px;
+}
+
+.event-meta-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 11px 13px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #f5f2f4;
+  font-weight: 700;
+}
+
+.event-countdown-card {
+  margin-top: 18px;
+  padding: 16px 15px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0f0f10, #1a1a1d);
+  color: #ffffff;
+}
+
+.event-countdown-label {
+  display: block;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.62);
+}
+
+.event-countdown-value {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.event-spotlight .hero-btn {
+  margin-top: 18px;
+  text-align: center;
+  background: #f4f1f3;
+  color: #ffffff;
+  color: #161214;
+}
+
+.event-spotlight .hero-btn:hover {
+  background: #ffffff;
 }
 
 /* ================= SECTIONS ================= */
@@ -634,9 +823,17 @@ footer {
   }
 
   .hero {
-    height: auto;
     min-height: 72vh;
     padding: 72px 16px 56px;
+  }
+
+  .hero-content {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .hero-copy {
+    padding: 8px 0;
   }
 
   .hero-content h2 {
@@ -647,10 +844,32 @@ footer {
     font-size: 16px;
   }
 
+  .theme-scripture {
+    font-size: 17px;
+  }
+
   .hero-btn {
     width: 100%;
-    max-width: 280px;
+    max-width: none;
     padding: 14px 20px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .event-spotlight {
+    border-radius: 20px;
+    padding: 22px 18px;
+  }
+
+  .event-spotlight h3 {
+    font-size: 24px;
+  }
+
+  .event-countdown-value {
+    font-size: 24px;
   }
 
   .section {
@@ -720,9 +939,35 @@ footer {
 
 <section class="hero">
   <div id="heroContent" class="hero-content">
-    <h2 id="heroTitle">Welcome to AIC Ziwani CYA</h2>
-    <p id="heroSubtitle">Growing in faith. Serving with love. Building a Christ-centered community.</p>
-    <a href="#services" id="heroBtn" class="hero-btn">Join Our Services</a>
+    <div class="hero-copy">
+      <span class="theme-kicker">CYA Theme Of The Year</span>
+      <h2 id="heroTitle">Chosen <span class="hero-theme-line">For Such A Time</span></h2>
+      <div class="theme-scripture">
+        <strong>Esther 4:14</strong><br>
+        You have been positioned by God with purpose, courage, and grace for this exact season.
+      </div>
+      <p id="heroSubtitle">This year we are leaning into a calling that is timely, bold, and full of responsibility. We are not here by accident. We are here to rise, serve, stand, and shine where God has placed us.</p>
+      <div class="hero-actions">
+        <a href="fellowship.html" class="hero-btn secondary">Step Into Fellowship</a>
+      </div>
+      <div class="theme-footnote">A year to answer the moment with faith, service, and holy courage.</div>
+    </div>
+
+    <aside class="event-spotlight">
+      <div>
+        <span class="event-spotlight-label">Upcoming Event</span>
+        <h3 id="heroEventTitle">Gathering Momentum Together</h3>
+        <p id="heroEventText" class="event-copy">The next community moment will appear here, so the theme leads the page while the calendar still stays alive and visible.</p>
+        <div class="event-meta">
+          <div id="heroEventMeta" class="event-meta-chip">Loading event details...</div>
+        </div>
+        <div class="event-countdown-card">
+          <span class="event-countdown-label">Countdown</span>
+          <span id="heroEventCountdown" class="event-countdown-value">Checking the next gathering...</span>
+        </div>
+      </div>
+      <a href="events.html" id="heroEventBtn" class="hero-btn">View Event Details</a>
+    </aside>
   </div>
 </section>
 
@@ -731,16 +976,8 @@ footer {
   <p>AIC Ziwani is committed to spreading the Gospel and nurturing believers through Christ-centered fellowship.</p>
 </section>
 
-<section id="services" class="section light">
-  <h2>Our Services</h2>
-  <div class="cards">
-    <div class="card"><h3>Sunday Worship</h3><p>Powerful worship and biblical teaching every week.</p></div>
-    <div class="card"><h3>Youth Fellowship</h3><p>Empowering young believers to grow spiritually.</p></div>
-    <div class="card"><h3>Midweek Prayer</h3><p>A time of prayer and spiritual renewal.</p></div>
-  </div>
-</section>
 
-<section id="ministries" class="section">
+<section id="ministries" class="section light">
   <h2>Ministries</h2>
   <div class="cards">
     <div class="card"><h3>Men's Ministry</h3><p>Strengthening men in faith and leadership.</p></div>
@@ -749,15 +986,7 @@ footer {
   </div>
 </section>
 
-<section id="gallery" class="section light">
-  <h2>Gallery</h2>
-  <div class="grid">
-    <div class="grid-box">Worship</div>
-    <div class="grid-box">Youth Events</div>
-    <div class="grid-box">Outreach</div>
-    <div class="grid-box">Special Services</div>
-  </div>
-</section>
+
 
 <section id="blog" class="section">
   <h2>Latest From Our Blog</h2>
@@ -1074,14 +1303,14 @@ let heroCountdownInterval = null;
 function startHeroCountdown(targetDate) {
   if (heroCountdownInterval) clearInterval(heroCountdownInterval);
 
-  const heroSubtitle = document.getElementById('heroSubtitle');
+  const heroCountdown = document.getElementById('heroEventCountdown');
   
   const updateCountdown = () => {
       const now = new Date().getTime();
       const distance = targetDate.getTime() - now;
 
       if (distance < 0) {
-          heroSubtitle.textContent = `This event has passed. Check out other events!`;
+          heroCountdown.textContent = `This event has passed. See what is next.`;
           clearInterval(heroCountdownInterval);
           return;
       }
@@ -1095,7 +1324,7 @@ function startHeroCountdown(targetDate) {
       if (days > 0) countdownText += `${days}d `;
       countdownText += `${hours}h ${minutes}m ${seconds}s`;
 
-      heroSubtitle.textContent = countdownText;
+      heroCountdown.textContent = countdownText;
   };
 
   heroCountdownInterval = setInterval(updateCountdown, 1000);
@@ -1103,8 +1332,11 @@ function startHeroCountdown(targetDate) {
 }
 
 async function loadHeroContent() {
-    const heroTitle = document.getElementById('heroTitle');
-    const heroBtn = document.getElementById('heroBtn');
+    const heroEventTitle = document.getElementById('heroEventTitle');
+    const heroEventMeta = document.getElementById('heroEventMeta');
+    const heroEventText = document.getElementById('heroEventText');
+    const heroEventCountdown = document.getElementById('heroEventCountdown');
+    const heroEventBtn = document.getElementById('heroEventBtn');
 
     try {
         const response = await fetch(buildBackendUrl('/api/events'));
@@ -1124,15 +1356,43 @@ async function loadHeroContent() {
         if (upcomingEvent) {
             const dateOnly = upcomingEvent.event_date.split('T')[0];
             const targetDate = new Date(`${dateOnly}T${upcomingEvent.event_time || '00:00:00'}`);
-            
-            heroTitle.innerHTML = `Next Event: ${upcomingEvent.title}`;
-            heroBtn.textContent = 'View Event Details';
-            heroBtn.href = 'events.html';
+
+            const eventDate = new Date(`${dateOnly}T00:00:00`);
+            const prettyDate = eventDate.toLocaleDateString(undefined, {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric'
+            });
+            const prettyTime = upcomingEvent.event_time
+              ? upcomingEvent.event_time.slice(0, 5)
+              : 'Time to be announced';
+            const fellowshipName = upcomingEvent.fellowship_name
+              ? ` with ${upcomingEvent.fellowship_name}`
+              : '';
+
+            heroEventTitle.textContent = upcomingEvent.title;
+            heroEventMeta.textContent = `${prettyDate} | ${prettyTime}`;
+            heroEventText.textContent = upcomingEvent.description
+              ? `${upcomingEvent.description}${fellowshipName}`
+              : `A meaningful community moment is coming up${fellowshipName}. Make room for it and come expectant.`;
+            heroEventBtn.textContent = 'View Event Details';
+            heroEventBtn.href = 'events.html';
 
             startHeroCountdown(targetDate);
+            return;
         }
+
+        heroEventTitle.textContent = 'More Gatherings Are On The Way';
+        heroEventMeta.textContent = 'Watch this space';
+        heroEventText.textContent = 'No upcoming event is listed right now, but the theme remains our call for the season. Check back soon for the next gathering.';
+        heroEventCountdown.textContent = 'New event details will appear here soon.';
+        heroEventBtn.textContent = 'Browse Events';
+        heroEventBtn.href = 'events.html';
     } catch (error) {
         console.error("Could not load hero content:", error);
+        heroEventMeta.textContent = 'Unable to load calendar';
+        heroEventText.textContent = 'The event panel could not be refreshed right now, but the rest of the page is still ready for you.';
+        heroEventCountdown.textContent = 'Please check again in a moment.';
     }
 }
 

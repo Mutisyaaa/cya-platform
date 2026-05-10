@@ -4,6 +4,16 @@
   <title>Upload Media to Gallery</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    (function() {
+      const { protocol, hostname, port, pathname, search, hash } = window.location;
+      const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+      if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+        window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+      }
+    })();
+  </script>
   <style>
     body {
       font-family: Arial, sans-serif;

@@ -7,6 +7,17 @@
 
 <script>
   (function() {
+    const { protocol, hostname, port, pathname, search, hash } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+      window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+    }
+  })();
+</script>
+
+<script>
+  (function() {
     const theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
@@ -381,6 +392,7 @@ footer {
 
 <script>
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+let currentUser = null;
 
 function getBackendOrigin() {
   const { protocol, hostname, port, origin } = window.location;
@@ -397,6 +409,24 @@ const backendOrigin = getBackendOrigin();
 
 function buildBackendUrl(path) {
   return new URL(path, backendOrigin).toString();
+}
+
+async function loadAuthState() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/auth/user"), {
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const user = await response.json();
+    return (user && user.displayName) ? user : null;
+  } catch (error) {
+    console.error("Could not load auth state:", error);
+    return null;
+  }
 }
 
 async function loadBlogPost() {
@@ -457,14 +487,35 @@ async function loadBlogPost() {
     renderComments(blog.comments);
 
     const likeButton = document.getElementById('likeButton');
-    if (localStorage.getItem(`liked_${blog.id}`) === 'true') {
-      likeButton.disabled = true;
-      likeButton.textContent = 'Liked!';
-    } else {
-      likeButton.addEventListener('click', () => handleLike(blog.id));
-    }
+    const commentForm = document.getElementById('commentForm');
+    const authorNameInput = document.getElementById('authorName');
 
-    document.getElementById('commentForm').addEventListener('submit', (e) => handleCommentSubmit(e, blog.id));
+    if (!currentUser) {
+      likeButton.disabled = true;
+      likeButton.textContent = 'Login to like';
+
+      if (commentForm) {
+        const loginPrompt = document.createElement('p');
+        loginPrompt.textContent = 'Please log in from the home page to like this post or leave a comment.';
+        commentForm.replaceWith(loginPrompt);
+      }
+    } else {
+      if (authorNameInput) {
+        authorNameInput.value = currentUser.displayName || '';
+        authorNameInput.readOnly = true;
+      }
+
+      if (localStorage.getItem(`liked_${blog.id}`) === 'true') {
+        likeButton.disabled = true;
+        likeButton.textContent = 'Liked!';
+      } else {
+        likeButton.addEventListener('click', () => handleLike(blog.id));
+      }
+
+      if (commentForm) {
+        commentForm.addEventListener('submit', (e) => handleCommentSubmit(e, blog.id));
+      }
+    }
 
   } catch (error) {
     console.error("Error loading blog post:", error);
@@ -506,6 +557,7 @@ async function handleLike(blogId) {
   try {
     const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}/like`), {
       method: 'POST',
+      credentials: 'include',
     });
 
     const result = await response.json();
@@ -526,7 +578,6 @@ async function handleLike(blogId) {
 async function handleCommentSubmit(event, blogId) {
   event.preventDefault();
   const form = event.target;
-  const authorName = document.getElementById('authorName').value;
   const content = document.getElementById('commentContent').value;
   const submitButton = form.querySelector('button');
 
@@ -536,8 +587,9 @@ async function handleCommentSubmit(event, blogId) {
   try {
     const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}/comments`), {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ author_name: authorName, content }),
+      body: JSON.stringify({ content }),
     });
 
     const newComment = await response.json();
@@ -569,7 +621,10 @@ async function handleCommentSubmit(event, blogId) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', loadBlogPost);
+document.addEventListener('DOMContentLoaded', async () => {
+  currentUser = await loadAuthState();
+  await loadBlogPost();
+});
 </script>
 
 </body>

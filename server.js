@@ -808,18 +808,19 @@ app.delete("/api/blogs/:id", ensureAdmin, async (req, res) => {
   }
 });
 
-app.post("/api/blogs/:id/comments", async (req, res) => {
+app.post("/api/blogs/:id/comments", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const { author_name, content } = req.body;
+    const { content } = req.body;
+    const authorName = req.user?.displayName || req.user?.emails?.[0]?.value || "Community Member";
 
-    if (!author_name || !content) {
-      return res.status(400).json({ error: "Author name and content are required." });
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required." });
     }
 
     const result = await pool.query(
       "INSERT INTO blog_comments (blog_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
-      [id, author_name, content]
+      [id, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);
@@ -828,7 +829,7 @@ app.post("/api/blogs/:id/comments", async (req, res) => {
   }
 });
 
-app.post("/api/blogs/:id/like", async (req, res) => {
+app.post("/api/blogs/:id/like", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const userIp = req.ip;
@@ -1170,7 +1171,7 @@ app.get("/api/gallery/:id", async (req, res) => {
   }
 });
 
-app.post("/api/gallery/:id/like", async (req, res) => {
+app.post("/api/gallery/:id/like", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const userIp = req.ip;
@@ -1192,18 +1193,19 @@ app.post("/api/gallery/:id/like", async (req, res) => {
   }
 });
 
-app.post("/api/gallery/:id/comments", async (req, res) => {
+app.post("/api/gallery/:id/comments", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const { author_name, content } = req.body;
+    const { content } = req.body;
+    const authorName = req.user?.displayName || req.user?.emails?.[0]?.value || "Community Member";
 
-    if (!author_name || !content) {
-      return res.status(400).json({ error: "Author name and content are required." });
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: "Comment content is required." });
     }
 
     const result = await pool.query(
       "INSERT INTO gallery_comments (gallery_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
-      [id, author_name, content]
+      [id, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);

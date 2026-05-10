@@ -7,6 +7,17 @@
 
 <script>
   (function() {
+    const { protocol, hostname, port, pathname, search, hash } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+      window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+    }
+  })();
+</script>
+
+<script>
+  (function() {
     const theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
@@ -139,19 +150,37 @@ nav {
 
 /* PAGE HEADER */
 .page-header {
-  background: linear-gradient(135deg, #c8102e, #9e0d23);
-  color: var(--text-on-primary);
-  padding: 80px 20px;
+  background:
+    linear-gradient(180deg, rgba(200,16,46,0.06), rgba(200,16,46,0)),
+    var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 72px 20px 56px;
   text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.page-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(180px, 42vw);
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c8102e, #9e0d23);
 }
 
 .page-header h2 {
   font-size: 42px;
+  color: var(--primary-red);
 }
 
 .page-header p {
   margin-top: 15px;
   font-size: 18px;
+  color: var(--text-secondary);
 }
 
 /* BLOG SECTION */

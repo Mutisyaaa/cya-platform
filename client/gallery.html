@@ -7,6 +7,17 @@
 
 <script>
   (function() {
+    const { protocol, hostname, port, pathname, search, hash } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+    if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+      window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+    }
+  })();
+</script>
+
+<script>
+  (function() {
     const theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
@@ -148,19 +159,37 @@ nav {
 
 /* HEADER */
 .page-header {
-  background: linear-gradient(135deg, #c8102e, #9e0d23);
-  color: var(--text-on-primary);
-  padding: 80px 20px;
+  background:
+    linear-gradient(180deg, rgba(200,16,46,0.06), rgba(200,16,46,0)),
+    var(--bg-secondary);
+  color: var(--text-primary);
+  padding: 72px 20px 56px;
   text-align: center;
+  border-bottom: 1px solid var(--border-color);
+  position: relative;
+}
+
+.page-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(180px, 42vw);
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #c8102e, #9e0d23);
 }
 
 .page-header h2 {
   font-size: 42px;
+  color: var(--primary-red);
 }
 
 .page-header p {
   margin-top: 15px;
   font-size: 18px;
+  color: var(--text-secondary);
 }
 
 /* GALLERY SECTION */
@@ -513,7 +542,7 @@ footer {
 </nav>
 
 <section class="page-header">
-  <h2>Church Gallery</h2>
+  <h2>Gallery</h2>
   <p>Moments from worship, fellowship, and outreach.</p>
 </section>
 
@@ -552,6 +581,26 @@ const backendOrigin = getBackendOrigin();
 
 function buildBackendUrl(path) {
   return new URL(path, backendOrigin).toString();
+}
+
+let currentUser = null;
+
+async function loadAuthState() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/auth/user"), {
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const user = await response.json();
+    return (user && user.displayName) ? user : null;
+  } catch (error) {
+    console.error("Could not load auth state:", error);
+    return null;
+  }
 }
 
 async function loadGallery() {
@@ -643,14 +692,35 @@ async function openGalleryModal(itemId) {
     renderGalleryComments(item.comments);
 
     const likeButton = document.getElementById('likeButton');
-    if (localStorage.getItem(`liked_gallery_${item.id}`) === 'true') {
-      likeButton.disabled = true;
-      likeButton.textContent = 'Liked!';
-    } else {
-      likeButton.addEventListener('click', () => handleGalleryLike(item.id));
-    }
+    const commentForm = document.getElementById('commentForm');
+    const authorNameInput = document.getElementById('authorName');
 
-    document.getElementById('commentForm').addEventListener('submit', (e) => handleGalleryCommentSubmit(e, item.id));
+    if (!currentUser) {
+      likeButton.disabled = true;
+      likeButton.textContent = 'Login to like';
+
+      if (commentForm) {
+        const loginPrompt = document.createElement('p');
+        loginPrompt.textContent = 'Please log in from the home page to like this item or leave a comment.';
+        commentForm.replaceWith(loginPrompt);
+      }
+    } else {
+      if (authorNameInput) {
+        authorNameInput.value = currentUser.displayName || '';
+        authorNameInput.readOnly = true;
+      }
+
+      if (localStorage.getItem(`liked_gallery_${item.id}`) === 'true') {
+        likeButton.disabled = true;
+        likeButton.textContent = 'Liked!';
+      } else {
+        likeButton.addEventListener('click', () => handleGalleryLike(item.id));
+      }
+
+      if (commentForm) {
+        commentForm.addEventListener('submit', (e) => handleGalleryCommentSubmit(e, item.id));
+      }
+    }
 
   } catch (error) {
     modalBody.innerHTML = `<p style="color: red;">${error.message}</p>`;
@@ -687,7 +757,10 @@ async function handleGalleryLike(itemId) {
   likeButton.disabled = true;
 
   try {
-    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/like`), { method: 'POST' });
+    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/like`), {
+      method: 'POST',
+      credentials: 'include'
+    });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Failed to like item.');
 
@@ -703,7 +776,6 @@ async function handleGalleryLike(itemId) {
 async function handleGalleryCommentSubmit(event, itemId) {
   event.preventDefault();
   const form = event.target;
-  const authorName = form.querySelector('#authorName').value;
   const content = form.querySelector('#commentContent').value;
   const submitButton = form.querySelector('button');
 
@@ -713,8 +785,9 @@ async function handleGalleryCommentSubmit(event, itemId) {
   try {
     const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/comments`), {
       method: 'POST',
+      credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ author_name: authorName, content }),
+      body: JSON.stringify({ content }),
     });
     const newComment = await response.json();
     if (!response.ok) throw new Error(newComment.error || 'Failed to post comment.');
@@ -742,7 +815,10 @@ async function handleGalleryCommentSubmit(event, itemId) {
   }
 }
 
-loadGallery();
+(async () => {
+  currentUser = await loadAuthState();
+  await loadGallery();
+})();
 </script>
 
 </body>
