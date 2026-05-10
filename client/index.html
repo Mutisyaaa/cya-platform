@@ -145,6 +145,7 @@ nav {
   position: relative;
   display: flex;
   align-items: center;
+  z-index: 1001;
 }
 
 .auth-link {
@@ -236,6 +237,7 @@ nav {
   box-shadow: 0 16px 40px var(--shadow-color-heavy);
   padding: 12px;
   display: none;
+  z-index: 1002;
 }
 
 .profile-menu.open {
@@ -621,8 +623,11 @@ footer {
   }
 
   .profile-menu {
+    top: calc(100% + 8px);
+    left: 0;
     right: 0;
-    width: min(280px, 100vw - 28px);
+    width: auto;
+    border: 1px solid var(--border-color);
   }
 
   .hero {
@@ -905,9 +910,14 @@ function renderLoggedIn(user) {
     }, { once: true });
   }
 
-  toggle.addEventListener("click", () => {
+  toggle.addEventListener("click", (event) => {
+    event.stopPropagation();
     const isOpen = menu.classList.toggle("open");
     toggle.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  menu.addEventListener("click", (event) => {
+    event.stopPropagation();
   });
 
   themeToggleBtn.addEventListener("click", toggleTheme);
