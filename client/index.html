@@ -623,11 +623,14 @@ footer {
   }
 
   .profile-menu {
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
+    position: fixed;
+    top: 88px;
+    left: 14px;
+    right: 14px;
     width: auto;
     border: 1px solid var(--border-color);
+    max-height: calc(100vh - 104px);
+    overflow-y: auto;
   }
 
   .hero {
@@ -874,6 +877,26 @@ function closeProfileMenu() {
   }
 }
 
+function positionProfileMenu(toggle, menu) {
+  if (!toggle || !menu || window.innerWidth > 640) {
+    if (menu) {
+      menu.style.top = "";
+      menu.style.left = "";
+      menu.style.right = "";
+      menu.style.width = "";
+    }
+    return;
+  }
+
+  const toggleRect = toggle.getBoundingClientRect();
+  const top = Math.round(toggleRect.bottom + 8);
+
+  menu.style.top = `${top}px`;
+  menu.style.left = "14px";
+  menu.style.right = "14px";
+  menu.style.width = "auto";
+}
+
 function renderLoggedOut() {
   authSlot.innerHTML = `<button class="auth-link" onclick="openAuthModal()">Login</button>`;
 }
@@ -912,6 +935,7 @@ function renderLoggedIn(user) {
 
   toggle.addEventListener("click", (event) => {
     event.stopPropagation();
+    positionProfileMenu(toggle, menu);
     const isOpen = menu.classList.toggle("open");
     toggle.setAttribute("aria-expanded", String(isOpen));
   });
@@ -943,6 +967,15 @@ document.addEventListener("click", (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     closeProfileMenu();
+  }
+});
+
+window.addEventListener("resize", () => {
+  const menu = authSlot.querySelector(".profile-menu");
+  const toggle = authSlot.querySelector(".profile-toggle");
+
+  if (menu?.classList.contains("open")) {
+    positionProfileMenu(toggle, menu);
   }
 });
 
