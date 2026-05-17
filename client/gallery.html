@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Gallery | AIC Ziwani</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
 <script>
   (function() {
@@ -266,14 +267,29 @@ nav {
 
 .modal-close {
   position: absolute;
-  top: 10px;
+  top: 20px;
   right: 20px;
-  font-size: 36px;
-  color: var(--text-secondary);
-  background: none;
-  border: none;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  background: var(--bg-secondary-translucent);
+  color: var(--text-primary);
+  font-size: 28px;
+  line-height: 1;
   cursor: pointer;
-  z-index: 1;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px var(--shadow-color-light);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.modal-close:hover {
+  background: var(--button-hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px var(--shadow-color-heavy);
 }
 
 #modalBody {
@@ -489,9 +505,11 @@ footer {
   }
 
   .modal-close {
-    top: 8px;
-    right: 12px;
-    font-size: 30px;
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
   }
 
   #modalBody {
@@ -516,6 +534,7 @@ footer {
     margin-top: 48px;
     padding: 24px 16px;
   }
+
 }
 </style>
 </head>
@@ -524,7 +543,7 @@ footer {
 
 <nav>
   <div class="logo-area">
-    <img src="logo.png" alt="AIC Logo">
+    <img src="favicon.png" alt="AIC Ziwani logo">
     <div class="church-name">
       <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
@@ -552,7 +571,7 @@ footer {
 
 <div id="galleryModal" class="modal-overlay">
   <div class="modal-content">
-    <button class="modal-close">&times;</button>
+    <button class="modal-close" type="button" aria-label="Close gallery item" title="Close">&times;</button>
     <div id="modalBody">
       <!-- Dynamic content will be loaded here -->
     </div>
@@ -651,6 +670,12 @@ modal.addEventListener('click', (e) => {
   }
 });
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && modal.classList.contains('open')) {
+    closeGalleryModal();
+  }
+});
+
 function closeGalleryModal() {
   modal.classList.remove('open');
   modalBody.innerHTML = '';
@@ -661,7 +686,9 @@ async function openGalleryModal(itemId) {
   modal.classList.add('open');
 
   try {
-    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}`));
+    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}`), {
+      credentials: 'include'
+    });
     if (!response.ok) throw new Error('Failed to load gallery item.');
     const item = await response.json();
 
@@ -710,7 +737,7 @@ async function openGalleryModal(itemId) {
         authorNameInput.readOnly = true;
       }
 
-      if (localStorage.getItem(`liked_gallery_${item.id}`) === 'true') {
+      if (item.userHasLiked) {
         likeButton.disabled = true;
         likeButton.textContent = 'Liked!';
       } else {
@@ -762,11 +789,19 @@ async function handleGalleryLike(itemId) {
       credentials: 'include'
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'Failed to like item.');
+    if (!response.ok) {
+      if (response.status === 409) {
+        likeButton.textContent = 'Liked!';
+        if (typeof result.likes === 'number') {
+          likeCountSpan.textContent = `${result.likes} likes`;
+        }
+        return;
+      }
+      throw new Error(result.error || 'Failed to like item.');
+    }
 
     likeCountSpan.textContent = `${result.likes} likes`;
     likeButton.textContent = 'Liked!';
-    localStorage.setItem(`liked_gallery_${itemId}`, 'true');
   } catch (error) {
     alert(error.message);
     likeButton.disabled = false;

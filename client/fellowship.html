@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fellowship Hub | AIC Ziwani</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
 <script>
   (function() {
@@ -766,6 +767,7 @@ footer {
     margin-top: 48px;
     padding: 24px 16px;
   }
+
 }
 </style>
 </head>
@@ -774,7 +776,7 @@ footer {
 
 <nav>
   <div class="logo-area">
-    <img src="logo.png" alt="AIC Logo">
+    <img src="favicon.png" alt="AIC Ziwani logo">
     <div class="church-name">
       <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
@@ -794,7 +796,7 @@ footer {
 <section class="hero">
   <div class="hero-shell">
     <h2>Fellowship Hub For Real Conversations And Shared Planning</h2>
-    <p>The fellowship page is now centered on discussion, gender-specific spaces, and a shared planning board so men and women can raise matters that affect them, respond to one another, and organize the next steps together.</p>
+    <p>The fellowship page is now centered on discussion, gender-specific spaces and a shared planning board so men and women can raise matters that affect them, respond to one another and organize the next steps together.</p>
     <div class="hero-stats">
       <div class="hero-stat">
         <span>Discussion Posts</span>
@@ -861,8 +863,8 @@ const TARGET_LABELS = {
   all: "Shared Planning"
 };
 const BOARD_COPY = {
-  male: "A focused space for men's matters, questions, and accountability conversations.",
-  female: "A focused space for women's matters, encouragement, and practical support.",
+  male: "A focused space for men's matters, questions and accountability conversations.",
+  female: "A focused space for women's matters, encouragement and practical support.",
   all: "A shared board for planning events, follow-ups, and ideas that involve the wider fellowship."
 };
 const CATEGORY_LABELS = {
@@ -1036,7 +1038,7 @@ function renderComposer() {
   if (!currentUser) {
     host.innerHTML = `
       <div class="ghost-card">
-        Sign in to start a discussion, raise a matter affecting your fellowship, or add a planning note for the next event.
+        Sign in to start a discussion, raise a matter affecting your fellowship or add a planning note for the next event.
       </div>
     `;
     return;

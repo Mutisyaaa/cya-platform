@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Blog Post | AIC Ziwani</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
 <script>
   (function() {
@@ -141,12 +142,43 @@ nav {
 
 /* BLOG POST SECTION */
 .blog-post-section {
-  max-width: 800px;
-  margin: 80px auto;
   padding: 40px;
   background: var(--bg-secondary);
   border-radius: 18px;
   box-shadow: 0 12px 30px var(--shadow-color-heavy);
+}
+
+.blog-post-shell {
+  max-width: 800px;
+  margin: 80px auto;
+  position: relative;
+}
+
+.close-post-button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--button-border);
+  border-radius: 999px;
+  background: var(--bg-secondary-translucent);
+  color: var(--text-primary);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 24px var(--shadow-color-light);
+  transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  z-index: 2;
+}
+
+.close-post-button:hover {
+  background: var(--button-hover-bg);
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px var(--shadow-color-heavy);
 }
 
 .blog-post-section h1 {
@@ -327,9 +359,21 @@ footer {
   }
 
   .blog-post-section {
-    margin: 32px 16px;
+    margin: 0;
     padding: 24px 18px;
     border-radius: 16px;
+  }
+
+  .blog-post-shell {
+    margin: 32px 16px;
+  }
+
+  .close-post-button {
+    top: 16px;
+    right: 16px;
+    width: 40px;
+    height: 40px;
+    font-size: 24px;
   }
 
   .blog-post-section h1 {
@@ -355,6 +399,7 @@ footer {
     margin-top: 48px;
     padding: 24px 16px;
   }
+
 }
 
 </style>
@@ -364,7 +409,7 @@ footer {
 
 <nav>
   <div class="logo-area">
-    <img src="logo.png" alt="AIC Logo">
+    <img src="favicon.png" alt="AIC Ziwani logo">
     <div class="church-name">
       <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
@@ -381,10 +426,20 @@ footer {
   </div>
 </nav>
 
-<section id="blogPostContainer" class="blog-post-section">
-  <!-- Dynamic content will be loaded here -->
-  <h1>Loading post...</h1>
-</section>
+<main class="blog-post-shell">
+  <button
+    type="button"
+    class="close-post-button"
+    aria-label="Close blog post"
+    title="Close"
+    onclick="closeBlogPost()"
+  >&times;</button>
+
+  <section id="blogPostContainer" class="blog-post-section">
+    <!-- Dynamic content will be loaded here -->
+    <h1>Loading post...</h1>
+  </section>
+</main>
 
 <footer>
   © 2026 AIC Ziwani | Africa Inland Church. All Rights Reserved.
@@ -429,6 +484,22 @@ async function loadAuthState() {
   }
 }
 
+function closeBlogPost() {
+  try {
+    if (document.referrer) {
+      const previousUrl = new URL(document.referrer);
+      if (previousUrl.origin === window.location.origin) {
+        window.history.back();
+        return;
+      }
+    }
+  } catch (error) {
+    console.warn("Could not resolve previous page for blog close button:", error);
+  }
+
+  window.location.href = "blog.html";
+}
+
 async function loadBlogPost() {
   const container = document.getElementById("blogPostContainer");
   try {
@@ -440,7 +511,9 @@ async function loadBlogPost() {
       return;
     }
 
-    const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}`));
+    const response = await fetch(buildBackendUrl(`/api/blogs/${blogId}`), {
+      credentials: 'include',
+    });
     if (!response.ok) {
       let errorMessage = `HTTP error! Status: ${response.status}`;
       try {
@@ -505,7 +578,7 @@ async function loadBlogPost() {
         authorNameInput.readOnly = true;
       }
 
-      if (localStorage.getItem(`liked_${blog.id}`) === 'true') {
+      if (blog.userHasLiked) {
         likeButton.disabled = true;
         likeButton.textContent = 'Liked!';
       } else {
@@ -563,12 +636,18 @@ async function handleLike(blogId) {
     const result = await response.json();
 
     if (!response.ok) {
+      if (response.status === 409) {
+        likeButton.textContent = 'Liked!';
+        if (typeof result.likes === 'number') {
+          likeCountSpan.textContent = `${result.likes} likes`;
+        }
+        return;
+      }
       throw new Error(result.error || 'Failed to like post.');
     }
 
     likeCountSpan.textContent = `${result.likes} likes`;
     likeButton.textContent = 'Liked!';
-    localStorage.setItem(`liked_${blogId}`, 'true');
   } catch (error) {
     alert(error.message);
     likeButton.disabled = false;

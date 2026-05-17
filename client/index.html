@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>AIC Ziwani CYA</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
 <script>
   (function() {
@@ -617,6 +618,49 @@ nav {
   margin: 50px auto 0;
 }
 
+.social-links {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.social-link:hover {
+  transform: translateY(-2px);
+  color: var(--primary-red);
+  border-color: rgba(200, 16, 46, 0.28);
+  box-shadow: 0 12px 24px var(--shadow-color-light);
+}
+
+.social-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.social-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
 /* ================= FOOTER ================= */
 footer {
   background: #1e1e1e;
@@ -757,6 +801,20 @@ footer {
 
 .auth-switch a {
   color: var(--primary-red); font-weight: 600; cursor: pointer; text-decoration: none;
+}
+
+.profile-completion-copy {
+  text-align: center;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.profile-completion-note {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 14px;
 }
 
 @media (max-width: 640px) {
@@ -919,7 +977,7 @@ footer {
 
 <nav>
   <div class="logo-area">
-    <img src="logo.png" alt="AIC Logo">
+    <img src="favicon.png" alt="AIC Ziwani logo">
     <div class="church-name">
       <h1>AIC Ziwani CYA</h1>
       <span>Africa Inland Church</span>
@@ -946,11 +1004,11 @@ footer {
         <strong>Esther 4:14</strong><br>
         You have been positioned by God with purpose, courage, and grace for this exact season.
       </div>
-      <p id="heroSubtitle">This year we are leaning into a calling that is timely, bold, and full of responsibility. We are not here by accident. We are here to rise, serve, stand, and shine where God has placed us.</p>
+      <p id="heroSubtitle">This year we are leaning into a calling that is timely, bold and full of responsibility. We are not here by accident. We are here to rise, serve, stand and shine where God has placed us.</p>
       <div class="hero-actions">
         <a href="fellowship.html" class="hero-btn secondary">Step Into Fellowship</a>
       </div>
-      <div class="theme-footnote">A year to answer the moment with faith, service, and holy courage.</div>
+      <div class="theme-footnote">A year to answer the moment with faith, service and holy courage.</div>
     </div>
 
     <aside class="event-spotlight">
@@ -982,7 +1040,7 @@ footer {
   <div class="cards">
     <div class="card"><h3>Men's Ministry</h3><p>Strengthening men in faith and leadership.</p></div>
     <div class="card"><h3>Women's Ministry</h3><p>Empowering women through fellowship and growth.</p></div>
-    <div class="card"><h3>Children's Ministry</h3><p>Raising children on biblical foundations.</p></div>
+    <div class="card"><h3>Children's Ministry</h3><p>Raising children on Biblical foundations.</p></div>
   </div>
 </section>
 
@@ -1000,6 +1058,24 @@ footer {
   <div class="contact-box">
     <p>Email: info@aicziwani.org</p>
     <p>Phone: +254 700 000 000</p>
+    <div class="social-links">
+      <a class="social-link" href="https://www.instagram.com/aic_ziwani_youth/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
+        <span class="social-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="5"></rect>
+            <circle cx="12" cy="12" r="4"></circle>
+            <circle cx="17.5" cy="6.5" r="1"></circle>
+          </svg>
+        </span>
+      </a>
+      <a class="social-link" href="https://www.tiktok.com/@cya.ziwani" target="_blank" rel="noopener noreferrer" aria-label="TikTok" title="TikTok">
+        <span class="social-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M14.5 3c.5 1.7 1.8 3 3.5 3.5v2.8a6.9 6.9 0 0 1-3.5-1.1v6a5 5 0 1 1-5-5c.3 0 .7 0 1 .1v2.7a2.6 2.6 0 1 0 1.4 2.3V3h2.6Z"></path>
+          </svg>
+        </span>
+      </a>
+    </div>
   </div>
 </section>
 
@@ -1035,9 +1111,34 @@ footer {
   </div>
 </div>
 
+<div id="genderPromptModal" class="modal-overlay">
+  <div class="auth-modal">
+    <h2>Complete Your Profile</h2>
+    <div id="genderPromptError" class="auth-error"></div>
+    <p class="profile-completion-copy">
+      Choose your gender once so we can place you in the right fellowship spaces and show the right community sections.
+    </p>
+    <form id="genderPromptForm" class="auth-form">
+      <select id="genderPromptSelect" name="gender" required>
+        <option value="" disabled selected>Select your gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+      <button type="submit" id="genderPromptSubmitBtn">Save And Continue</button>
+    </form>
+    <p class="profile-completion-note">This is only asked once for your account.</p>
+  </div>
+</div>
+
 <script>
 const authSlot = document.getElementById("authSlot");
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+const authModal = document.getElementById('authModal');
+const genderPromptModal = document.getElementById('genderPromptModal');
+const genderPromptForm = document.getElementById('genderPromptForm');
+const genderPromptError = document.getElementById('genderPromptError');
+const genderPromptSelect = document.getElementById('genderPromptSelect');
+const genderPromptSubmitBtn = document.getElementById('genderPromptSubmitBtn');
 
 function getBackendOrigin() {
   const { protocol, hostname, port, origin } = window.location;
@@ -1223,14 +1324,41 @@ function toggleTheme() {
 let isLoginMode = true;
 
 function openAuthModal() {
-  document.getElementById('authModal').classList.add('open');
+  authModal.classList.add('open');
   document.getElementById('googleLoginBtn').href = buildLoginUrl();
 }
 
 function closeAuthModal() {
-  document.getElementById('authModal').classList.remove('open');
+  authModal.classList.remove('open');
   document.getElementById('authError').style.display = 'none';
   document.getElementById('authForm').reset();
+}
+
+function shouldPromptForGender(user) {
+  return Boolean(user?.displayName) && !user?.gender;
+}
+
+function openGenderPrompt() {
+  closeAuthModal();
+  genderPromptError.style.display = 'none';
+  genderPromptForm.reset();
+  genderPromptModal.classList.add('open');
+}
+
+function closeGenderPrompt() {
+  genderPromptModal.classList.remove('open');
+  genderPromptError.style.display = 'none';
+}
+
+function getProfileCompletionReturnTarget() {
+  const params = new URLSearchParams(window.location.search);
+  const returnTo = params.get('returnTo');
+
+  if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+    return returnTo;
+  }
+
+  return null;
 }
 
 function toggleAuthMode() {
@@ -1295,6 +1423,44 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
   } catch (err) {
     document.getElementById('authError').innerText = 'Network error. Please try again.';
     document.getElementById('authError').style.display = 'block';
+  }
+});
+
+genderPromptForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  genderPromptError.style.display = 'none';
+  genderPromptSubmitBtn.disabled = true;
+  genderPromptSubmitBtn.textContent = 'Saving...';
+
+  try {
+    const response = await fetch(buildBackendUrl('/api/auth/complete-profile'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ gender: genderPromptSelect.value }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok && response.status !== 409) {
+      throw new Error(result.error || 'Could not save your profile right now.');
+    }
+
+    closeGenderPrompt();
+
+    const returnTarget = getProfileCompletionReturnTarget();
+    if (returnTarget) {
+      window.location.href = returnTarget;
+      return;
+    }
+
+    window.location.reload();
+  } catch (error) {
+    genderPromptError.innerText = error.message || 'Could not save your profile right now.';
+    genderPromptError.style.display = 'block';
+  } finally {
+    genderPromptSubmitBtn.disabled = false;
+    genderPromptSubmitBtn.textContent = 'Save And Continue';
   }
 });
 
@@ -1438,6 +1604,9 @@ async function initializePage() {
       const user = await response.json();
       if (user && user.displayName) {
         renderLoggedIn(user);
+        if (shouldPromptForGender(user)) {
+          openGenderPrompt();
+        }
       } else {
         renderLoggedOut();
       }

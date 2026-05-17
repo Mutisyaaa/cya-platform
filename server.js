@@ -17,8 +17,7 @@ const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const passport = require("passport");
 
-// Automatically create the users table if it doesn't exist
-pool.query(`
+const schemaBootstrapQuery = `
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -55,8 +54,8 @@ pool.query(`
 
   CREATE TABLE IF NOT EXISTS blog_likes (
     blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
-    user_ip VARCHAR(45) NOT NULL,
-    PRIMARY KEY (blog_id, user_ip)
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (blog_id, user_id)
   );
 
   CREATE TABLE IF NOT EXISTS gallery_comments (
@@ -69,8 +68,8 @@ pool.query(`
 
   CREATE TABLE IF NOT EXISTS gallery_likes (
     gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
-    user_ip VARCHAR(45) NOT NULL,
-    PRIMARY KEY (gallery_id, user_ip)
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    PRIMARY KEY (gallery_id, user_id)
   );
 
   CREATE TABLE IF NOT EXISTS services (
@@ -124,7 +123,133 @@ pool.query(`
     ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50),
     ADD COLUMN IF NOT EXISTS storage_public_id TEXT,
     ADD COLUMN IF NOT EXISTS storage_resource_type VARCHAR(50);
-`).catch(err => console.error("Could not create tables:", err));
+`;
+
+const legacyLikesSchemaRepairQuery = `
+  ALTER TABLE blog_likes
+    ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+  ALTER TABLE gallery_likes
+    ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id) ON DELETE CASCADE;
+
+  DELETE FROM blog_likes
+  WHERE user_id IS NULL;
+
+  DELETE FROM gallery_likes
+  WHERE user_id IS NULL;
+
+  DELETE FROM blog_likes older
+  USING blog_likes newer
+  WHERE older.ctid < newer.ctid
+    AND older.blog_id = newer.blog_id
+    AND older.user_id = newer.user_id
+    AND older.user_id IS NOT NULL;
+
+  DELETE FROM gallery_likes older
+  USING gallery_likes newer
+  WHERE older.ctid < newer.ctid
+    AND older.gallery_id = newer.gallery_id
+    AND older.user_id = newer.user_id
+    AND older.user_id IS NOT NULL;
+
+  DO $$
+  DECLARE
+    pk_name TEXT;
+    pk_columns TEXT[];
+  BEGIN
+    SELECT c.conname, array_agg(a.attname ORDER BY u.ordinality)
+    INTO pk_name, pk_columns
+    FROM pg_constraint c
+    JOIN unnest(c.conkey) WITH ORDINALITY AS u(attnum, ordinality) ON TRUE
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = u.attnum
+    WHERE c.conrelid = 'blog_likes'::regclass AND c.contype = 'p'
+    GROUP BY c.conname;
+
+    IF pk_name IS NOT NULL AND pk_columns <> ARRAY['blog_id', 'user_id'] THEN
+      EXECUTE format('ALTER TABLE blog_likes DROP CONSTRAINT %I', pk_name);
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM blog_likes WHERE user_id IS NULL) THEN
+      ALTER TABLE blog_likes
+        ALTER COLUMN user_id SET NOT NULL;
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM blog_likes WHERE user_id IS NULL)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'blog_likes'::regclass
+          AND contype = 'p'
+      ) THEN
+      ALTER TABLE blog_likes ADD PRIMARY KEY (blog_id, user_id);
+    END IF;
+  END $$;
+
+  ALTER TABLE blog_likes
+    DROP COLUMN IF EXISTS user_ip;
+
+  DROP INDEX IF EXISTS blog_likes_blog_id_user_id_idx;
+
+  DO $$
+  DECLARE
+    pk_name TEXT;
+    pk_columns TEXT[];
+  BEGIN
+    SELECT c.conname, array_agg(a.attname ORDER BY u.ordinality)
+    INTO pk_name, pk_columns
+    FROM pg_constraint c
+    JOIN unnest(c.conkey) WITH ORDINALITY AS u(attnum, ordinality) ON TRUE
+    JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = u.attnum
+    WHERE c.conrelid = 'gallery_likes'::regclass AND c.contype = 'p'
+    GROUP BY c.conname;
+
+    IF pk_name IS NOT NULL AND pk_columns <> ARRAY['gallery_id', 'user_id'] THEN
+      EXECUTE format('ALTER TABLE gallery_likes DROP CONSTRAINT %I', pk_name);
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM gallery_likes WHERE user_id IS NULL) THEN
+      ALTER TABLE gallery_likes
+        ALTER COLUMN user_id SET NOT NULL;
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    IF NOT EXISTS (SELECT 1 FROM gallery_likes WHERE user_id IS NULL)
+      AND NOT EXISTS (
+        SELECT 1
+        FROM pg_constraint
+        WHERE conrelid = 'gallery_likes'::regclass
+          AND contype = 'p'
+      ) THEN
+      ALTER TABLE gallery_likes ADD PRIMARY KEY (gallery_id, user_id);
+    END IF;
+  END $$;
+
+  ALTER TABLE gallery_likes
+    DROP COLUMN IF EXISTS user_ip;
+
+  DROP INDEX IF EXISTS gallery_likes_gallery_id_user_id_idx;
+`;
+
+async function initializeDatabase() {
+  try {
+    await pool.query(schemaBootstrapQuery);
+    await pool.query(legacyLikesSchemaRepairQuery);
+  } catch (err) {
+    console.error("Could not initialize database schema:", err);
+    throw err;
+  }
+}
 
 const app = express();
 app.set('trust proxy', true); // To ensure req.ip is reliable behind a proxy
@@ -237,6 +362,10 @@ function isValidTargetGender(targetGender) {
   return ["all", "male", "female"].includes(targetGender);
 }
 
+function isValidUserGender(gender) {
+  return ["male", "female"].includes(gender);
+}
+
 function isValidFellowshipCategory(category) {
   return ["discussion", "planning"].includes(category);
 }
@@ -303,7 +432,20 @@ function getPostLoginRedirect(user, fallback = "/") {
     return "/admin.html";
   }
 
-  return getSafeReturnTo(fallback);
+  const safeFallback = getSafeReturnTo(fallback);
+
+  if (!user?.gender) {
+    const profilePromptTarget = new URL("/index.html", "http://127.0.0.1");
+    profilePromptTarget.searchParams.set("completeProfile", "1");
+
+    if (safeFallback && safeFallback !== "/" && safeFallback !== "/index.html") {
+      profilePromptTarget.searchParams.set("returnTo", safeFallback);
+    }
+
+    return `${profilePromptTarget.pathname}${profilePromptTarget.search}`;
+  }
+
+  return safeFallback;
 }
 
 function getSafeReturnTo(value) {
@@ -495,7 +637,10 @@ app.get("/auth/google/callback", (req, res, next) => {
 
 app.get("/api/auth/user", (req, res) => {
   if (req.isAuthenticated()) {
-    return res.json(req.user);
+    return res.json({
+      ...req.user,
+      needsGender: !req.user.gender,
+    });
   }
 
   return res.status(401).json({ error: "Not logged in" });
@@ -737,6 +882,73 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
+app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const normalizedGender = typeof req.body?.gender === "string"
+      ? req.body.gender.trim().toLowerCase()
+      : "";
+
+    if (!isValidUserGender(normalizedGender)) {
+      return res.status(400).json({ error: "Please choose a valid gender." });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id, name, email, gender, google_id, avatar_url FROM users WHERE id = $1",
+      [req.user.id]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User account not found." });
+    }
+
+    const userRow = userResult.rows[0];
+
+    if (userRow.gender) {
+      return res.status(409).json({
+        error: "Gender has already been set for this account.",
+        user: {
+          id: userRow.id,
+          displayName: userRow.name,
+          emails: [{ value: userRow.email }],
+          avatarUrl: userRow.avatar_url,
+          gender: userRow.gender,
+          provider: userRow.google_id ? "google" : "local",
+          isAdmin: isAdminEmail(userRow.email),
+          needsGender: false,
+        },
+      });
+    }
+
+    const updatedResult = await pool.query(
+      `UPDATE users
+       SET gender = $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, name, email, gender, google_id, avatar_url`,
+      [normalizedGender, req.user.id]
+    );
+
+    const updatedUser = updatedResult.rows[0];
+    req.user.gender = updatedUser.gender;
+
+    return res.status(200).json({
+      message: "Profile updated successfully.",
+      user: {
+        id: updatedUser.id,
+        displayName: updatedUser.name,
+        emails: [{ value: updatedUser.email }],
+        avatarUrl: updatedUser.avatar_url,
+        gender: updatedUser.gender,
+        provider: updatedUser.google_id ? "google" : "local",
+        isAdmin: isAdminEmail(updatedUser.email),
+        needsGender: false,
+      },
+    });
+  } catch (error) {
+    console.error("Complete profile error:", error);
+    return res.status(500).json({ error: "Internal server error while updating your profile." });
+  }
+});
+
 app.get("/api", (req, res) => {
   res.json({ message: "API running clean" });
 });
@@ -755,6 +967,7 @@ app.get("/api/blogs", async (req, res) => {
 app.get("/api/blogs/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || null;
 
     const blogResult = await pool.query("SELECT * FROM blogs WHERE id = $1", [id]);
 
@@ -764,13 +977,20 @@ app.get("/api/blogs/:id", async (req, res) => {
 
     const blog = blogResult.rows[0];
 
-    const [commentsResult, likesResult] = await Promise.all([
+    const [commentsResult, likesResult, likedResult] = await Promise.all([
       pool.query("SELECT * FROM blog_comments WHERE blog_id = $1 ORDER BY created_at DESC", [id]),
-      pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id])
+      pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]),
+      userId
+        ? pool.query(
+            "SELECT EXISTS(SELECT 1 FROM blog_likes WHERE blog_id = $1 AND user_id = $2) AS liked",
+            [id, userId]
+          )
+        : Promise.resolve({ rows: [{ liked: false }] })
     ]);
 
     blog.comments = commentsResult.rows;
     blog.likes = parseInt(likesResult.rows[0].count, 10);
+    blog.userHasLiked = Boolean(likedResult.rows[0].liked);
 
     res.json(blog);
   } catch (err) {
@@ -832,11 +1052,11 @@ app.post("/api/blogs/:id/comments", ensureUserAuthenticated, async (req, res) =>
 app.post("/api/blogs/:id/like", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const userIp = req.ip;
+    const userId = req.user.id;
 
     await pool.query(
-      "INSERT INTO blog_likes (blog_id, user_ip) VALUES ($1, $2)",
-      [id, userIp]
+      "INSERT INTO blog_likes (blog_id, user_id) VALUES ($1, $2)",
+      [id, userId]
     );
     
     const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]);
@@ -845,7 +1065,9 @@ app.post("/api/blogs/:id/like", ensureUserAuthenticated, async (req, res) => {
     res.status(201).json({ likes: likeCount });
   } catch (err) {
     if (err.code === '23505') { // unique_violation
-      return res.status(409).json({ error: "You have already liked this post." });
+      const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [req.params.id]);
+      const likeCount = parseInt(likesResult.rows[0].count, 10);
+      return res.status(409).json({ error: "You have already liked this post.", likes: likeCount });
     }
     res.status(500).json({ error: err.message });
   }
@@ -1148,6 +1370,7 @@ app.delete("/api/gallery/:id", ensureAdmin, async (req, res) => {
 app.get("/api/gallery/:id", async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.id || null;
 
     const itemResult = await pool.query("SELECT * FROM gallery WHERE id = $1", [id]);
 
@@ -1157,13 +1380,20 @@ app.get("/api/gallery/:id", async (req, res) => {
 
     const item = itemResult.rows[0];
 
-    const [commentsResult, likesResult] = await Promise.all([
+    const [commentsResult, likesResult, likedResult] = await Promise.all([
       pool.query("SELECT * FROM gallery_comments WHERE gallery_id = $1 ORDER BY created_at DESC", [id]),
-      pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id])
+      pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]),
+      userId
+        ? pool.query(
+            "SELECT EXISTS(SELECT 1 FROM gallery_likes WHERE gallery_id = $1 AND user_id = $2) AS liked",
+            [id, userId]
+          )
+        : Promise.resolve({ rows: [{ liked: false }] })
     ]);
 
     item.comments = commentsResult.rows;
     item.likes = parseInt(likesResult.rows[0].count, 10);
+    item.userHasLiked = Boolean(likedResult.rows[0].liked);
 
     res.json(item);
   } catch (err) {
@@ -1174,11 +1404,11 @@ app.get("/api/gallery/:id", async (req, res) => {
 app.post("/api/gallery/:id/like", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
-    const userIp = req.ip;
+    const userId = req.user.id;
 
     await pool.query(
-      "INSERT INTO gallery_likes (gallery_id, user_ip) VALUES ($1, $2)",
-      [id, userIp]
+      "INSERT INTO gallery_likes (gallery_id, user_id) VALUES ($1, $2)",
+      [id, userId]
     );
     
     const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]);
@@ -1187,7 +1417,9 @@ app.post("/api/gallery/:id/like", ensureUserAuthenticated, async (req, res) => {
     res.status(201).json({ likes: likeCount });
   } catch (err) {
     if (err.code === '23505') { // unique_violation
-      return res.status(409).json({ error: "You have already liked this item." });
+      const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [req.params.id]);
+      const likeCount = parseInt(likesResult.rows[0].count, 10);
+      return res.status(409).json({ error: "You have already liked this item.", likes: likeCount });
     }
     res.status(500).json({ error: err.message });
   }
@@ -1252,6 +1484,12 @@ app.use((req, res, next) => {
 });
 
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+initializeDatabase()
+  .then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch(() => {
+    process.exit(1);
+  });
