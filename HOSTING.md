@@ -56,10 +56,46 @@ This combination is the most sustainable free setup for the current codebase bec
    - `ADMIN_EMAIL`
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
+   - `APP_NAME`
+   - `SMTP_FROM`
    - `CLOUDINARY_CLOUD_NAME`
    - `CLOUDINARY_API_KEY`
    - `CLOUDINARY_API_SECRET`
 5. Deploy.
+
+## Password reset email setup
+
+To enable "Forgot password", configure either:
+
+- `SMTP_URL`
+
+or:
+
+- `SMTP_HOST`
+- `SMTP_PORT`
+- `SMTP_SECURE`
+- `SMTP_USER`
+- `SMTP_PASS`
+- `SMTP_FROM`
+
+For local development, if SMTP is not configured, the server logs a preview reset link instead of sending an email.
+
+For Gmail SMTP, use:
+
+- `SMTP_HOST=smtp.gmail.com`
+- `SMTP_PORT=465`
+- `SMTP_SECURE=true`
+- `SMTP_USER=your-gmail-address`
+- `SMTP_PASS=your 16-character Gmail app password`
+- `SMTP_FROM=AIC Ziwani <your-gmail-address>`
+
+Gmail requires 2-Step Verification plus an App Password for SMTP. A normal Gmail account password will not work.
+
+If local SMTP fails with a certificate-chain error caused by antivirus, a corporate proxy, or local TLS inspection, you can temporarily set:
+
+- `SMTP_TLS_REJECT_UNAUTHORIZED=false`
+
+Use that only as a local workaround. Keep normal TLS verification enabled in production.
 
 ## Google login callback
 

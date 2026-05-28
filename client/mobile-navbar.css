@@ -1,0 +1,113 @@
+.nav-toggle {
+  display: none;
+  margin-left: auto;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.12));
+  border-radius: 16px;
+  background: var(--bg-secondary, rgba(255, 255, 255, 0.92));
+  color: var(--text-primary, #171717);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.nav-toggle:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.16);
+}
+
+.nav-toggle:focus-visible {
+  outline: 2px solid var(--primary-red, #c8102e);
+  outline-offset: 3px;
+}
+
+.nav-toggle-bar {
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+@media (max-width: 640px) {
+  nav[data-nav-ready="true"] {
+    align-items: center;
+  }
+
+  nav[data-nav-ready="true"] .logo-area {
+    width: auto;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  nav[data-nav-ready="true"] .church-name {
+    min-width: 0;
+  }
+
+  nav[data-nav-ready="true"] .nav-toggle {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  nav[data-nav-ready="true"] .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+
+  nav[data-nav-ready="true"] .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+
+  nav[data-nav-ready="true"] .nav-toggle[aria-expanded="true"] .nav-toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  nav[data-nav-ready="true"] .nav-links {
+    display: none;
+    width: 100%;
+    margin-left: 0;
+    padding: 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    background: var(--bg-secondary, rgba(255, 255, 255, 0.96));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    overflow: visible;
+  }
+
+  nav[data-nav-ready="true"] .nav-links.open {
+    display: flex;
+  }
+
+  nav[data-nav-ready="true"] .nav-links a {
+    width: 100%;
+    padding: 14px 16px;
+    white-space: normal;
+  }
+
+  nav[data-nav-ready="true"] .auth-slot {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  nav[data-nav-ready="true"] .auth-link {
+    width: 100%;
+    justify-content: center;
+  }
+
+  nav[data-nav-ready="true"] .profile-toggle {
+    align-self: flex-start;
+  }
+}
+
+@media (min-width: 641px) {
+  nav[data-nav-ready="true"] .nav-links {
+    display: flex !important;
+  }
+}

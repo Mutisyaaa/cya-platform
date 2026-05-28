@@ -803,6 +803,29 @@ footer {
   color: var(--primary-red); font-weight: 600; cursor: pointer; text-decoration: none;
 }
 
+.auth-support-row {
+  text-align: right;
+  margin-top: -4px;
+  font-size: 13px;
+}
+
+.auth-support-row a {
+  color: var(--primary-red);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.auth-success {
+  display: none;
+  background: rgba(11, 122, 66, 0.12);
+  color: #0b7a42;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
 .profile-completion-copy {
   text-align: center;
   color: var(--text-secondary);
@@ -971,6 +994,7 @@ footer {
   }
 }
 </style>
+<link rel="stylesheet" href="mobile-navbar.css">
 </head>
 
 <body>
@@ -983,6 +1007,12 @@ footer {
       <span>Africa Inland Church</span>
     </div>
   </div>
+
+  <button class="nav-toggle" type="button" aria-expanded="false" aria-label="Toggle navigation menu">
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+    <span class="nav-toggle-bar"></span>
+  </button>
 
   <div class="nav-links">
     <a href="index.html" class="active">Home</a>
@@ -1097,6 +1127,9 @@ footer {
       </select>
       <input type="email" id="authEmail" name="email" placeholder="Email Address" required>
       <input type="password" id="authPassword" name="password" placeholder="Password" required>
+      <div id="forgotPasswordRow" class="auth-support-row">
+        <a onclick="openForgotPasswordModal()">Forgot password?</a>
+      </div>
       <button type="submit" id="authSubmitBtn">Login</button>
     </form>
     <div class="auth-divider"><span>OR</span></div>
@@ -1108,6 +1141,22 @@ footer {
       <span id="authSwitchText">Don't have an account?</span>
       <a onclick="toggleAuthMode()">Sign up</a>
     </div>
+  </div>
+</div>
+
+<div id="forgotPasswordModal" class="modal-overlay">
+  <div class="auth-modal">
+    <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
+    <h2>Reset Password</h2>
+    <p class="profile-completion-copy">
+      Enter your email address and we’ll send you a link to choose a new password.
+    </p>
+    <div id="forgotPasswordError" class="auth-error"></div>
+    <div id="forgotPasswordSuccess" class="auth-success"></div>
+    <form id="forgotPasswordForm" class="auth-form">
+      <input type="email" id="forgotPasswordEmail" name="email" placeholder="Email Address" required>
+      <button type="submit" id="forgotPasswordSubmitBtn">Send Reset Link</button>
+    </form>
   </div>
 </div>
 
@@ -1134,6 +1183,12 @@ footer {
 const authSlot = document.getElementById("authSlot");
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
 const authModal = document.getElementById('authModal');
+const forgotPasswordModal = document.getElementById('forgotPasswordModal');
+const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+const forgotPasswordError = document.getElementById('forgotPasswordError');
+const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
+const forgotPasswordEmail = document.getElementById('forgotPasswordEmail');
+const forgotPasswordSubmitBtn = document.getElementById('forgotPasswordSubmitBtn');
 const genderPromptModal = document.getElementById('genderPromptModal');
 const genderPromptForm = document.getElementById('genderPromptForm');
 const genderPromptError = document.getElementById('genderPromptError');
@@ -1334,6 +1389,23 @@ function closeAuthModal() {
   document.getElementById('authForm').reset();
 }
 
+function openForgotPasswordModal() {
+  const currentEmail = document.getElementById('authEmail').value.trim();
+  closeAuthModal();
+  forgotPasswordError.style.display = 'none';
+  forgotPasswordSuccess.style.display = 'none';
+  forgotPasswordForm.reset();
+  forgotPasswordEmail.value = currentEmail;
+  forgotPasswordModal.classList.add('open');
+}
+
+function closeForgotPasswordModal() {
+  forgotPasswordModal.classList.remove('open');
+  forgotPasswordError.style.display = 'none';
+  forgotPasswordSuccess.style.display = 'none';
+  forgotPasswordForm.reset();
+}
+
 function shouldPromptForGender(user) {
   return Boolean(user?.displayName) && !user?.gender;
 }
@@ -1372,6 +1444,7 @@ function toggleAuthMode() {
     document.getElementById('authName').required = false;
     document.getElementById('authGender').style.display = 'none';
     document.getElementById('authGender').required = false;
+    document.getElementById('forgotPasswordRow').style.display = 'flex';
     document.getElementById('authSubmitBtn').innerText = 'Login';
     document.getElementById('authSwitchText').innerText = "Don't have an account?";
     document.querySelector('.auth-switch a').innerText = 'Sign up';
@@ -1381,6 +1454,7 @@ function toggleAuthMode() {
     document.getElementById('authName').required = true;
     document.getElementById('authGender').style.display = 'block';
     document.getElementById('authGender').required = true;
+    document.getElementById('forgotPasswordRow').style.display = 'none';
     document.getElementById('authSubmitBtn').innerText = 'Create Account';
     document.getElementById('authSwitchText').innerText = "Already have an account?";
     document.querySelector('.auth-switch a').innerText = 'Log in';
@@ -1423,6 +1497,43 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
   } catch (err) {
     document.getElementById('authError').innerText = 'Network error. Please try again.';
     document.getElementById('authError').style.display = 'block';
+  }
+});
+
+forgotPasswordForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  forgotPasswordError.style.display = 'none';
+  forgotPasswordSuccess.style.display = 'none';
+  forgotPasswordSubmitBtn.disabled = true;
+  forgotPasswordSubmitBtn.textContent = 'Sending...';
+
+  try {
+    const response = await fetch(buildBackendUrl('/api/auth/forgot-password'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: forgotPasswordEmail.value.trim() }),
+      credentials: 'include'
+    });
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Could not send reset email right now.');
+    }
+
+    let message = result.message || 'If an account with that email exists, a reset link has been sent.';
+    if (result.previewUrl) {
+      message += ` Open this link to continue: ${result.previewUrl}`;
+    }
+
+    forgotPasswordSuccess.innerText = message;
+    forgotPasswordSuccess.style.display = 'block';
+  } catch (error) {
+    forgotPasswordError.innerText = error.message || 'Could not send reset email right now.';
+    forgotPasswordError.style.display = 'block';
+  } finally {
+    forgotPasswordSubmitBtn.disabled = false;
+    forgotPasswordSubmitBtn.textContent = 'Send Reset Link';
   }
 });
 
@@ -1624,6 +1735,7 @@ async function initializePage() {
 
 document.addEventListener('DOMContentLoaded', initializePage);
 </script>
+<script src="navbar.js"></script>
 
 </body>
 </html>

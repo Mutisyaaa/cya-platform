@@ -2,12 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-const rootEnvPath = path.join(__dirname, ".env");
-const fallbackEnvPath = path.join(__dirname, "server", ".env");
-
-require("dotenv").config({
-  path: fs.existsSync(rootEnvPath) ? rootEnvPath : fallbackEnvPath,
-});
+require("./config/loadEnv");
 
 const express = require("express");
 const cors = require("cors");
@@ -16,6 +11,13 @@ const pool = require("./db");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const passport = require("passport");
+
+let nodemailer = null;
+try {
+  nodemailer = require("nodemailer");
+} catch (error) {
+  console.warn("Nodemailer not installed. Password reset emails will fall back to preview mode outside production.");
+}
 
 const schemaBootstrapQuery = `
   CREATE TABLE IF NOT EXISTS users (
@@ -116,6 +118,15 @@ const schemaBootstrapQuery = `
     author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     author_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS password_reset_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash VARCHAR(255) NOT NULL UNIQUE,
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -419,8 +430,161 @@ function getAuthUnavailableMessage() {
   return authInitError?.message || "Google auth is not available on this server.";
 }
 
+function hasUsableEnvValue(value) {
+  const normalized = String(value || "").trim();
+
+  if (!normalized) {
+    return false;
+  }
+
+  return !/^(replace-|your-)/i.test(normalized);
+}
+
+function shouldRejectSmtpTlsUnauthorized() {
+  return String(process.env.SMTP_TLS_REJECT_UNAUTHORIZED || "").trim().toLowerCase() !== "false";
+}
+
+function isPasswordResetEmailConfigured() {
+  if (!nodemailer) {
+    return false;
+  }
+
+  const from = process.env.SMTP_FROM?.trim();
+  if (!hasUsableEnvValue(from)) {
+    return false;
+  }
+
+  const smtpUrl = process.env.SMTP_URL?.trim();
+  if (hasUsableEnvValue(smtpUrl)) {
+    return true;
+  }
+
+  const host = process.env.SMTP_HOST?.trim();
+  const port = process.env.SMTP_PORT?.trim();
+  if (!hasUsableEnvValue(host) || !hasUsableEnvValue(port)) {
+    return false;
+  }
+
+  // Gmail requires authenticated SMTP with an app password.
+  if (/smtp\.gmail\.com/i.test(host)) {
+    return hasUsableEnvValue(process.env.SMTP_USER) && hasUsableEnvValue(process.env.SMTP_PASS);
+  }
+
+  return true;
+}
+
+function createPasswordResetTransport() {
+  if (!nodemailer) {
+    return null;
+  }
+
+  const smtpUrl = process.env.SMTP_URL?.trim();
+  if (hasUsableEnvValue(smtpUrl)) {
+    return nodemailer.createTransport(smtpUrl);
+  }
+
+  const host = process.env.SMTP_HOST?.trim();
+  const port = Number.parseInt(process.env.SMTP_PORT || "", 10);
+  const from = process.env.SMTP_FROM?.trim();
+
+  if (!hasUsableEnvValue(host) || !Number.isInteger(port) || !hasUsableEnvValue(from)) {
+    return null;
+  }
+
+  const user = process.env.SMTP_USER?.trim();
+  const pass = process.env.SMTP_PASS ?? "";
+  if (/smtp\.gmail\.com/i.test(host) && (!hasUsableEnvValue(user) || !hasUsableEnvValue(pass))) {
+    return null;
+  }
+
+  const secure = String(process.env.SMTP_SECURE || "").trim().toLowerCase() === "true" || port === 465;
+
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure,
+    auth: user ? { user, pass } : undefined,
+    tls: {
+      rejectUnauthorized: shouldRejectSmtpTlsUnauthorized(),
+    },
+  });
+}
+
+async function sendPasswordResetEmail({ req, email, name, token }) {
+  const resetUrl = buildPasswordResetUrl(req, token);
+  const previewOnly = !isProduction && !isPasswordResetEmailConfigured();
+
+  if (previewOnly) {
+    console.info(`Password reset preview for ${email}: ${resetUrl}`);
+    return { delivered: false, previewUrl: resetUrl };
+  }
+
+  const transport = createPasswordResetTransport();
+  if (!transport) {
+    throw new Error("Password reset email is not configured.");
+  }
+
+  const from = process.env.SMTP_FROM?.trim();
+  const appName = process.env.APP_NAME?.trim() || "AIC Ziwani";
+  const safeName = name?.trim() || "there";
+
+  await transport.sendMail({
+    from,
+    to: email,
+    subject: `${appName} password reset`,
+    text: [
+      `Hi ${safeName},`,
+      "",
+      "We received a request to reset your password.",
+      `Use this link to set a new password: ${resetUrl}`,
+      "",
+      "This link expires in 1 hour.",
+      "If you did not request this, you can safely ignore this email.",
+    ].join("\n"),
+    html: `
+      <p>Hi ${safeName},</p>
+      <p>We received a request to reset your password.</p>
+      <p><a href="${resetUrl}">Set a new password</a></p>
+      <p>This link expires in 1 hour.</p>
+      <p>If you did not request this, you can safely ignore this email.</p>
+    `,
+  });
+
+  return { delivered: true, previewUrl: null };
+}
+
 function normalizeEmail(email) {
   return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function hashResetToken(token) {
+  return crypto
+    .createHash("sha256")
+    .update(String(token || ""))
+    .digest("hex");
+}
+
+function generatePasswordResetToken() {
+  return crypto.randomBytes(32).toString("hex");
+}
+
+function isStrongPassword(password) {
+  return typeof password === "string" && password.length >= 8;
+}
+
+function getAppBaseUrl(req) {
+  const configuredOrigin = process.env.APP_ORIGIN?.trim();
+  if (configuredOrigin) {
+    return configuredOrigin.replace(/\/+$/, "");
+  }
+
+  return `${req.protocol}://${req.get("host")}`;
+}
+
+function buildPasswordResetUrl(req, token) {
+  const resetUrl = new URL("/reset-password.html", getAppBaseUrl(req));
+  resetUrl.searchParams.set("token", token);
+  return resetUrl.toString();
 }
 
 function isAdminEmail(email) {
@@ -879,6 +1043,153 @@ app.post("/api/auth/login", async (req, res) => {
   } catch (error) {
     console.error("Login Error:", error);
     res.status(500).json({ error: "Internal server error during login." });
+  }
+});
+
+app.post("/api/auth/forgot-password", async (req, res) => {
+  try {
+    const email = normalizeEmail(req.body?.email);
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+
+    if (isProduction && !isPasswordResetEmailConfigured()) {
+      return res.status(503).json({ error: "Password reset is not configured right now." });
+    }
+
+    const userResult = await pool.query(
+      "SELECT id, name, email FROM users WHERE email = $1",
+      [email]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(200).json({
+        message: "If an account with that email exists, a password reset link has been sent.",
+      });
+    }
+
+    const user = userResult.rows[0];
+    const token = generatePasswordResetToken();
+    const tokenHash = hashResetToken(token);
+
+    await pool.query(
+      `DELETE FROM password_reset_tokens
+       WHERE user_id = $1
+          OR expires_at < CURRENT_TIMESTAMP
+          OR used_at IS NOT NULL`,
+      [user.id]
+    );
+
+    await pool.query(
+      `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
+       VALUES ($1, $2, CURRENT_TIMESTAMP + INTERVAL '1 hour')`,
+      [user.id, tokenHash]
+    );
+
+    const mailResult = await sendPasswordResetEmail({
+      req,
+      email: user.email,
+      name: user.name,
+      token,
+    });
+
+    return res.status(200).json({
+      message: "If an account with that email exists, a password reset link has been sent.",
+      previewUrl: mailResult.previewUrl,
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({ error: "Could not start password reset right now." });
+  }
+});
+
+app.get("/api/auth/reset-password/validate", async (req, res) => {
+  try {
+    const token = typeof req.query?.token === "string" ? req.query.token.trim() : "";
+    if (!token) {
+      return res.status(400).json({ error: "Reset token is required." });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const result = await pool.query(
+      `SELECT id
+       FROM password_reset_tokens
+       WHERE token_hash = $1
+         AND used_at IS NULL
+         AND expires_at > CURRENT_TIMESTAMP
+       LIMIT 1`,
+      [tokenHash]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ error: "This password reset link is invalid or has expired." });
+    }
+
+    return res.json({ valid: true });
+  } catch (error) {
+    console.error("Reset password validation error:", error);
+    return res.status(500).json({ error: "Could not validate reset link right now." });
+  }
+});
+
+app.post("/api/auth/reset-password", async (req, res) => {
+  let client;
+
+  try {
+    client = await pool.connect();
+    const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
+    const password = typeof req.body?.password === "string" ? req.body.password : "";
+
+    if (!token || !password) {
+      return res.status(400).json({ error: "Reset token and new password are required." });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    }
+
+    const tokenHash = hashResetToken(token);
+    const tokenResult = await pool.query(
+      `SELECT id, user_id
+       FROM password_reset_tokens
+       WHERE token_hash = $1
+         AND used_at IS NULL
+         AND expires_at > CURRENT_TIMESTAMP
+       LIMIT 1`,
+      [tokenHash]
+    );
+
+    if (tokenResult.rows.length === 0) {
+      return res.status(400).json({ error: "This password reset link is invalid or has expired." });
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+    const resetToken = tokenResult.rows[0];
+
+    await client.query("BEGIN");
+    await client.query(
+      "UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2",
+      [passwordHash, resetToken.user_id]
+    );
+    await client.query(
+      "UPDATE password_reset_tokens SET used_at = CURRENT_TIMESTAMP WHERE id = $1",
+      [resetToken.id]
+    );
+    await client.query(
+      "DELETE FROM password_reset_tokens WHERE user_id = $1 AND id <> $2",
+      [resetToken.user_id, resetToken.id]
+    );
+    await client.query("COMMIT");
+
+    return res.json({ message: "Your password has been reset successfully. You can now log in." });
+  } catch (error) {
+    if (client) {
+      await client.query("ROLLBACK").catch(() => {});
+    }
+    console.error("Reset password error:", error);
+    return res.status(500).json({ error: "Could not reset password right now." });
+  } finally {
+    client?.release();
   }
 });
 
