@@ -107,6 +107,8 @@
     return new URL(path, backendOrigin || resolveBackendOrigin()).toString();
   }
 
-  window.resolveBackendOrigin = resolveBackendOrigin;
-  window.buildBackendUrl = buildBackendUrl;
+  window.CYABackendOrigin = {
+    resolveBackendOrigin,
+    buildBackendUrl,
+  };
 })();

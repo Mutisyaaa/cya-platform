@@ -887,13 +887,13 @@ let allEvents = [];
 let allFellowships = [];
 
 function getBackendOrigin() {
-  return window.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
+  return window.CYABackendOrigin.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
 }
 
 const backendOrigin = getBackendOrigin();
 
 function buildBackendUrl(path) {
-  return window.buildBackendUrl(path, backendOrigin);
+  return window.CYABackendOrigin.buildBackendUrl(path, backendOrigin);
 }
 
 function escapeHtml(value = "") {

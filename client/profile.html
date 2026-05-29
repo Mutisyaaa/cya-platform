@@ -704,11 +704,11 @@ let presetAvatarUrls = [];
 let selectedPresetIndex = null;
 
 function getBackendOrigin() {
-  return window.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
+  return window.CYABackendOrigin.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
 }
 
 function buildBackendUrl(path) {
-  return window.buildBackendUrl(path, getBackendOrigin());
+  return window.CYABackendOrigin.buildBackendUrl(path, getBackendOrigin());
 }
 
 function getEmail(user) {
