@@ -609,6 +609,139 @@ function buildPasswordResetUrl(req, token) {
   return resetUrl.toString();
 }
 
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function buildSafeSpreadsheetFileName(title) {
+  const slug = String(title || "event-rsvps")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+
+  return `${slug || "event-rsvps"}-rsvps.xls`;
+}
+
+function isAllowedAvatarUrl(value) {
+  if (typeof value !== "string") {
+    return false;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return false;
+  }
+
+  if (trimmed.startsWith("/uploads/")) {
+    return true;
+  }
+
+  if (trimmed.startsWith("data:image/")) {
+    return true;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch (error) {
+    return false;
+  }
+}
+
+function deleteLocalUploadIfPresent(imageUrl) {
+  if (!imageUrl?.startsWith("/uploads/")) {
+    return;
+  }
+
+  const filename = path.basename(imageUrl);
+  const filePath = path.join(uploadsDir, filename);
+
+  fs.unlink(filePath, (err) => {
+    if (err && err.code !== "ENOENT") {
+      console.error(`Failed to delete file: ${filePath}`, err);
+    }
+  });
+}
+
+function isValidDisplayName(value) {
+  return typeof value === "string" && value.trim().length >= 2 && value.trim().length <= 60;
+}
+
+function getAvatarUploadStorage() {
+  return isCloudinaryConfigured() ? multer.memoryStorage() : storage;
+}
+
+function avatarFileFilter(req, file, cb) {
+  if (!file?.mimetype?.startsWith("image/")) {
+    cb(new Error("Please upload an image file."));
+    return;
+  }
+
+  cb(null, true);
+}
+
+function loginUpdatedUser(req, user) {
+  return new Promise((resolve, reject) => {
+    req.login(user, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      resolve();
+    });
+  });
+}
+
+async function getAdminEventRsvpDetails(eventId) {
+  const eventResult = await pool.query(
+    `SELECT
+       e.id,
+       e.title,
+       e.description,
+       e.event_date,
+       e.event_time,
+       e.target_gender,
+       s.name AS fellowship_name,
+       COUNT(er.user_id)::int AS rsvp_count
+     FROM events e
+     LEFT JOIN services s ON s.id = e.fellowship_id
+     LEFT JOIN event_rsvps er ON er.event_id = e.id
+     WHERE e.id = $1
+     GROUP BY e.id, s.name
+     LIMIT 1`,
+    [eventId]
+  );
+
+  if (eventResult.rows.length === 0) {
+    return null;
+  }
+
+  const attendeeResult = await pool.query(
+    `SELECT
+       u.id AS user_id,
+       COALESCE(NULLIF(TRIM(u.name), ''), SPLIT_PART(u.email, '@', 1)) AS display_name,
+       u.email,
+       er.created_at AS responded_at
+     FROM event_rsvps er
+     JOIN users u ON u.id = er.user_id
+     WHERE er.event_id = $1
+     ORDER BY er.created_at ASC`,
+    [eventId]
+  );
+
+  return {
+    ...eventResult.rows[0],
+    attendees: attendeeResult.rows,
+  };
+}
+
 function getPostLoginRedirect(user, fallback = "/") {
   if (user?.isAdmin) {
     return "/admin.html";
@@ -826,6 +959,62 @@ app.get("/api/auth/user", (req, res) => {
   }
 
   return res.status(401).json({ error: "Not logged in" });
+});
+
+app.patch("/api/profile", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const providedName = typeof req.body?.displayName === "string" ? req.body.displayName.trim() : "";
+    const providedAvatarUrl = typeof req.body?.avatarUrl === "string" ? req.body.avatarUrl.trim() : "";
+
+    if (!isValidDisplayName(providedName)) {
+      return res.status(400).json({ error: "Display name must be between 2 and 60 characters." });
+    }
+
+    if (providedAvatarUrl && !isAllowedAvatarUrl(providedAvatarUrl)) {
+      return res.status(400).json({ error: "Please choose a valid avatar." });
+    }
+
+    const currentUserResult = await pool.query(
+      "SELECT id, name, email, gender, google_id, avatar_url, is_admin FROM users WHERE id = $1",
+      [req.user.id]
+    );
+
+    if (currentUserResult.rows.length === 0) {
+      return res.status(404).json({ error: "User account not found." });
+    }
+
+    const currentUser = currentUserResult.rows[0];
+    const nextAvatarUrl = providedAvatarUrl || currentUser.avatar_url || null;
+
+    const updateResult = await pool.query(
+      `UPDATE users
+       SET name = $1,
+           avatar_url = $2,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING id, name, email, gender, google_id, avatar_url, is_admin`,
+      [providedName, nextAvatarUrl, req.user.id]
+    );
+
+    const updatedUser = updateResult.rows[0];
+    const sessionUser = buildSessionUser(updatedUser);
+    await loginUpdatedUser(req, sessionUser);
+
+    if (currentUser.avatar_url && currentUser.avatar_url !== updatedUser.avatar_url) {
+      deleteLocalUploadIfPresent(currentUser.avatar_url);
+    }
+
+    return res.json({
+      message: "Profile updated successfully.",
+      user: {
+        ...sessionUser,
+        needsGender: !sessionUser.isAdmin && !sessionUser.gender,
+      },
+    });
+  } catch (error) {
+    console.error("Profile update error:", error);
+    return res.status(500).json({ error: "Could not update your profile right now." });
+  }
 });
 
 app.get("/api/auth/logout", (req, res) => {
@@ -1561,6 +1750,293 @@ app.delete("/api/events/:id", ensureAdmin, async (req, res) => {
   }
 });
 
+app.get("/api/events/:id/rsvps", ensureAdmin, async (req, res) => {
+  try {
+    const eventId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(eventId)) {
+      return res.status(400).json({ error: "A valid event id is required." });
+    }
+
+    const details = await getAdminEventRsvpDetails(eventId);
+
+    if (!details) {
+      return res.status(404).json({ error: "Event not found." });
+    }
+
+    return res.json(details);
+  } catch (error) {
+    console.error("Event RSVP detail error:", error);
+    return res.status(500).json({ error: "Could not load RSVP details right now." });
+  }
+});
+
+app.get("/api/events/:id/rsvps/export", ensureAdmin, async (req, res) => {
+  try {
+    const eventId = Number.parseInt(req.params.id, 10);
+
+    if (!Number.isInteger(eventId)) {
+      return res.status(400).json({ error: "A valid event id is required." });
+    }
+
+    const details = await getAdminEventRsvpDetails(eventId);
+
+    if (!details) {
+      return res.status(404).json({ error: "Event not found." });
+    }
+
+    const appName = process.env.APP_NAME?.trim() || "AIC Ziwani";
+    const eventDateLabel = new Date(details.event_date).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const generatedAtLabel = new Date().toLocaleString();
+    const audienceLabel = details.target_gender === "male"
+      ? "Men Only"
+      : details.target_gender === "female"
+        ? "Women Only"
+        : "Everyone";
+    const descriptionLabel = details.description?.trim() || "No event description was added for this event.";
+
+    const attendeeRows = details.attendees.length
+      ? details.attendees.map((attendee, index) => `
+          <tr>
+            <td>${index + 1}</td>
+            <td>${escapeHtml(attendee.display_name)}</td>
+            <td>${escapeHtml(attendee.email)}</td>
+            <td>${escapeHtml(new Date(attendee.responded_at).toLocaleString())}</td>
+          </tr>
+        `).join("")
+      : `
+          <tr>
+            <td>1</td>
+            <td colspan="3">No RSVPs yet</td>
+          </tr>
+        `;
+
+    const worksheetHtml = `
+      <html xmlns:o="urn:schemas-microsoft-com:office:office"
+            xmlns:x="urn:schemas-microsoft-com:office:excel"
+            xmlns="http://www.w3.org/TR/REC-html40">
+      <head>
+        <meta charset="utf-8" />
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>RSVP Report</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            color: #111827;
+            margin: 24px;
+          }
+          table {
+            border-collapse: collapse;
+            width: 100%;
+          }
+          .report-shell {
+            width: 100%;
+          }
+          .hero {
+            background: linear-gradient(135deg, #4d0f16 0%, #8c112b 52%, #c8102e 100%);
+            color: #ffffff;
+            padding: 24px 28px;
+            border-radius: 18px;
+          }
+          .eyebrow {
+            font-size: 11px;
+            letter-spacing: 1.4px;
+            text-transform: uppercase;
+            opacity: 0.82;
+            margin-bottom: 8px;
+          }
+          .hero-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 0 0 8px 0;
+          }
+          .hero-copy {
+            font-size: 13px;
+            line-height: 1.55;
+            max-width: 720px;
+          }
+          .spacer {
+            height: 18px;
+          }
+          .meta-grid {
+            width: 100%;
+            border-spacing: 0;
+          }
+          .meta-card {
+            width: 25%;
+            padding: 0 8px 0 0;
+            vertical-align: top;
+          }
+          .meta-card-inner {
+            background: #f8fafc;
+            border: 1px solid #dbe3ee;
+            border-radius: 14px;
+            padding: 14px 16px;
+          }
+          .meta-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.9px;
+            color: #6b7280;
+            margin-bottom: 8px;
+          }
+          .meta-value {
+            font-size: 15px;
+            font-weight: bold;
+            color: #111827;
+          }
+          .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #111827;
+            margin: 0 0 8px 0;
+          }
+          .section-copy {
+            font-size: 13px;
+            line-height: 1.6;
+            color: #4b5563;
+            margin: 0;
+          }
+          .attendee-table th,
+          .attendee-table td {
+            border: 1px solid #dbe3ee;
+            padding: 10px 12px;
+            text-align: left;
+          }
+          .attendee-table thead th {
+            background: #eef2f7;
+            color: #374151;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+          }
+          .attendee-table tbody tr:nth-child(even) td {
+            background: #fafbfc;
+          }
+          .attendee-table tbody td:first-child {
+            width: 48px;
+            text-align: center;
+            font-weight: bold;
+          }
+          .footer-note {
+            font-size: 11px;
+            color: #6b7280;
+            margin-top: 18px;
+          }
+        </style>
+      </head>
+      <body>
+        <table class="report-shell">
+          <tr>
+            <td>
+              <div class="hero">
+                <div class="eyebrow">${escapeHtml(appName)} Reporting Export</div>
+                <div class="hero-title">Event RSVP Report</div>
+                <div class="hero-copy">
+                  This worksheet captures the attendee list for <strong>${escapeHtml(details.title)}</strong>,
+                  including contact details and RSVP timestamps for admin follow-up.
+                </div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <div class="spacer"></div>
+
+        <table class="meta-grid">
+          <tr>
+            <td class="meta-card">
+              <div class="meta-card-inner">
+                <span class="meta-label">Event</span>
+                <div class="meta-value">${escapeHtml(details.title)}</div>
+              </div>
+            </td>
+            <td class="meta-card">
+              <div class="meta-card-inner">
+                <span class="meta-label">Date</span>
+                <div class="meta-value">${escapeHtml(eventDateLabel)}</div>
+              </div>
+            </td>
+            <td class="meta-card">
+              <div class="meta-card-inner">
+                <span class="meta-label">Audience</span>
+                <div class="meta-value">${escapeHtml(audienceLabel)}</div>
+              </div>
+            </td>
+            <td class="meta-card">
+              <div class="meta-card-inner">
+                <span class="meta-label">Total RSVPs</span>
+                <div class="meta-value">${escapeHtml(details.rsvp_count)}</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+
+        <div class="spacer"></div>
+
+        <table class="report-shell">
+          <tr>
+            <td>
+              <div class="section-title">Event Summary</div>
+              <p class="section-copy">
+                <strong>Fellowship:</strong> ${escapeHtml(details.fellowship_name || "General event")}<br />
+                <strong>Time:</strong> ${escapeHtml(details.event_time || "All Day")}<br />
+                <strong>Generated:</strong> ${escapeHtml(generatedAtLabel)}<br />
+                <strong>Description:</strong> ${escapeHtml(descriptionLabel)}
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <div class="spacer"></div>
+
+        <table class="attendee-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>RSVP Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${attendeeRows}
+          </tbody>
+        </table>
+
+        <div class="footer-note">
+          Generated from the ${escapeHtml(appName)} admin dashboard. This worksheet is intended for attendance follow-up and reporting.
+        </div>
+      </body>
+      </html>
+    `;
+
+    res.setHeader("Content-Type", "application/vnd.ms-excel; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${buildSafeSpreadsheetFileName(details.title)}"`);
+    return res.send(worksheetHtml);
+  } catch (error) {
+    console.error("Event RSVP export error:", error);
+    return res.status(500).json({ error: "Could not export RSVP worksheet right now." });
+  }
+});
+
 app.post("/api/events/:id/rsvp", ensureUserAuthenticated, async (req, res) => {
   try {
     const { id: eventId } = req.params;
@@ -1608,6 +2084,83 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: isCloudinaryConfigured() ? multer.memoryStorage() : storage,
 });
+
+const avatarUpload = multer({
+  storage: getAvatarUploadStorage(),
+  fileFilter: avatarFileFilter,
+  limits: {
+    fileSize: 4 * 1024 * 1024,
+  },
+});
+
+app.post(
+  "/api/profile/avatar",
+  ensureUserAuthenticated,
+  (req, res, next) => {
+    avatarUpload.single("avatar")(req, res, (err) => {
+      if (err) {
+        console.error("AVATAR UPLOAD ERROR:", err);
+        return res.status(400).json({ error: err.message || "Could not upload that image." });
+      }
+
+      next();
+    });
+  },
+  async (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Please choose an image to upload." });
+      }
+
+      const currentUserResult = await pool.query(
+        "SELECT id, name, email, gender, google_id, avatar_url, is_admin FROM users WHERE id = $1",
+        [req.user.id]
+      );
+
+      if (currentUserResult.rows.length === 0) {
+        return res.status(404).json({ error: "User account not found." });
+      }
+
+      const currentUser = currentUserResult.rows[0];
+      let avatarUrl;
+
+      if (isCloudinaryConfigured()) {
+        const uploadedAsset = await uploadToCloudinary(req.file);
+        avatarUrl = uploadedAsset.imageUrl;
+      } else {
+        avatarUrl = `/uploads/${req.file.filename}`;
+      }
+
+      const updateResult = await pool.query(
+        `UPDATE users
+         SET avatar_url = $1,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING id, name, email, gender, google_id, avatar_url, is_admin`,
+        [avatarUrl, req.user.id]
+      );
+
+      const updatedUser = updateResult.rows[0];
+      const sessionUser = buildSessionUser(updatedUser);
+      await loginUpdatedUser(req, sessionUser);
+
+      if (currentUser.avatar_url && currentUser.avatar_url !== updatedUser.avatar_url) {
+        deleteLocalUploadIfPresent(currentUser.avatar_url);
+      }
+
+      return res.status(201).json({
+        message: "Profile photo updated successfully.",
+        user: {
+          ...sessionUser,
+          needsGender: !sessionUser.isAdmin && !sessionUser.gender,
+        },
+      });
+    } catch (error) {
+      console.error("Profile avatar upload error:", error);
+      return res.status(500).json({ error: "Could not update your profile photo right now." });
+    }
+  }
+);
 
 app.get("/api/gallery", async (req, res) => {
   try {

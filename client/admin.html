@@ -459,8 +459,159 @@ button.submit:hover {
   border-top: 1px solid var(--border-color);
 }
 
+.entity-action-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.secondary-btn {
+  margin-top: 0;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.secondary-btn:hover {
+  background: var(--button-hover-bg);
+}
+
 .entity-actions .delete-btn {
   margin-top: 0;
+}
+
+.admin-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.58);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 3000;
+}
+
+.admin-modal-overlay.open {
+  display: flex;
+}
+
+.admin-modal {
+  width: min(860px, 100%);
+  max-height: min(84vh, 880px);
+  overflow: auto;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: 0 28px 60px var(--shadow-color-heavy);
+  padding: 26px;
+}
+
+.admin-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.admin-modal-header h3 {
+  margin: 0 0 8px;
+  font-size: 24px;
+  color: var(--text-primary);
+}
+
+.admin-modal-close {
+  margin-top: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+
+.admin-modal-close:hover {
+  background: var(--button-hover-bg);
+}
+
+.modal-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.modal-meta-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px;
+}
+
+.modal-meta-card span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 8px;
+}
+
+.modal-meta-card strong {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+
+.modal-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.modal-toolbar p {
+  margin: 0;
+  color: var(--text-secondary);
+}
+
+.modal-attendee-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.modal-attendee-table th,
+.modal-attendee-table td {
+  border-bottom: 1px solid var(--border-color);
+  padding: 12px 10px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.modal-attendee-table th {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.modal-empty {
+  padding: 20px 0;
+  color: var(--text-secondary);
+}
+
+.modal-event-description {
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 18px;
 }
 
 .item-list {
@@ -954,9 +1105,36 @@ button.submit:hover {
   </div>
 </div>
 
+<div id="eventRsvpModal" class="admin-modal-overlay" aria-hidden="true">
+  <div class="admin-modal">
+    <div class="admin-modal-header">
+      <div>
+        <h3 id="eventRsvpModalTitle">Event RSVPs</h3>
+        <p id="eventRsvpModalSubtitle" class="grid-item-meta">Attendee details for this event.</p>
+      </div>
+      <button id="eventRsvpModalClose" class="admin-modal-close" type="button" aria-label="Close RSVP details">&times;</button>
+    </div>
+    <p id="eventRsvpModalDescription" class="modal-event-description"></p>
+    <div id="eventRsvpMeta" class="modal-meta-grid"></div>
+    <div class="modal-toolbar">
+      <p id="eventRsvpToolbarCopy">Review attendee details and export the worksheet for follow-up.</p>
+      <button id="downloadRsvpWorksheetBtn" class="secondary-btn" type="button">Download Excel Worksheet</button>
+    </div>
+    <div id="eventRsvpAttendees"></div>
+  </div>
+</div>
+
 <script>
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
 const statusBox = document.getElementById("statusBox");
+const eventRsvpModal = document.getElementById("eventRsvpModal");
+const eventRsvpModalTitle = document.getElementById("eventRsvpModalTitle");
+const eventRsvpModalSubtitle = document.getElementById("eventRsvpModalSubtitle");
+const eventRsvpModalDescription = document.getElementById("eventRsvpModalDescription");
+const eventRsvpMeta = document.getElementById("eventRsvpMeta");
+const eventRsvpAttendees = document.getElementById("eventRsvpAttendees");
+const downloadRsvpWorksheetBtn = document.getElementById("downloadRsvpWorksheetBtn");
+let activeRsvpEventId = null;
 
 function getBackendOrigin() {
   const { protocol, hostname, port, origin } = window.location;
@@ -973,6 +1151,15 @@ const backendOrigin = getBackendOrigin();
 
 function buildBackendUrl(path) {
   return new URL(path, backendOrigin).toString();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function renderEmptyState(message) {
@@ -1001,6 +1188,14 @@ function formatEventDateTime(eventDate, eventTime) {
   }
 
   return `${formattedDate} at ${eventTime.substring(0, 5)}`;
+}
+
+function formatTimestamp(value) {
+  if (!value) {
+    return "Not available";
+  }
+
+  return new Date(value).toLocaleString();
 }
 
 function updateEventSummary(items) {
@@ -1033,6 +1228,84 @@ function showStatus(message, isError = false) {
   statusBox.textContent = message;
   statusBox.style.background = isError ? "#450a0a" : "#172554";
   statusBox.style.color = isError ? "#fecaca" : "#dbeafe";
+}
+
+function closeEventRsvpModal() {
+  eventRsvpModal.classList.remove("open");
+  eventRsvpModal.setAttribute("aria-hidden", "true");
+  activeRsvpEventId = null;
+}
+
+function openEventRsvpModalShell() {
+  eventRsvpModal.classList.add("open");
+  eventRsvpModal.setAttribute("aria-hidden", "false");
+}
+
+async function openEventRsvpModal(eventId) {
+  activeRsvpEventId = eventId;
+  openEventRsvpModalShell();
+  eventRsvpModalTitle.textContent = "Loading RSVP Details...";
+  eventRsvpModalSubtitle.textContent = "Fetching attendee information.";
+  eventRsvpModalDescription.textContent = "";
+  eventRsvpMeta.innerHTML = "";
+  eventRsvpAttendees.innerHTML = '<p class="modal-empty">Loading attendees...</p>';
+
+  try {
+    const response = await fetch(buildBackendUrl(`/api/events/${eventId}/rsvps`), {
+      credentials: "include"
+    });
+    const details = await (await ensureOk(response, "Loading RSVP details")).json();
+
+    eventRsvpModalTitle.textContent = details.title || "Event RSVPs";
+    eventRsvpModalSubtitle.textContent = details.fellowship_name || "General event";
+    eventRsvpModalDescription.textContent = details.description || "No event description was added for this event.";
+    eventRsvpMeta.innerHTML = `
+      <div class="modal-meta-card">
+        <span>Date</span>
+        <strong>${escapeHtml(formatEventDateTime(details.event_date, details.event_time))}</strong>
+      </div>
+      <div class="modal-meta-card">
+        <span>Audience</span>
+        <strong>${escapeHtml(getTargetMeta(details.target_gender).label)}</strong>
+      </div>
+      <div class="modal-meta-card">
+        <span>RSVP Count</span>
+        <strong>${escapeHtml(details.rsvp_count)}</strong>
+      </div>
+    `;
+
+    const attendees = Array.isArray(details.attendees) ? details.attendees : [];
+    if (!attendees.length) {
+      eventRsvpAttendees.innerHTML = '<p class="modal-empty">No one has RSVPd to this event yet.</p>';
+      return;
+    }
+
+    eventRsvpAttendees.innerHTML = `
+      <table class="modal-attendee-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>RSVP Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${attendees.map((attendee, index) => `
+            <tr>
+              <td>${index + 1}</td>
+              <td>${escapeHtml(attendee.display_name)}</td>
+              <td>${escapeHtml(attendee.email)}</td>
+              <td>${escapeHtml(formatTimestamp(attendee.responded_at))}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (error) {
+    eventRsvpAttendees.innerHTML = `<p class="modal-empty">${escapeHtml(error.message || "Could not load RSVP details.")}</p>`;
+    showStatus(error.message || "Could not load RSVP details.", true);
+  }
 }
 
 async function ensureOk(response, actionLabel) {
@@ -1212,7 +1485,10 @@ async function loadEvents() {
             </div>
             <div class="entity-actions">
               <span class="grid-item-meta">${rsvpCount} RSVP${rsvpCount === 1 ? '' : 's'}</span>
-              <button class="delete-btn" data-id="${item.id}" data-type="events">Delete</button>
+              <div class="entity-action-group">
+                <button class="secondary-btn view-rsvps-btn" data-event-id="${item.id}" type="button">View RSVPs</button>
+                <button class="delete-btn" data-id="${item.id}" data-type="events">Delete</button>
+              </div>
             </div>
           </article>
         `;
@@ -1507,7 +1783,33 @@ async function logout() {
   }
 }
 
+document.getElementById("eventRsvpModalClose").addEventListener("click", closeEventRsvpModal);
+eventRsvpModal.addEventListener("click", (event) => {
+  if (event.target === eventRsvpModal) {
+    closeEventRsvpModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && eventRsvpModal.classList.contains("open")) {
+    closeEventRsvpModal();
+  }
+});
+
+downloadRsvpWorksheetBtn.addEventListener("click", () => {
+  if (!activeRsvpEventId) {
+    return;
+  }
+
+  window.location.href = buildBackendUrl(`/api/events/${activeRsvpEventId}/rsvps/export`);
+});
+
 document.querySelector('.main').addEventListener('click', async (e) => {
+  if (e.target.matches('.view-rsvps-btn')) {
+    await openEventRsvpModal(e.target.dataset.eventId);
+    return;
+  }
+
   if (e.target.matches('.delete-btn')) {
     const id = e.target.dataset.id;
     const type = e.target.dataset.type;

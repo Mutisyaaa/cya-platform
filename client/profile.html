@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile | AIC Ziwani CYA</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+<script>
+  (function() {
+    const theme = localStorage.getItem("theme") || "light";
+    document.documentElement.setAttribute("data-theme", theme);
+  })();
+</script>
+<style>
+:root {
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+  --bg-primary: #f4f4f4;
+  --bg-secondary: #ffffff;
+  --bg-soft: #faf6f7;
+  --text-primary: #222;
+  --text-secondary: #666;
+  --text-on-primary: #ffffff;
+  --border-color: #ddd;
+  --shadow-light: rgba(0, 0, 0, 0.06);
+  --shadow-heavy: rgba(0, 0, 0, 0.12);
+  --button-bg: #f6f6f6;
+  --button-hover-bg: #f0d7dc;
+}
+
+[data-theme="dark"] {
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #121212;
+  --bg-secondary: #1e1e1e;
+  --bg-soft: #262020;
+  --text-primary: #e6e6e6;
+  --text-secondary: #a0a0a0;
+  --text-on-primary: #ffffff;
+  --border-color: #333;
+  --shadow-light: rgba(255, 255, 255, 0.05);
+  --shadow-heavy: rgba(0, 0, 0, 0.24);
+  --button-bg: #2a2a2a;
+  --button-hover-bg: #3a2d2f;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(200, 16, 46, 0.11), transparent 30%),
+    linear-gradient(180deg, var(--bg-primary), #ece7e8);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+[data-theme="dark"] body {
+  background:
+    radial-gradient(circle at top left, rgba(229, 57, 53, 0.16), transparent 28%),
+    linear-gradient(180deg, #111111, #1a1617);
+}
+
+.page-shell {
+  width: min(1120px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 28px 0 56px;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.topbar-links,
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pill-link,
+.secondary-button,
+.primary-button,
+.upload-button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
+}
+
+.pill-link,
+.secondary-button,
+.upload-button {
+  background: var(--button-bg);
+  color: var(--text-primary);
+}
+
+.pill-link:hover,
+.secondary-button:hover,
+.upload-button:hover {
+  background: var(--button-hover-bg);
+  color: var(--dark-red);
+  transform: translateY(-2px);
+}
+
+.primary-button {
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  box-shadow: 0 10px 24px rgba(200, 16, 46, 0.2);
+}
+
+.primary-button:hover {
+  background: var(--dark-red);
+  transform: translateY(-2px);
+}
+
+.hero-card {
+  background: linear-gradient(135deg, #1d0b11, #78142a 72%, #22090f);
+  color: #ffffff;
+  border-radius: 28px;
+  padding: 32px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.2);
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 26px;
+  align-items: center;
+}
+
+.hero-avatar-wrap {
+  width: 140px;
+  height: 140px;
+  border-radius: 32px;
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(circle at 28% 24%, rgba(255, 255, 255, 0.3), transparent 34%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    0 24px 50px rgba(6, 1, 3, 0.34);
+}
+
+.hero-avatar-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 10px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.hero-avatar-wrap::after {
+  content: "";
+  position: absolute;
+  inset: auto 16px 12px 16px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(17, 4, 8, 0.24);
+  filter: blur(14px);
+  pointer-events: none;
+}
+
+.hero-avatar-wrap img,
+.hero-avatar-fallback {
+  width: 100%;
+  height: 100%;
+}
+
+.hero-avatar-wrap img {
+  object-fit: cover;
+  transform: scale(1.02);
+}
+
+.hero-avatar-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #fff8fa;
+  background:
+    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.34), transparent 30%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffb1bf;
+}
+
+.hero-card h1 {
+  margin-top: 14px;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1;
+}
+
+.hero-card p {
+  margin-top: 12px;
+  color: rgba(255, 255, 255, 0.78);
+  line-height: 1.6;
+  max-width: 620px;
+}
+
+.hero-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.hero-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.card {
+  background: var(--bg-secondary);
+  border-radius: 24px;
+  box-shadow: 0 16px 34px var(--shadow-light);
+  padding: 28px;
+}
+
+.section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.section-heading h2 {
+  font-size: 24px;
+}
+
+.section-heading p,
+.muted {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.status-message {
+  display: none;
+  padding: 13px 14px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.status-message.success {
+  display: block;
+  background: rgba(11, 122, 66, 0.12);
+  color: #0b7a42;
+}
+
+.status-message.error {
+  display: block;
+  background: rgba(200, 16, 46, 0.1);
+  color: var(--primary-red);
+}
+
+.field-group {
+  margin-bottom: 18px;
+}
+
+.field-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 700;
+}
+
+.field-group input {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-size: 15px;
+  outline: none;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.field-group input:focus {
+  border-color: var(--primary-red);
+}
+
+.readonly-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.readonly-item {
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 16px;
+  background: var(--bg-soft);
+}
+
+.readonly-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.avatar-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.avatar-option {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.avatar-option:focus-visible {
+  outline: 2px solid var(--primary-red);
+  outline-offset: 6px;
+}
+
+.avatar-option-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid rgba(200, 16, 46, 0.08);
+  border-radius: 24px;
+  padding: 12px;
+  background:
+    radial-gradient(circle at top, rgba(200, 16, 46, 0.08), transparent 55%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 246, 247, 0.92));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 14px 24px rgba(23, 10, 14, 0.08);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+[data-theme="dark"] .avatar-option-inner {
+  background:
+    radial-gradient(circle at top, rgba(229, 57, 53, 0.12), transparent 55%),
+    linear-gradient(180deg, rgba(39, 29, 31, 0.96), rgba(26, 22, 23, 0.96));
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 28px rgba(0, 0, 0, 0.24);
+}
+
+.avatar-option:hover .avatar-option-inner {
+  transform: translateY(-4px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 18px 34px rgba(23, 10, 14, 0.14);
+}
+
+.avatar-option.selected .avatar-option-inner {
+  border-color: var(--primary-red);
+  background:
+    radial-gradient(circle at top, rgba(200, 16, 46, 0.14), transparent 58%),
+    linear-gradient(180deg, rgba(255, 250, 251, 0.98), rgba(249, 240, 242, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    0 18px 34px rgba(200, 16, 46, 0.16);
+}
+
+.avatar-option-preview {
+  display: block;
+  aspect-ratio: 1;
+  border-radius: 18px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+[data-theme="dark"] .avatar-option-preview {
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.avatar-option img {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+  object-fit: contain;
+  display: block;
+}
+
+.avatar-option-copy {
+  display: grid;
+  gap: 2px;
+  min-height: 38px;
+}
+
+.avatar-option-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+
+.avatar-option-subtitle {
+  display: block;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.avatar-option.selected .avatar-option-label {
+  color: var(--dark-red);
+}
+
+.upload-panel {
+  margin-top: 22px;
+  border: 1px dashed var(--border-color);
+  border-radius: 22px;
+  padding: 18px;
+  background: var(--bg-soft);
+}
+
+.upload-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.upload-input {
+  display: none;
+}
+
+.file-name {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.helper-text {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.save-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+  color: var(--text-secondary);
+  font-size: 18px;
+}
+
+@media (max-width: 900px) {
+  .hero-card,
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hero-avatar-wrap {
+    width: 112px;
+    height: 112px;
+    border-radius: 26px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-shell {
+    width: min(100% - 24px, 100%);
+    padding-top: 18px;
+  }
+
+  .topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .hero-card,
+  .card {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .avatar-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .save-row,
+  .upload-actions {
+    justify-content: stretch;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .upload-button,
+  .pill-link {
+    width: 100%;
+    text-align: center;
+  }
+}
+</style>
+</head>
+<body>
+<div id="loadingState" class="loading-state">Loading your profile...</div>
+
+<main id="profileApp" class="page-shell" hidden>
+  <div class="topbar">
+    <div class="topbar-links">
+      <a class="pill-link" href="/index.html">Back To Site</a>
+      <a id="adminShortcut" class="pill-link" href="/admin.html" hidden>Admin Dashboard</a>
+    </div>
+    <div class="topbar-actions">
+      <button id="themeToggleButton" class="secondary-button" type="button">Toggle Theme</button>
+      <button id="logoutButton" class="secondary-button" type="button">Logout</button>
+    </div>
+  </div>
+
+  <section class="hero-card">
+    <div id="heroAvatar" class="hero-avatar-wrap"></div>
+    <div>
+      <span class="eyebrow">Your Account</span>
+      <h1 id="heroName">Profile</h1>
+      <p>Update the name people see around the platform, choose a Bible-inspired avatar, or upload your own profile photo.</p>
+      <div class="hero-meta">
+        <span id="heroRole" class="hero-chip">Member</span>
+        <span id="heroEmail" class="hero-chip">Email</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="layout">
+    <div class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Edit Profile</h2>
+          <p>Display names update the way your account appears in the community areas and RSVP lists.</p>
+        </div>
+      </div>
+
+      <div id="profileStatus" class="status-message" role="status" aria-live="polite"></div>
+
+      <form id="profileForm">
+        <div class="field-group">
+          <label for="displayNameInput">Display Name</label>
+          <input id="displayNameInput" name="displayName" type="text" maxlength="60" minlength="2" placeholder="Enter your display name" required>
+        </div>
+
+        <div class="field-group">
+          <label>Choose A Bible-Inspired Avatar</label>
+          <p class="muted">Pick one of the illustrated character styles below, or leave your current photo in place.</p>
+          <div id="avatarGrid" class="avatar-grid"></div>
+        </div>
+
+        <div class="upload-panel">
+          <strong>Prefer your own picture?</strong>
+          <p class="helper-text">Upload a square-ish image for the cleanest result. JPG, PNG, WEBP, and other image formats are fine up to 4 MB.</p>
+          <div class="upload-actions">
+            <label class="upload-button" for="avatarUploadInput">Choose Photo</label>
+            <input id="avatarUploadInput" class="upload-input" type="file" accept="image/*">
+            <span id="selectedFileName" class="file-name">No file chosen</span>
+            <button id="uploadAvatarButton" class="secondary-button" type="button">Upload Photo</button>
+          </div>
+        </div>
+
+        <div class="save-row">
+          <button id="saveProfileButton" class="primary-button" type="submit">Save Changes</button>
+        </div>
+      </form>
+    </div>
+
+    <aside class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Account Details</h2>
+          <p>A quick snapshot of the account currently signed in on this device.</p>
+        </div>
+      </div>
+
+      <div class="readonly-grid">
+        <div class="readonly-item">
+          <span class="readonly-label">Email</span>
+          <div id="infoEmail">-</div>
+        </div>
+        <div class="readonly-item">
+          <span class="readonly-label">Role</span>
+          <div id="infoRole">-</div>
+        </div>
+        <div class="readonly-item">
+          <span class="readonly-label">Sign-In Method</span>
+          <div id="infoProvider">-</div>
+        </div>
+        <div class="readonly-item">
+          <span class="readonly-label">Gender</span>
+          <div id="infoGender">-</div>
+        </div>
+      </div>
+    </aside>
+  </section>
+</main>
+
+<script>
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+const BIBLE_AVATAR_THEMES = [
+  { label: "Jesus With Bible", subtitle: "Chibi shepherd icon", bg: ["#fff3ee", "#ffd9cf"], outline: "#7d3b34", skin: "#ffd2bd", hair: "#a44d3e", robe: "#fffdf8", accent: "#ef4b62", secondary: "#4c5369", prop: "bible-staff", beard: true, hairStyle: "jesus" },
+  { label: "Moses With Tablets", subtitle: "Lawgiver icon", bg: ["#f3f0ff", "#d6d0ff"], outline: "#6d5b73", skin: "#ffccba", hair: "#f2efee", robe: "#f8f3ea", accent: "#5c70a8", secondary: "#d2c6c0", prop: "tablets", beard: true, hairStyle: "elder" },
+  { label: "Golden Angel", subtitle: "Blessing icon", bg: ["#fff6dd", "#ffe58a"], outline: "#8f6a2d", skin: "#ffd6c4", hair: "#ffbf66", robe: "#ffffff", accent: "#ffd54f", secondary: "#f7c948", prop: "star", wings: true, halo: true, hairStyle: "angel" },
+  { label: "Lavender Angel", subtitle: "Guardian icon", bg: ["#efe5ff", "#d6c0ff"], outline: "#6c4aa0", skin: "#ffd6c6", hair: "#9f7aea", robe: "#fff9ff", accent: "#8b5cf6", secondary: "#c4b5fd", prop: "prayer", wings: true, halo: true, hairStyle: "angel" },
+  { label: "Cross Bearer", subtitle: "Pilgrim icon", bg: ["#ffe9df", "#ffc7a8"], outline: "#7a4638", skin: "#ffcfbd", hair: "#8a523a", robe: "#f6ead8", accent: "#9b5f3b", secondary: "#5b2f21", prop: "cross", hairStyle: "pilgrim" },
+  { label: "Mercy Christ", subtitle: "Portrait icon", bg: ["#ffe8e8", "#ffd0d0"], outline: "#7c4137", skin: "#ffd0ba", hair: "#b36a4c", robe: "#fff8f8", accent: "#d74d4d", secondary: "#f5d6a5", beard: true, prop: "heart", hairStyle: "jesus" },
+  { label: "Halo Saint", subtitle: "Prayer icon", bg: ["#f2f0ff", "#d8d4ff"], outline: "#6e6488", skin: "#ffd5c4", hair: "#ddd6fe", robe: "#fffefe", accent: "#d4af37", secondary: "#64748b", halo: true, prop: "prayer", hairStyle: "saint" },
+  { label: "Silver Knight", subtitle: "Sword icon", bg: ["#eef5ff", "#cfe0ff"], outline: "#495470", skin: "#ffe1cf", hair: "#cdd5e3", robe: "#dfe8f7", accent: "#8aa0d1", secondary: "#f3b343", prop: "sword", outfit: "armor", headwear: "helmet" },
+  { label: "Crimson Knight", subtitle: "Helm icon", bg: ["#fff0f2", "#ffc6d0"], outline: "#5b5669", skin: "#ffdaca", hair: "#cbd5e1", robe: "#d8dee9", accent: "#e73a67", secondary: "#f6c453", prop: "shield", outfit: "armor", headwear: "plume" },
+  { label: "David Sling", subtitle: "Courage icon", bg: ["#fff2e7", "#ffd8ba"], outline: "#7b4b3a", skin: "#ffcdb9", hair: "#935847", robe: "#efe1c7", accent: "#a94f3d", secondary: "#6b4f45", prop: "sling", hairStyle: "david" },
+  { label: "Shepherd Staff", subtitle: "Psalm icon", bg: ["#fff7df", "#ffe08d"], outline: "#87512f", skin: "#ffd2be", hair: "#a85f3f", robe: "#fffdf9", accent: "#e9485a", secondary: "#8b5a2b", prop: "staff", beard: true, hairStyle: "jesus" },
+  { label: "Queen Esther", subtitle: "Royal icon", bg: ["#fff0f7", "#ffc8e6"], outline: "#81416e", skin: "#ffd0c0", hair: "#8b4c67", robe: "#fffafc", accent: "#ef5da8", secondary: "#ffd76a", prop: "scepter", headwear: "crown", hairStyle: "queen" }
+];
+
+const loadingState = document.getElementById("loadingState");
+const profileApp = document.getElementById("profileApp");
+const profileForm = document.getElementById("profileForm");
+const displayNameInput = document.getElementById("displayNameInput");
+const avatarGrid = document.getElementById("avatarGrid");
+const heroAvatar = document.getElementById("heroAvatar");
+const heroName = document.getElementById("heroName");
+const heroRole = document.getElementById("heroRole");
+const heroEmail = document.getElementById("heroEmail");
+const infoEmail = document.getElementById("infoEmail");
+const infoRole = document.getElementById("infoRole");
+const infoProvider = document.getElementById("infoProvider");
+const infoGender = document.getElementById("infoGender");
+const adminShortcut = document.getElementById("adminShortcut");
+const profileStatus = document.getElementById("profileStatus");
+const saveProfileButton = document.getElementById("saveProfileButton");
+const uploadAvatarButton = document.getElementById("uploadAvatarButton");
+const avatarUploadInput = document.getElementById("avatarUploadInput");
+const selectedFileName = document.getElementById("selectedFileName");
+const logoutButton = document.getElementById("logoutButton");
+const themeToggleButton = document.getElementById("themeToggleButton");
+
+let currentUser = null;
+let currentAvatarUrl = "";
+let presetAvatarUrls = [];
+let selectedPresetIndex = null;
+
+function getBackendOrigin() {
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+function buildBackendUrl(path) {
+  return new URL(path, getBackendOrigin()).toString();
+}
+
+function getEmail(user) {
+  return user?.emails?.[0]?.value || "";
+}
+
+function getInitials(name = "User") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "U";
+}
+
+function escapeAttribute(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function getAvatarThemeSubtitle(theme) {
+  return theme.subtitle || "Faith icon";
+}
+
+function getChibiHeadwearMarkup(theme) {
+  switch (theme.headwear) {
+    case "crown":
+      return `
+        <path d="M61 31 L69 22 L80 30 L91 21 L99 31 L96 38 H64 Z" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+        <circle cx="69" cy="29" r="2.3" fill="#ffffff" />
+        <circle cx="80" cy="26" r="2.6" fill="#ffffff" />
+        <circle cx="91" cy="29" r="2.3" fill="#ffffff" />
+      `;
+    case "helmet":
+      return `
+        <path d="M52 41 C52 22 65 14 80 14 C95 14 108 22 108 41 V54 H52 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <rect x="58" y="41" width="44" height="18" rx="9" fill="#e7edf7" stroke="${theme.outline}" stroke-width="3" />
+        <path d="M67 47 H73" stroke="${theme.outline}" stroke-width="3.2" stroke-linecap="round" />
+        <path d="M87 47 H93" stroke="${theme.outline}" stroke-width="3.2" stroke-linecap="round" />
+      `;
+    case "plume":
+      return `
+        <path d="M52 41 C52 22 65 14 80 14 C95 14 108 22 108 41 V54 H52 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M86 8 C96 8 106 18 106 31 C96 27 88 30 82 38 C82 28 81 17 86 8 Z" fill="${theme.accent}" stroke="${theme.outline}" stroke-width="3" />
+        <rect x="58" y="41" width="44" height="18" rx="9" fill="#e7edf7" stroke="${theme.outline}" stroke-width="3" />
+        <path d="M67 47 H73" stroke="${theme.outline}" stroke-width="3.2" stroke-linecap="round" />
+        <path d="M87 47 H93" stroke="${theme.outline}" stroke-width="3.2" stroke-linecap="round" />
+      `;
+    default:
+      return "";
+  }
+}
+
+function getChibiHairMarkup(theme) {
+  switch (theme.hairStyle) {
+    case "jesus":
+      return `
+        <path d="M50 53 C50 31 63 22 80 22 C97 22 110 31 110 53 C105 42 96 37 80 37 C64 37 55 42 50 53 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M61 29 C67 37 69 47 67 61" fill="none" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" />
+        <path d="M99 29 C93 37 91 47 93 61" fill="none" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" />
+        <path d="M78 24 C76 31 76 36 80 40 C84 36 84 31 82 24" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="2.4" stroke-linejoin="round" />
+      `;
+    case "elder":
+      return `
+        <path d="M53 49 C55 28 66 21 80 21 C94 21 105 28 107 49 C100 39 92 35 80 35 C68 35 60 39 53 49 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M60 26 C63 22 68 20 74 20" fill="none" stroke="${theme.outline}" stroke-width="2.6" stroke-linecap="round" />
+        <path d="M86 20 C92 20 97 22 100 26" fill="none" stroke="${theme.outline}" stroke-width="2.6" stroke-linecap="round" />
+      `;
+    case "angel":
+      return `
+        <path d="M51 50 C51 31 63 22 80 22 C97 22 109 31 109 50 C104 40 95 35 80 35 C65 35 56 40 51 50 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M58 42 C55 49 55 57 61 63" fill="none" stroke="${theme.outline}" stroke-width="2.8" stroke-linecap="round" />
+        <path d="M102 42 C105 49 105 57 99 63" fill="none" stroke="${theme.outline}" stroke-width="2.8" stroke-linecap="round" />
+      `;
+    case "pilgrim":
+      return `
+        <path d="M53 50 C53 31 64 23 80 23 C96 23 107 31 107 50 C102 43 93 39 80 39 C67 39 58 43 53 50 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M58 33 H102" stroke="${theme.accent}" stroke-width="6" stroke-linecap="round" />
+      `;
+    case "david":
+      return `
+        <path d="M53 49 C53 30 65 22 80 22 C95 22 107 30 107 49 C102 42 93 37 80 37 C67 37 58 42 53 49 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <path d="M59 31 H101" stroke="${theme.accent}" stroke-width="5.5" stroke-linecap="round" />
+        <path d="M61 35 C61 48 62 57 58 64" fill="none" stroke="${theme.outline}" stroke-width="2.8" stroke-linecap="round" />
+      `;
+    case "saint":
+      return `
+        <path d="M54 49 C56 31 67 24 80 24 C93 24 104 31 106 49 C98 41 90 38 80 38 C70 38 62 41 54 49 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+      `;
+    case "queen":
+      return `
+        <path d="M53 49 C53 31 64 23 80 23 C96 23 107 31 107 49 C101 41 93 37 80 37 C67 37 59 41 53 49 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3.2" />
+        <circle cx="80" cy="19" r="7" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3" />
+      `;
+    default:
+      return "";
+  }
+}
+
+function getChibiBeardMarkup(theme) {
+  if (!theme.beard) {
+    return "";
+  }
+
+  return `
+    <path d="M65 70 C67 83 73 90 80 90 C87 90 93 83 95 70 C90 77 86 80 80 80 C74 80 70 77 65 70 Z" fill="${theme.hair}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+  `;
+}
+
+function getChibiWingMarkup(theme) {
+  if (!theme.wings) {
+    return "";
+  }
+
+  return `
+    <path d="M42 85 C24 73 24 46 42 38 C39 50 43 63 52 73" fill="#ffffff" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+    <path d="M118 85 C136 73 136 46 118 38 C121 50 117 63 108 73" fill="#ffffff" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+  `;
+}
+
+function getChibiBackPropMarkup(theme) {
+  switch (theme.prop) {
+    case "cross":
+      return `
+        <path d="M47 49 L103 108" stroke="${theme.secondary}" stroke-width="10" stroke-linecap="round" />
+        <path d="M58 58 L89 27" stroke="${theme.secondary}" stroke-width="10" stroke-linecap="round" />
+        <path d="M47 49 L103 108" stroke="${theme.outline}" stroke-width="3.4" stroke-linecap="round" />
+        <path d="M58 58 L89 27" stroke="${theme.outline}" stroke-width="3.4" stroke-linecap="round" />
+      `;
+    case "sword":
+      return `
+        <path d="M104 26 L129 51 L93 87 L84 78 Z" fill="#deebff" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+        <path d="M95 82 L111 98" stroke="${theme.secondary}" stroke-width="8" stroke-linecap="round" />
+        <path d="M87 76 L97 86" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" />
+      `;
+    case "staff":
+    case "bible-staff":
+      return `
+        <path d="M44 46 C34 46 31 36 38 32 C42 29 46 30 49 34 C47 36 45 39 44 46 M44 46 V121" fill="none" stroke="${theme.secondary}" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="M44 46 C34 46 31 36 38 32 C42 29 46 30 49 34 C47 36 45 39 44 46 M44 46 V121" fill="none" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+      `;
+    default:
+      return "";
+  }
+}
+
+function getChibiBodyMarkup(theme) {
+  if (theme.outfit === "armor") {
+    return `
+      <path d="M56 92 C60 86 69 82 80 82 C91 82 100 86 104 92 L101 131 C92 138 68 138 59 131 Z" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3.2" stroke-linejoin="round" />
+      <path d="M63 95 H97 V122 C90 128 70 128 63 122 Z" fill="${theme.accent}" opacity="0.28" stroke="${theme.outline}" stroke-width="2.6" stroke-linejoin="round" />
+      <path d="M67 94 H93" stroke="${theme.secondary}" stroke-width="6.5" stroke-linecap="round" />
+      <path d="M56 94 C50 98 48 106 48 112 C55 112 59 108 63 102" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+      <path d="M104 94 C110 98 112 106 112 112 C105 112 101 108 97 102" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+    `;
+  }
+
+  return `
+    <path d="M58 92 C64 86 73 82 80 82 C87 82 96 86 102 92 L98 132 C90 138 70 138 62 132 Z" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3.2" stroke-linejoin="round" />
+    <path d="M58 97 C51 102 48 109 47 116 C54 116 59 113 63 105" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+    <path d="M102 97 C109 102 112 109 113 116 C106 116 101 113 97 105" fill="${theme.robe}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+    <path d="M76 91 L92 91 L86 130 L76 130 Z" fill="${theme.accent}" stroke="${theme.outline}" stroke-width="2.6" stroke-linejoin="round" />
+  `;
+}
+
+function getChibiFrontPropMarkup(theme) {
+  switch (theme.prop) {
+    case "bible-staff":
+      return `
+        <rect x="94" y="75" width="30" height="36" rx="5" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="3" transform="rotate(8 109 93)" />
+        <path d="M109 81 V101" stroke="#ffd76a" stroke-width="4" stroke-linecap="round" />
+        <path d="M101 91 H117" stroke="#ffd76a" stroke-width="4" stroke-linecap="round" />
+        <circle cx="49" cy="109" r="5" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="2.8" />
+        <circle cx="99" cy="98" r="5" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="2.8" />
+      `;
+    case "tablets":
+      return `
+        <path d="M45 68 H78 C82 68 85 71 85 75 V112 H52 C48 112 45 109 45 105 Z" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+        <path d="M54 80 H75 M54 87 H75 M54 94 H75 M54 101 H72" stroke="#b8aaa4" stroke-width="3" stroke-linecap="round" />
+        <circle cx="87" cy="74" r="5" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="2.8" />
+      `;
+    case "star":
+      return `
+        <path d="M108 88 L112 96 L121 97 L114 103 L116 112 L108 108 L100 112 L102 103 L95 97 L104 96 Z" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="2.6" stroke-linejoin="round" />
+      `;
+    case "prayer":
+      return `
+        <path d="M70 103 C74 95 80 95 84 103 C86 111 84 117 80 120 C76 117 74 111 70 103 Z" fill="${theme.accent}" stroke="${theme.outline}" stroke-width="2.8" stroke-linejoin="round" />
+      `;
+    case "heart":
+      return `
+        <path d="M80 107 C73 101 69 96 69 91 C69 86 73 83 77 83 C80 83 82 85 84 88 C86 85 88 83 91 83 C95 83 99 86 99 91 C99 96 95 101 88 107 L84 110 Z" fill="${theme.accent}" stroke="${theme.outline}" stroke-width="2.8" stroke-linejoin="round" />
+      `;
+    case "shield":
+      return `
+        <path d="M93 87 L111 94 V110 C111 118 104 124 93 128 C82 124 75 118 75 110 V94 Z" fill="${theme.accent}" stroke="${theme.outline}" stroke-width="3" stroke-linejoin="round" />
+        <path d="M93 94 V121" stroke="#ffffff" stroke-width="3" stroke-linecap="round" />
+      `;
+    case "sling":
+      return `
+        <path d="M37 86 C28 77 23 72 17 68" fill="none" stroke="${theme.secondary}" stroke-width="5" stroke-linecap="round" />
+        <path d="M40 91 C31 91 25 90 18 89" fill="none" stroke="${theme.secondary}" stroke-width="5" stroke-linecap="round" />
+        <circle cx="15" cy="79" r="5" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="2.4" />
+      `;
+    case "scepter":
+      return `
+        <path d="M109 62 V118" stroke="${theme.secondary}" stroke-width="7" stroke-linecap="round" />
+        <circle cx="109" cy="54" r="8" fill="${theme.secondary}" stroke="${theme.outline}" stroke-width="2.8" />
+      `;
+    default:
+      return "";
+  }
+}
+
+function buildPresetAvatar(index) {
+  const theme = BIBLE_AVATAR_THEMES[index % BIBLE_AVATAR_THEMES.length];
+  const gradientId = `avatar-bg-${index}`;
+  const haloMarkup = theme.halo
+    ? `<ellipse cx="80" cy="22" rx="18" ry="7" fill="#fff6bf" stroke="${theme.outline}" stroke-width="2.6" />`
+    : "";
+  const faceMarkup = theme.outfit === "armor"
+    ? ""
+    : `
+      <ellipse cx="69" cy="61" rx="4.3" ry="5.4" fill="${theme.outline}" />
+      <ellipse cx="91" cy="61" rx="4.3" ry="5.4" fill="${theme.outline}" />
+      <ellipse cx="61" cy="72" rx="6" ry="3.4" fill="#ffb6b6" opacity="0.75" />
+      <ellipse cx="99" cy="72" rx="6" ry="3.4" fill="#ffb6b6" opacity="0.75" />
+      <path d="M75 79 C77 82 83 82 85 79" fill="none" stroke="${theme.outline}" stroke-width="2.6" stroke-linecap="round" />
+    `;
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="${escapeAttribute(theme.label)}">
+      <defs>
+        <linearGradient id="${gradientId}" x1="18%" y1="10%" x2="82%" y2="100%">
+          <stop offset="0%" stop-color="${theme.bg[0]}" />
+          <stop offset="100%" stop-color="${theme.bg[1]}" />
+        </linearGradient>
+      </defs>
+      <title>${escapeAttribute(`${theme.label} avatar`)}</title>
+      <rect width="160" height="160" rx="38" fill="url(#${gradientId})" />
+      <circle cx="80" cy="78" r="55" fill="rgba(255,255,255,0.42)" />
+      <circle cx="118" cy="34" r="7" fill="rgba(255,255,255,0.42)" />
+      <circle cx="42" cy="44" r="5" fill="rgba(255,255,255,0.3)" />
+      <ellipse cx="80" cy="142" rx="32" ry="8" fill="rgba(64,32,28,0.14)" />
+      ${getChibiBackPropMarkup(theme)}
+      ${getChibiWingMarkup(theme)}
+      ${haloMarkup}
+      <g>
+        <circle cx="80" cy="58" r="30" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="3.2" />
+        ${theme.outfit === "armor" ? getChibiHeadwearMarkup(theme) : getChibiHairMarkup(theme)}
+        ${faceMarkup}
+        ${getChibiBeardMarkup(theme)}
+        ${theme.outfit === "armor" ? `<path d="M64 70 H96" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" opacity="0.35" />` : ""}
+        ${theme.headwear === "crown" ? getChibiHeadwearMarkup(theme) : ""}
+      </g>
+      ${getChibiBodyMarkup(theme)}
+      <path d="M68 132 V144" stroke="${theme.skin}" stroke-width="9" stroke-linecap="round" />
+      <path d="M92 132 V144" stroke="${theme.skin}" stroke-width="9" stroke-linecap="round" />
+      <path d="M63 145 H73" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" />
+      <path d="M87 145 H97" stroke="${theme.outline}" stroke-width="3" stroke-linecap="round" />
+      ${getChibiFrontPropMarkup(theme)}
+      <circle cx="53" cy="108" r="5" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="2.8" />
+      <circle cx="107" cy="108" r="5" fill="${theme.skin}" stroke="${theme.outline}" stroke-width="2.8" />
+      <rect x="11" y="11" width="138" height="138" rx="34" fill="none" stroke="rgba(255,255,255,0.58)" stroke-width="2" />
+    </svg>
+  `;
+
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
+
+function showStatus(kind, message) {
+  profileStatus.className = `status-message ${kind}`;
+  profileStatus.textContent = message;
+}
+
+function clearStatus() {
+  profileStatus.className = "status-message";
+  profileStatus.textContent = "";
+}
+
+function getWorkingDisplayName() {
+  return displayNameInput.value.trim() || currentUser?.displayName || "User";
+}
+
+function renderHeroAvatar() {
+  if (currentAvatarUrl) {
+    heroAvatar.innerHTML = `<img src="${currentAvatarUrl}" alt="${escapeAttribute(getWorkingDisplayName())}" referrerpolicy="no-referrer">`;
+    const image = heroAvatar.querySelector("img");
+    image.addEventListener("error", () => {
+      heroAvatar.innerHTML = `<div class="hero-avatar-fallback">${getInitials(getWorkingDisplayName())}</div>`;
+    }, { once: true });
+    return;
+  }
+
+  heroAvatar.innerHTML = `<div class="hero-avatar-fallback">${getInitials(getWorkingDisplayName())}</div>`;
+}
+
+function renderAvatarGrid() {
+  presetAvatarUrls = Array.from({ length: 12 }, (_, index) => buildPresetAvatar(index));
+
+  if (selectedPresetIndex !== null) {
+    currentAvatarUrl = presetAvatarUrls[selectedPresetIndex];
+  }
+
+  avatarGrid.innerHTML = presetAvatarUrls.map((avatarUrl, index) => `
+    <button class="avatar-option${avatarUrl === currentAvatarUrl ? " selected" : ""}" type="button" data-avatar-index="${index}" aria-pressed="${avatarUrl === currentAvatarUrl ? "true" : "false"}" aria-label="Choose ${BIBLE_AVATAR_THEMES[index].label}" title="${BIBLE_AVATAR_THEMES[index].label}">
+      <span class="avatar-option-inner">
+        <span class="avatar-option-preview">
+          <img src="${avatarUrl}" alt="${BIBLE_AVATAR_THEMES[index].label} avatar">
+        </span>
+        <span class="avatar-option-copy">
+          <span class="avatar-option-label">${BIBLE_AVATAR_THEMES[index].label}</span>
+          <span class="avatar-option-subtitle">${getAvatarThemeSubtitle(BIBLE_AVATAR_THEMES[index])}</span>
+        </span>
+      </span>
+    </button>
+  `).join("");
+
+  avatarGrid.querySelectorAll(".avatar-option").forEach((button) => {
+    button.addEventListener("click", () => {
+      selectedPresetIndex = Number(button.dataset.avatarIndex);
+      currentAvatarUrl = presetAvatarUrls[selectedPresetIndex];
+      renderAvatarGrid();
+      renderHeroAvatar();
+      clearStatus();
+    });
+  });
+}
+
+function populateProfile(user) {
+  currentUser = user;
+  currentAvatarUrl = user.avatarUrl || "";
+  displayNameInput.value = user.displayName || "";
+  const baselinePresetUrls = Array.from({ length: 12 }, (_, index) => buildPresetAvatar(index));
+  selectedPresetIndex = baselinePresetUrls.findIndex((avatarUrl) => avatarUrl === currentAvatarUrl);
+  if (selectedPresetIndex < 0) {
+    selectedPresetIndex = null;
+  }
+  heroName.textContent = user.displayName || "Profile";
+  heroRole.textContent = user.isAdmin ? "Admin Account" : "Member Account";
+  heroEmail.textContent = getEmail(user) || "No email";
+  infoEmail.textContent = getEmail(user) || "-";
+  infoRole.textContent = user.isAdmin ? "Administrator" : "Member";
+  infoProvider.textContent = user.provider === "google" ? "Google Sign-In" : "Email And Password";
+  infoGender.textContent = user.isAdmin ? "Neutral admin account" : (user.gender || "Not set");
+  adminShortcut.hidden = !user.isAdmin;
+  renderAvatarGrid();
+  renderHeroAvatar();
+}
+
+async function loadProfile() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/auth/user"), {
+      credentials: "include"
+    });
+
+    if (!response.ok) {
+      window.location.href = "/index.html";
+      return;
+    }
+
+    const user = await response.json();
+    populateProfile(user);
+    loadingState.style.display = "none";
+    loadingState.hidden = true;
+    profileApp.style.display = "block";
+    profileApp.hidden = false;
+  } catch (error) {
+    console.error("Could not load profile:", error);
+    loadingState.textContent = "Could not load your profile right now.";
+  }
+}
+
+displayNameInput.addEventListener("input", () => {
+  heroName.textContent = getWorkingDisplayName();
+  renderAvatarGrid();
+  renderHeroAvatar();
+  clearStatus();
+});
+
+profileForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  clearStatus();
+  saveProfileButton.disabled = true;
+  saveProfileButton.textContent = "Saving...";
+
+  try {
+    const response = await fetch(buildBackendUrl("/api/profile"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        displayName: displayNameInput.value.trim(),
+        avatarUrl: currentAvatarUrl
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "Could not update your profile right now.");
+    }
+
+    populateProfile(result.user);
+    showStatus("success", result.message || "Profile updated successfully.");
+  } catch (error) {
+    showStatus("error", error.message || "Could not update your profile right now.");
+  } finally {
+    saveProfileButton.disabled = false;
+    saveProfileButton.textContent = "Save Changes";
+  }
+});
+
+avatarUploadInput.addEventListener("change", () => {
+  const file = avatarUploadInput.files?.[0];
+  selectedFileName.textContent = file ? file.name : "No file chosen";
+  clearStatus();
+});
+
+uploadAvatarButton.addEventListener("click", async () => {
+  const file = avatarUploadInput.files?.[0];
+  if (!file) {
+    showStatus("error", "Choose an image first.");
+    return;
+  }
+
+  clearStatus();
+  uploadAvatarButton.disabled = true;
+  uploadAvatarButton.textContent = "Uploading...";
+
+  try {
+    const formData = new FormData();
+    formData.append("avatar", file);
+
+    const response = await fetch(buildBackendUrl("/api/profile/avatar"), {
+      method: "POST",
+      body: formData,
+      credentials: "include"
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "Could not upload your profile photo right now.");
+    }
+
+    avatarUploadInput.value = "";
+    selectedFileName.textContent = "No file chosen";
+    selectedPresetIndex = null;
+    populateProfile(result.user);
+    showStatus("success", result.message || "Profile photo updated successfully.");
+  } catch (error) {
+    showStatus("error", error.message || "Could not upload your profile photo right now.");
+  } finally {
+    uploadAvatarButton.disabled = false;
+    uploadAvatarButton.textContent = "Upload Photo";
+  }
+});
+
+themeToggleButton.addEventListener("click", () => {
+  const currentTheme = document.documentElement.getAttribute("data-theme");
+  const nextTheme = currentTheme === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", nextTheme);
+  localStorage.setItem("theme", nextTheme);
+});
+
+logoutButton.addEventListener("click", async () => {
+  try {
+    await fetch(buildBackendUrl("/api/auth/logout"), {
+      method: "GET",
+      credentials: "include"
+    });
+  } finally {
+    window.location.href = "/index.html";
+  }
+});
+
+loadProfile();
+</script>
+</body>
+</html>
