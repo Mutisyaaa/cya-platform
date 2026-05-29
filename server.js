@@ -603,9 +603,14 @@ function getAppBaseUrl(req) {
   return `${req.protocol}://${req.get("host")}`;
 }
 
+function getApiBaseUrl(req) {
+  return `${req.protocol}://${req.get("host")}`;
+}
+
 function buildPasswordResetUrl(req, token) {
   const resetUrl = new URL("/reset-password.html", getAppBaseUrl(req));
   resetUrl.searchParams.set("token", token);
+  resetUrl.searchParams.set("apiOrigin", getApiBaseUrl(req));
   return resetUrl.toString();
 }
 
@@ -809,6 +814,14 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.get("/runtime-config.js", (req, res) => {
+  const apiOrigin = (process.env.API_ORIGIN || "").trim().replace(/\/+$/, "");
+  const runtimeConfig = `window.__CYA_RUNTIME_CONFIG__ = ${JSON.stringify({ apiOrigin })};\n`;
+
+  res.type("application/javascript");
+  res.set("Cache-Control", "no-store");
+  res.send(runtimeConfig);
+});
 app.use(express.static(clientDir));
 app.use("/uploads", express.static(uploadsDir));
 

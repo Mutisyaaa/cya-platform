@@ -6,6 +6,8 @@
 <title>Blog | AIC Ziwani</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 
+<script src="runtime-config.js"></script>
+<script src="backend-origin.js"></script>
 <script>
   (function() {
     const { protocol, hostname, port, pathname, search, hash } = window.location;
@@ -394,20 +396,13 @@ footer {
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
 
 function getBackendOrigin() {
-  const { protocol, hostname, port, origin } = window.location;
-  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
-
-  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
-    return origin;
-  }
-
-  return LOCAL_BACKEND_ORIGIN;
+  return window.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
 }
 
 const backendOrigin = getBackendOrigin();
 
 function buildBackendUrl(path) {
-  return new URL(path, backendOrigin).toString();
+  return window.buildBackendUrl(path, backendOrigin);
 }
 
 async function loadBlogs() {

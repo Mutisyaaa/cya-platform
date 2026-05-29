@@ -52,6 +52,8 @@ This combination is the most sustainable free setup for the current codebase bec
 3. Render should pick up `render.yaml`.
 4. Fill in these environment variables:
    - `APP_ORIGIN`
+   - `CORS_ALLOWED_ORIGINS` (if your frontend is on a different origin)
+   - `API_ORIGIN` (if your frontend is on a different origin)
    - `DATABASE_URL`
    - `ADMIN_EMAIL` (optional bootstrap admin email)
    - `GOOGLE_CLIENT_ID`
@@ -96,6 +98,22 @@ If local SMTP fails with a certificate-chain error caused by antivirus, a corpor
 - `SMTP_TLS_REJECT_UNAUTHORIZED=false`
 
 Use that only as a local workaround. Keep normal TLS verification enabled in production.
+
+## Separate frontend/backend hosting
+
+If your website pages are served from a different domain than the API, set:
+
+- `APP_ORIGIN` to your frontend URL
+- `API_ORIGIN` to your backend URL
+- `CORS_ALLOWED_ORIGINS` to your frontend URL
+
+Example:
+
+- `APP_ORIGIN=https://cya-frontend.onrender.com`
+- `API_ORIGIN=https://cya-platform-api.onrender.com`
+- `CORS_ALLOWED_ORIGINS=https://cya-frontend.onrender.com`
+
+The frontend loads `runtime-config.js` to discover `API_ORIGIN`, and reset links also include the backend origin automatically.
 
 ## Google login callback
 
