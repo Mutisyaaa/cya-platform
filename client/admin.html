@@ -440,6 +440,16 @@ button.submit:hover {
   min-height: 66px;
 }
 
+.entity-rsvp-list {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.entity-rsvp-list strong {
+  color: var(--text-primary);
+}
+
 .entity-actions {
   display: flex;
   justify-content: space-between;
@@ -501,6 +511,18 @@ button.submit:hover {
 .delete-btn:hover {
   background: #ef4444;
   color: white;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(200, 16, 46, 0.12);
+  color: var(--primary-red);
 }
 
 .data-table {
@@ -708,6 +730,7 @@ button.submit:hover {
   <button onclick="showSection('ministries')">Ministries</button>
   <button onclick="showSection('events')">Events</button>
   <button onclick="showSection('users')">Users</button>
+  <button onclick="window.location.href='/'">Back To Site</button>
   <button onclick="logout()">Logout</button>
 </div>
 
@@ -1159,6 +1182,10 @@ async function loadEvents() {
         const description = item.description || 'No event description added yet.';
         const fellowshipLabel = item.fellowship_name || 'General event';
         const rsvpCount = parseInt(item.rsvp_count, 10) || 0;
+        const rsvpUserNames = Array.isArray(item.rsvp_user_names) ? item.rsvp_user_names : [];
+        const rsvpSummary = rsvpUserNames.length
+          ? rsvpUserNames.join(', ')
+          : 'No RSVPs yet';
 
         return `
           <article class="entity-card">
@@ -1179,6 +1206,9 @@ async function loadEvents() {
                 <span>Audience</span>
                 <span class="${targetMeta.className}">${targetMeta.label}</span>
               </div>
+            </div>
+            <div class="entity-rsvp-list">
+              <strong>RSVP Users:</strong> ${rsvpSummary}
             </div>
             <div class="entity-actions">
               <span class="grid-item-meta">${rsvpCount} RSVP${rsvpCount === 1 ? '' : 's'}</span>
@@ -1264,6 +1294,7 @@ async function loadUsers() {
             <th>Name</th>
             <th>Email</th>
             <th>Provider</th>
+            <th>Role</th>
             <th>Joined</th>
           </tr>
         </thead>
@@ -1274,6 +1305,7 @@ async function loadUsers() {
           <td>${item.name}</td>
           <td>${item.email}</td>
           <td>${item.google_id ? 'Google' : 'Local'}</td>
+          <td><span class="admin-badge">${item.is_admin ? 'Admin' : 'Member'}</span></td>
           <td>${new Date(item.created_at).toLocaleDateString()}</td>
         </tr>
       `).join('');

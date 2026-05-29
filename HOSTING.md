@@ -53,7 +53,7 @@ This combination is the most sustainable free setup for the current codebase bec
 4. Fill in these environment variables:
    - `APP_ORIGIN`
    - `DATABASE_URL`
-   - `ADMIN_EMAIL`
+   - `ADMIN_EMAIL` (optional bootstrap admin email)
    - `GOOGLE_CLIENT_ID`
    - `GOOGLE_CLIENT_SECRET`
    - `APP_NAME`

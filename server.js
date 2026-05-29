@@ -27,6 +27,7 @@ const schemaBootstrapQuery = `
     password_hash VARCHAR(255), 
     google_id VARCHAR(255) UNIQUE, 
     gender VARCHAR(50),
+    is_admin BOOLEAN NOT NULL DEFAULT FALSE,
     avatar_url TEXT, 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -129,6 +130,9 @@ const schemaBootstrapQuery = `
     used_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
+
+  ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE;
 
   ALTER TABLE gallery
     ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50),
@@ -256,6 +260,7 @@ async function initializeDatabase() {
   try {
     await pool.query(schemaBootstrapQuery);
     await pool.query(legacyLikesSchemaRepairQuery);
+    await syncConfiguredAdminAccess();
   } catch (err) {
     console.error("Could not initialize database schema:", err);
     throw err;
@@ -314,17 +319,7 @@ passport.deserializeUser(async (id, done) => {
     if (result.rows.length === 0) {
       return done(null, false, { message: 'User not found.' });
     }
-    const dbUser = result.rows[0];
-    const user = {
-      id: dbUser.id,
-      displayName: dbUser.name,
-      emails: [{ value: dbUser.email }],
-      avatarUrl: dbUser.avatar_url,
-      gender: dbUser.gender,
-      provider: dbUser.google_id ? 'google' : 'local',
-      isAdmin: dbUser.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set consistently
-    };
-    return done(null, user);
+    return done(null, buildSessionUser(result.rows[0]));
   } catch (err) {
     return done(err);
   }
@@ -355,17 +350,10 @@ function ensureUserAuthenticated(req, res, next) {
 
 // New middleware for admin access
 function ensureAdmin(req, res, next) {
-  if (!process.env.ADMIN_EMAIL) {
-    console.error("ADMIN_EMAIL environment variable is not set. Admin access is disabled.");
-    return res.status(500).json({ error: "Server configuration error: Admin email not set." });
+  if (req.isAuthenticated() && req.user?.isAdmin) {
+    return next();
   }
 
-  if (req.isAuthenticated() && req.user) {
-    const userEmail = req.user.emails?.[0]?.value;
-    if (userEmail === process.env.ADMIN_EMAIL) {
-      return next(); // User is admin, proceed
-    }
-  }
   return res.status(403).json({ error: "Forbidden: You do not have administrative privileges." });
 }
 
@@ -428,6 +416,40 @@ function isGoogleAuthReady() {
 
 function getAuthUnavailableMessage() {
   return authInitError?.message || "Google auth is not available on this server.";
+}
+
+function buildSessionUser(dbUser) {
+  return {
+    id: dbUser.id,
+    displayName: dbUser.name,
+    emails: [{ value: dbUser.email }],
+    avatarUrl: dbUser.avatar_url,
+    gender: dbUser.gender,
+    provider: dbUser.google_id ? "google" : "local",
+    isAdmin: Boolean(dbUser.is_admin),
+  };
+}
+
+function isBootstrapAdminEmail(email) {
+  const configuredAdminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
+  return Boolean(configuredAdminEmail) && normalizeEmail(email) === configuredAdminEmail;
+}
+
+async function syncConfiguredAdminAccess() {
+  const adminEmail = normalizeEmail(process.env.ADMIN_EMAIL);
+
+  if (!adminEmail) {
+    return;
+  }
+
+  await pool.query(
+    `UPDATE users
+     SET is_admin = TRUE,
+         updated_at = CURRENT_TIMESTAMP
+     WHERE LOWER(email) = $1
+       AND is_admin = FALSE`,
+    [adminEmail]
+  );
 }
 
 function hasUsableEnvValue(value) {
@@ -587,12 +609,8 @@ function buildPasswordResetUrl(req, token) {
   return resetUrl.toString();
 }
 
-function isAdminEmail(email) {
-  return normalizeEmail(email) === normalizeEmail(process.env.ADMIN_EMAIL);
-}
-
 function getPostLoginRedirect(user, fallback = "/") {
-  if (isAdminEmail(user?.emails?.[0]?.value)) {
+  if (user?.isAdmin) {
     return "/admin.html";
   }
 
@@ -803,7 +821,7 @@ app.get("/api/auth/user", (req, res) => {
   if (req.isAuthenticated()) {
     return res.json({
       ...req.user,
-      needsGender: !req.user.gender,
+      needsGender: !req.user.isAdmin && !req.user.gender,
     });
   }
 
@@ -937,7 +955,7 @@ app.post("/api/fellowship/posts/:id/comments", ensureUserAuthenticated, async (r
 app.get("/api/users", ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, google_id, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, google_id, is_admin, created_at FROM users ORDER BY created_at DESC"
     );
     res.json(result.rows);
   } catch (err) {
@@ -971,8 +989,15 @@ function sendGalleryUploadResponse(req, res, statusCode, payload) {
 app.post("/api/auth/register", async (req, res) => {
   try {
     const { name, email, password, gender } = req.body;
-    if (!name || !email || !password || !gender) {
-      return res.status(400).json({ error: "Name, email, password, and gender are required." });
+    const isBootstrapAdmin = isBootstrapAdminEmail(email);
+    const normalizedGender = typeof gender === "string" ? gender.trim().toLowerCase() : "";
+
+    if (!name || !email || !password || (!isBootstrapAdmin && !normalizedGender)) {
+      return res.status(400).json({ error: isBootstrapAdmin ? "Name, email, and password are required." : "Name, email, password, and gender are required." });
+    }
+
+    if (normalizedGender && !isValidUserGender(normalizedGender)) {
+      return res.status(400).json({ error: "Please choose a valid gender." });
     }
 
     const userCheck = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
@@ -982,19 +1007,11 @@ app.post("/api/auth/register", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
-      "INSERT INTO users (name, email, password_hash, gender) VALUES ($1, $2, $3, $4) RETURNING id, name, email, gender",
-      [name, email, passwordHash, gender]
+      "INSERT INTO users (name, email, password_hash, gender, is_admin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+      [name, email, passwordHash, isBootstrapAdmin ? null : normalizedGender, isBootstrapAdmin]
     );
 
-    const row = result.rows[0];
-    const newUser = {
-      id: row.id,
-      displayName: row.name,
-      emails: [{ value: row.email }],
-      gender: row.gender,
-      provider: "local",
-      isAdmin: row.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set on registration
-    };
+    const newUser = buildSessionUser(result.rows[0]);
 
     req.login(newUser, (err) => {
       if (err) return res.status(500).json({ error: "Login failed after registration." });
@@ -1024,14 +1041,21 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(401).json({ error: "Invalid email or password." });
     }
 
-    const user = {
-      id: row.id,
-      displayName: row.name,
-      emails: [{ value: row.email }],
-      gender: row.gender,
-      provider: "local",
-      isAdmin: row.email === process.env.ADMIN_EMAIL // Ensure isAdmin is set on local login
-    };
+    if (!row.is_admin && isBootstrapAdminEmail(row.email)) {
+      const adminBootstrapResult = await pool.query(
+        `UPDATE users
+         SET is_admin = TRUE,
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1
+         RETURNING *`,
+        [row.id]
+      );
+      if (adminBootstrapResult.rows[0]) {
+        row.is_admin = adminBootstrapResult.rows[0].is_admin;
+      }
+    }
+
+    const user = buildSessionUser(row);
     req.login(user, (err) => {
       if (err) return res.status(500).json({ error: "Internal server error during login." });
       res.status(200).json({
@@ -1195,6 +1219,16 @@ app.post("/api/auth/reset-password", async (req, res) => {
 
 app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res) => {
   try {
+    if (req.user?.isAdmin) {
+      return res.status(200).json({
+        message: "Admin accounts can stay neutral.",
+        user: {
+          ...req.user,
+          needsGender: false,
+        },
+      });
+    }
+
     const normalizedGender = typeof req.body?.gender === "string"
       ? req.body.gender.trim().toLowerCase()
       : "";
@@ -1204,7 +1238,7 @@ app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res)
     }
 
     const userResult = await pool.query(
-      "SELECT id, name, email, gender, google_id, avatar_url FROM users WHERE id = $1",
+      "SELECT id, name, email, gender, google_id, avatar_url, is_admin FROM users WHERE id = $1",
       [req.user.id]
     );
 
@@ -1218,13 +1252,7 @@ app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res)
       return res.status(409).json({
         error: "Gender has already been set for this account.",
         user: {
-          id: userRow.id,
-          displayName: userRow.name,
-          emails: [{ value: userRow.email }],
-          avatarUrl: userRow.avatar_url,
-          gender: userRow.gender,
-          provider: userRow.google_id ? "google" : "local",
-          isAdmin: isAdminEmail(userRow.email),
+          ...buildSessionUser(userRow),
           needsGender: false,
         },
       });
@@ -1234,7 +1262,7 @@ app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res)
       `UPDATE users
        SET gender = $1, updated_at = CURRENT_TIMESTAMP
        WHERE id = $2
-       RETURNING id, name, email, gender, google_id, avatar_url`,
+       RETURNING id, name, email, gender, google_id, avatar_url, is_admin`,
       [normalizedGender, req.user.id]
     );
 
@@ -1244,13 +1272,7 @@ app.post("/api/auth/complete-profile", ensureUserAuthenticated, async (req, res)
     return res.status(200).json({
       message: "Profile updated successfully.",
       user: {
-        id: updatedUser.id,
-        displayName: updatedUser.name,
-        emails: [{ value: updatedUser.email }],
-        avatarUrl: updatedUser.avatar_url,
-        gender: updatedUser.gender,
-        provider: updatedUser.google_id ? "google" : "local",
-        isAdmin: isAdminEmail(updatedUser.email),
+        ...buildSessionUser(updatedUser),
         needsGender: false,
       },
     });
@@ -1479,9 +1501,29 @@ app.get("/api/events", async (req, res) => {
       );
     }
     
-    const events = result.rows.map(event => ({
-      ...event,
-      rsvp_count: parseInt(event.rsvp_count, 10)
+    const events = await Promise.all(result.rows.map(async (event) => {
+      let rsvpUserNames = [];
+
+      if (isAdminRequest) {
+        const rsvpUsersResult = await pool.query(
+          `SELECT COALESCE(NULLIF(TRIM(name), ''), SPLIT_PART(email, '@', 1)) AS display_name
+           FROM event_rsvps er
+           JOIN users u ON u.id = er.user_id
+           WHERE er.event_id = $1
+           ORDER BY er.created_at ASC`,
+          [event.id]
+        );
+
+        rsvpUserNames = rsvpUsersResult.rows
+          .map((row) => row.display_name)
+          .filter(Boolean);
+      }
+
+      return {
+        ...event,
+        rsvp_count: parseInt(event.rsvp_count, 10),
+        rsvp_user_names: rsvpUserNames,
+      };
     }));
     res.json(events);
   } catch (err) {

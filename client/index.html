@@ -268,7 +268,8 @@ nav {
   word-break: break-word;
 }
 
-.profile-menu button {
+.profile-menu button,
+.profile-menu-link {
   width: 100%;
   border: none;
   background: var(--button-bg);
@@ -279,9 +280,15 @@ nav {
   cursor: pointer;
   transition: 0.2s ease;
   margin-top: 8px;
+  font-size: 14px;
+  font-family: inherit;
+  text-decoration: none;
+  text-align: left;
+  line-height: 1;
 }
 
-.profile-menu button:hover {
+.profile-menu button:hover,
+.profile-menu-link:hover {
   background: var(--button-hover-bg);
   color: var(--button-hover-text);
 }
@@ -616,6 +623,29 @@ nav {
   box-shadow: 0 12px 30px var(--shadow-color-light);
   max-width: 600px;
   margin: 50px auto 0;
+}
+
+.contact-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.contact-item-icon {
+  width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-red);
+  flex: 0 0 auto;
+}
+
+.contact-item-icon svg {
+  width: 100%;
+  height: 100%;
 }
 
 .social-links {
@@ -1086,8 +1116,23 @@ footer {
 <section id="contact" class="section light">
   <h2>Contact Us</h2>
   <div class="contact-box">
-    <p>Email: info@aicziwani.org</p>
-    <p>Phone: +254 700 000 000</p>
+    <p class="contact-item">
+      <span class="contact-item-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 6h16v12H4z"></path>
+          <path d="m4 7 8 6 8-6"></path>
+        </svg>
+      </span>
+      <span>Email: info@aicziwani.org</span>
+    </p>
+    <p class="contact-item">
+      <span class="contact-item-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7l.5 3.2a2 2 0 0 1-.6 1.8l-1.3 1.3a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.8-.6l3.2.5a2 2 0 0 1 1.7 2Z"></path>
+        </svg>
+      </span>
+      <span>Phone: +254 700 000 000</span>
+    </p>
     <div class="social-links">
       <a class="social-link" href="https://www.instagram.com/aic_ziwani_youth/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">
         <span class="social-icon" aria-hidden="true">
@@ -1236,13 +1281,30 @@ function isAdminUser(user) {
   return Boolean(user?.isAdmin);
 }
 
-function redirectAdminToDashboardAfterLogin(user) {
-  if (!isAdminUser(user)) {
-    return false;
-  }
+async function syncAuthState() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/auth/user"), {
+      credentials: "include"
+    });
 
-  window.location.href = "admin.html";
-  return true;
+    if (!response.ok) {
+      renderLoggedOut();
+      return null;
+    }
+
+    const user = await response.json();
+    if (user && user.displayName) {
+      renderLoggedIn(user);
+      return user;
+    }
+
+    renderLoggedOut();
+    return null;
+  } catch (error) {
+    console.error("Could not load auth state:", error);
+    renderLoggedOut();
+    return null;
+  }
 }
 
 function getFallbackAvatarMarkup(name) {
@@ -1290,6 +1352,9 @@ function renderLoggedIn(user) {
   const displayName = user.displayName || "My Profile";
   const email = user.emails && user.emails[0] ? user.emails[0].value : "";
   const photo = getAvatarUrl(user);
+  const adminLinkMarkup = isAdminUser(user)
+    ? `<button id="adminDashboardButton" class="profile-menu-link" type="button">Admin Dashboard</button>`
+    : "";
   const avatarMarkup = photo
     ? `<img class="profile-avatar" src="${photo}" alt="${displayName}" referrerpolicy="no-referrer">`
     : getFallbackAvatarMarkup(displayName);
@@ -1301,6 +1366,7 @@ function renderLoggedIn(user) {
     <div class="profile-menu">
       <div class="profile-menu-name">${displayName}</div>
       <div class="profile-menu-email">${email}</div>
+      ${adminLinkMarkup}
       <button id="themeToggleBtn" type="button">Toggle Theme</button>
       <button id="logoutButton" type="button">Logout</button>
     </div>
@@ -1310,6 +1376,7 @@ function renderLoggedIn(user) {
   const menu = authSlot.querySelector(".profile-menu");
   const logoutButton = document.getElementById("logoutButton");
   const themeToggleBtn = document.getElementById("themeToggleBtn");
+  const adminDashboardButton = document.getElementById("adminDashboardButton");
   const avatar = authSlot.querySelector(".profile-avatar");
 
   if (avatar) {
@@ -1330,6 +1397,9 @@ function renderLoggedIn(user) {
   });
 
   themeToggleBtn.addEventListener("click", toggleTheme);
+  adminDashboardButton?.addEventListener("click", () => {
+    window.location.href = "admin.html";
+  });
 
   logoutButton.addEventListener("click", async () => {
     try {
@@ -1407,7 +1477,7 @@ function closeForgotPasswordModal() {
 }
 
 function shouldPromptForGender(user) {
-  return Boolean(user?.displayName) && !user?.gender;
+  return Boolean(user?.displayName) && !user?.isAdmin && !user?.gender;
 }
 
 function openGenderPrompt() {
@@ -1488,8 +1558,6 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       closeAuthModal();
       if (result.redirectTo) {
         window.location.href = result.redirectTo;
-      } else if (redirectAdminToDashboardAfterLogin(result.user)) {
-        return;
       } else {
         window.location.reload();
       }
@@ -1706,27 +1774,9 @@ async function loadRecentBlogs() {
 }
 
 async function initializePage() {
-  try {
-    const response = await fetch(buildBackendUrl("/api/auth/user"), {
-      credentials: "include"
-    });
-
-    if (response.ok) {
-      const user = await response.json();
-      if (user && user.displayName) {
-        renderLoggedIn(user);
-        if (shouldPromptForGender(user)) {
-          openGenderPrompt();
-        }
-      } else {
-        renderLoggedOut();
-      }
-    } else {
-      renderLoggedOut();
-    }
-  } catch (error) {
-    console.error("Could not load auth state:", error);
-    renderLoggedOut();
+  const user = await syncAuthState();
+  if (user && shouldPromptForGender(user)) {
+    openGenderPrompt();
   }
 
   await loadHeroContent();
@@ -1734,6 +1784,9 @@ async function initializePage() {
 }
 
 document.addEventListener('DOMContentLoaded', initializePage);
+window.addEventListener('pageshow', () => {
+  syncAuthState();
+});
 </script>
 <script src="navbar.js"></script>
 

@@ -10,6 +10,23 @@ function getAvatarUrl(profile) {
   );
 }
 
+function buildSessionUser(user) {
+  return {
+    id: user.id,
+    displayName: user.name,
+    emails: [{ value: user.email }],
+    avatarUrl: user.avatar_url,
+    gender: user.gender,
+    provider: user.google_id ? "google" : "local",
+    isAdmin: Boolean(user.is_admin),
+  };
+}
+
+function isBootstrapAdminEmail(email) {
+  const configuredAdminEmail = String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
+  return Boolean(configuredAdminEmail) && String(email || "").trim().toLowerCase() === configuredAdminEmail;
+}
+
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -33,25 +50,24 @@ async (accessToken, refreshToken, profile, done) => {
       if (!user.google_id) {
         updatedAvatarUrl = user.avatar_url || getAvatarUrl(profile);
         await pool.query("UPDATE users SET google_id = $1, avatar_url = $2 WHERE id = $3", [googleId, updatedAvatarUrl, user.id]);
+        user.google_id = googleId;
+        user.avatar_url = updatedAvatarUrl;
       }
-      return done(null, { id: user.id, displayName: user.name, emails: [{ value: user.email }], avatarUrl: updatedAvatarUrl, gender: user.gender, provider: 'google', isAdmin: user.email === process.env.ADMIN_EMAIL });
+
+      if (!user.is_admin && isBootstrapAdminEmail(user.email)) {
+        await pool.query("UPDATE users SET is_admin = TRUE, updated_at = CURRENT_TIMESTAMP WHERE id = $1", [user.id]);
+        user.is_admin = true;
+      }
+
+      return done(null, buildSessionUser(user));
     } else {
       // User not found, create a new one.
       const avatarUrl = getAvatarUrl(profile);
       const newUserResult = await pool.query(
-        "INSERT INTO users (name, email, google_id, avatar_url) VALUES ($1, $2, $3, $4) RETURNING *",
-        [displayName, email, googleId, avatarUrl]
+        "INSERT INTO users (name, email, google_id, avatar_url, is_admin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
+        [displayName, email, googleId, avatarUrl, isBootstrapAdminEmail(email)]
       );
-      const newUser = newUserResult.rows[0];
-      return done(null, {
-        id: newUser.id,
-        displayName: newUser.name,
-        emails: [{ value: newUser.email }],
-        gender: newUser.gender, // This will be null for Google sign-ups initially
-        isAdmin: newUser.email === process.env.ADMIN_EMAIL,
-        avatarUrl: newUser.avatar_url,
-        provider: 'google'
-      });
+      return done(null, buildSessionUser(newUserResult.rows[0]));
     }
   } catch (err) {
     console.error("Error in Google OAuth strategy:", err);
