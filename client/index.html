@@ -1020,10 +1020,25 @@ footer {
     margin-top: 32px;
   }
 
+  .blog-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
   .card,
   .blog-card {
     width: 100%;
     padding: 24px;
+  }
+
+  .blog-card {
+    padding: 18px 14px;
+  }
+
+  .blog-card h3 {
+    font-size: 18px;
+    line-height: 1.25;
   }
 
   .contact-box {
@@ -1043,6 +1058,12 @@ footer {
 
   footer {
     padding: 24px 16px;
+  }
+}
+
+@media (max-width: 420px) {
+  .blog-cards {
+    grid-template-columns: 1fr;
   }
 }
 </style>

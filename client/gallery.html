@@ -319,33 +319,68 @@ nav {
   margin-top: 20px;
   display: flex;
   align-items: center;
-  gap: 15px;
+  flex-wrap: wrap;
+  gap: 12px;
   border-top: 1px solid var(--border-color);
   padding-top: 20px;
 }
 
-#likeButton {
-  background: var(--button-bg);
+.action-button {
   border: 1px solid var(--button-border);
-  padding: 10px 20px;
+  background: var(--button-bg);
+  color: var(--text-primary);
+  min-width: 52px;
+  height: 52px;
+  padding: 0 16px;
   border-radius: 999px;
   cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-#likeButton:hover {
+.action-button:hover {
   background: var(--button-hover-bg);
+  transform: translateY(-1px);
 }
 
-#likeButton:disabled {
+.action-button:disabled {
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-#likeCount {
-  font-weight: 600;
-  color: var(--text-secondary);
+.action-button.is-active {
+  background: rgba(200, 16, 46, 0.12);
+  border-color: rgba(200, 16, 46, 0.36);
+  color: var(--primary-red);
+}
+
+.action-icon {
+  width: 21px;
+  height: 21px;
+  display: inline-flex;
+}
+
+.action-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.action-button.is-active .action-icon svg.fill-on-active {
+  fill: currentColor;
+}
+
+.action-count {
+  font-weight: 700;
+  font-size: 14px;
+  color: inherit;
 }
 
 .comments-section {
@@ -420,6 +455,123 @@ nav {
   line-height: 1.6;
 }
 
+.comment.is-reply {
+  margin-top: 12px;
+  margin-bottom: 0;
+}
+
+.comment-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.comment-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}
+
+.comment-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.comment-like-btn,
+.reply-toggle-btn,
+.reply-collapse-btn,
+.reply-cancel-btn {
+  border: none;
+  background: transparent;
+  color: var(--primary-red);
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.comment-like-btn {
+  color: var(--text-secondary);
+}
+
+.comment-like-btn.is-active {
+  color: var(--primary-red);
+}
+
+.comment-like-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.comment-like-btn .action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.comment-like-count {
+  font-size: 13px;
+  color: inherit;
+}
+
+.reply-toggle-btn:hover,
+.reply-collapse-btn:hover,
+.reply-cancel-btn:hover {
+  color: var(--dark-red);
+}
+
+.comment-children {
+  margin-top: 12px;
+  padding-left: 18px;
+  border-left: 2px solid var(--border-color);
+  display: grid;
+  gap: 12px;
+}
+
+.reply-form {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+
+.reply-form textarea {
+  width: 100%;
+  min-height: 88px;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 15px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  resize: vertical;
+}
+
+.reply-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.reply-submit-btn {
+  border: none;
+  background: var(--primary-red);
+  color: var(--text-on-primary);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reply-submit-btn:hover {
+  background: var(--dark-red);
+}
+
 /* FOOTER */
 footer {
   background: #1e1e1e;
@@ -489,12 +641,17 @@ footer {
   }
 
   .gallery-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .gallery-item img {
-    height: 220px;
+    height: 170px;
+  }
+
+  .gallery-title {
+    padding: 8px;
+    font-size: 12px;
   }
 
   .modal-overlay {
@@ -519,17 +676,39 @@ footer {
   }
 
   .post-actions {
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .action-button {
+    width: auto;
+    min-width: 44px;
+    height: 44px;
+    padding: 0 12px;
+    gap: 6px;
+  }
+
+  .action-icon {
+    width: 18px;
+    height: 18px;
+  }
+
+  .action-count {
+    font-size: 13px;
+  }
+
+  #commentForm button {
+    width: 100%;
+    align-self: stretch;
+  }
+
+  .comment-header {
     flex-direction: column;
     align-items: flex-start;
   }
 
-  #likeButton,
-  #commentForm button {
-    width: 100%;
-  }
-
-  #commentForm button {
-    align-self: stretch;
+  .comment-children {
+    padding-left: 14px;
   }
 
   footer {
@@ -537,6 +716,12 @@ footer {
     padding: 24px 16px;
   }
 
+}
+
+@media (max-width: 420px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>
 <link rel="stylesheet" href="mobile-navbar.css">
@@ -566,6 +751,7 @@ footer {
     <a href="gallery.html" class="active">Gallery</a>
     <a href="blog.html">Blog</a>
     <a href="index.html#contact">Contact</a>
+    <div id="authSlot" class="auth-slot"></div>
   </div>
 </nav>
 
@@ -695,6 +881,48 @@ document.addEventListener('keydown', (e) => {
 function closeGalleryModal() {
   modal.classList.remove('open');
   modalBody.innerHTML = '';
+  const currentUrl = new URL(window.location.href);
+  if (currentUrl.searchParams.has('item')) {
+    currentUrl.searchParams.delete('item');
+    window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+  }
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function getHeartIconMarkup() {
+  return `
+    <svg class="fill-on-active" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 20s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 10c0 5.65-7 10-7 10Z"></path>
+    </svg>
+  `;
+}
+
+function getBookmarkIconMarkup() {
+  return `
+    <svg class="fill-on-active" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M7 4h10a1 1 0 0 1 1 1v15l-6-3-6 3V5a1 1 0 0 1 1-1Z"></path>
+    </svg>
+  `;
+}
+
+function getActionButtonsMarkup(likeCount) {
+  return `
+    <button id="likeButton" class="action-button" type="button" title="Like this item" aria-label="Like this item">
+      <span class="action-icon">${getHeartIconMarkup()}</span>
+      <span id="likeCount" class="action-count">${likeCount}</span>
+    </button>
+    <button id="saveButton" class="action-button" type="button" title="Save this item" aria-label="Save this item">
+      <span class="action-icon">${getBookmarkIconMarkup()}</span>
+    </button>
+  `;
 }
 
 async function openGalleryModal(itemId) {
@@ -716,10 +944,9 @@ async function openGalleryModal(itemId) {
 
     modalBody.innerHTML = `
       <div class="media-container">${mediaMarkup}</div>
-      <h3>${item.title}</h3>
+      <h3>${escapeHtml(item.title)}</h3>
       <div class="post-actions">
-        <button id="likeButton" title="Like this item">❤️ Like</button>
-        <span id="likeCount">${item.likes} likes</span>
+        ${getActionButtonsMarkup(item.likes)}
       </div>
       <div class="comments-section">
         <h4><span id="commentCount">${item.comments.length}</span> Comments</h4>
@@ -732,19 +959,25 @@ async function openGalleryModal(itemId) {
       </div>
     `;
 
-    renderGalleryComments(item.comments);
+    renderGalleryComments(item.comments, item.id);
 
+    const saveButton = document.getElementById('saveButton');
     const likeButton = document.getElementById('likeButton');
     const commentForm = document.getElementById('commentForm');
     const authorNameInput = document.getElementById('authorName');
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set('item', String(item.id));
+    window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 
     if (!currentUser) {
+      saveButton.disabled = true;
       likeButton.disabled = true;
-      likeButton.textContent = 'Login to like';
+      saveButton.title = 'Login to save';
+      likeButton.title = 'Login to like';
 
       if (commentForm) {
         const loginPrompt = document.createElement('p');
-        loginPrompt.textContent = 'Please log in from the home page to like this item or leave a comment.';
+        loginPrompt.textContent = 'Please log in from the home page to save, like, or comment on this item.';
         commentForm.replaceWith(loginPrompt);
       }
     } else {
@@ -753,12 +986,10 @@ async function openGalleryModal(itemId) {
         authorNameInput.readOnly = true;
       }
 
-      if (item.userHasLiked) {
-        likeButton.disabled = true;
-        likeButton.textContent = 'Liked!';
-      } else {
-        likeButton.addEventListener('click', () => handleGalleryLike(item.id));
-      }
+      setGallerySaveButtonState(saveButton, item.userHasSaved);
+      saveButton.addEventListener('click', () => handleGallerySaveToggle(item.id));
+      setGalleryLikeButtonState(likeButton, item.userHasLiked, item.likes);
+      likeButton.addEventListener('click', () => handleGalleryLikeToggle(item.id));
 
       if (commentForm) {
         commentForm.addEventListener('submit', (e) => handleGalleryCommentSubmit(e, item.id));
@@ -770,7 +1001,206 @@ async function openGalleryModal(itemId) {
   }
 }
 
-function renderGalleryComments(comments) {
+function setGallerySaveButtonState(button, isSaved) {
+  if (!button) return;
+  button.dataset.saved = isSaved ? 'true' : 'false';
+  button.classList.toggle('is-active', isSaved);
+  button.title = isSaved ? 'Remove saved item' : 'Save this item';
+  button.setAttribute('aria-label', button.title);
+}
+
+function setGalleryLikeButtonState(button, isLiked, likeCount) {
+  if (!button) return;
+  button.dataset.liked = isLiked ? 'true' : 'false';
+  button.classList.toggle('is-active', isLiked);
+  button.title = isLiked ? 'Unlike this item' : 'Like this item';
+  button.setAttribute('aria-label', button.title);
+
+  const count = button.querySelector('#likeCount');
+  if (count) {
+    count.textContent = String(likeCount);
+  }
+}
+
+function buildCommentGroups(comments) {
+  const groups = new Map();
+
+  comments.forEach((comment) => {
+    const key = comment.parent_comment_id ?? 0;
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push(comment);
+  });
+
+  return groups;
+}
+
+function createGalleryReplyForm(itemId, parentCommentId) {
+  const form = document.createElement('form');
+  form.className = 'reply-form';
+  form.innerHTML = `
+    <textarea placeholder="Write a reply..." required></textarea>
+    <div class="reply-form-actions">
+      <button class="reply-submit-btn" type="submit">Reply</button>
+      <button class="reply-cancel-btn" type="button">Cancel</button>
+    </div>
+  `;
+
+  form.addEventListener('submit', (event) => handleGalleryCommentSubmit(event, itemId, parentCommentId));
+  form.querySelector('.reply-cancel-btn').addEventListener('click', () => {
+    form.remove();
+  });
+
+  return form;
+}
+
+function setGalleryCommentLikeButtonState(button, isLiked, likeCount) {
+  if (!button) return;
+  button.dataset.liked = isLiked ? 'true' : 'false';
+  button.classList.toggle('is-active', isLiked);
+  button.title = isLiked ? 'Unlike comment' : 'Like comment';
+  button.setAttribute('aria-label', button.title);
+
+  const count = button.querySelector('.comment-like-count');
+  if (count) {
+    count.textContent = String(likeCount);
+  }
+}
+
+async function handleGalleryCommentLikeToggle(commentId, button) {
+  if (!button) return;
+
+  const isLiked = button.dataset.liked === 'true';
+  button.disabled = true;
+
+  try {
+    const response = await fetch(buildBackendUrl(`/api/gallery-comments/${commentId}/like`), {
+      method: isLiked ? 'DELETE' : 'POST',
+      credentials: 'include'
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to like comment.');
+    }
+
+    setGalleryCommentLikeButtonState(button, Boolean(result.liked), typeof result.likes === 'number' ? result.likes : 0);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = !currentUser;
+  }
+}
+
+function createGalleryCommentElement(comment, commentGroups, itemId, depth = 0) {
+  const commentDate = new Date(comment.created_at).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  const commentEl = document.createElement('article');
+  commentEl.className = `comment${depth ? ' is-reply' : ''}`;
+
+  const header = document.createElement('div');
+  header.className = 'comment-header';
+  header.innerHTML = `
+    <div class="comment-meta">
+      <span class="comment-author">${escapeHtml(comment.author_name)}</span>
+      <span class="comment-date">${escapeHtml(commentDate)}</span>
+    </div>
+  `;
+
+  const body = document.createElement('p');
+  body.className = 'comment-content';
+  body.textContent = comment.content;
+
+  commentEl.appendChild(header);
+  commentEl.appendChild(body);
+
+  const toolbar = document.createElement('div');
+  toolbar.className = 'comment-toolbar';
+
+  const likeButton = document.createElement('button');
+  likeButton.type = 'button';
+  likeButton.className = 'comment-like-btn';
+  likeButton.innerHTML = `
+    <span class="action-icon">${getHeartIconMarkup()}</span>
+    <span class="comment-like-count">${comment.likes || 0}</span>
+  `;
+  setGalleryCommentLikeButtonState(likeButton, comment.userHasLiked, comment.likes || 0);
+  likeButton.disabled = !currentUser;
+  if (!currentUser) {
+    likeButton.title = 'Login to like comments';
+    likeButton.setAttribute('aria-label', likeButton.title);
+  }
+  likeButton.addEventListener('click', () => handleGalleryCommentLikeToggle(comment.id, likeButton));
+  toolbar.appendChild(likeButton);
+
+  if (currentUser) {
+    const replyButton = document.createElement('button');
+    replyButton.type = 'button';
+    replyButton.className = 'reply-toggle-btn';
+    replyButton.textContent = 'Reply';
+    replyButton.addEventListener('click', () => {
+      const existingForm = commentEl.querySelector('.reply-form');
+      if (existingForm) {
+        existingForm.remove();
+        return;
+      }
+
+      toolbar.after(createGalleryReplyForm(itemId, comment.id));
+    });
+
+    toolbar.appendChild(replyButton);
+  }
+
+  commentEl.appendChild(toolbar);
+
+  const childComments = commentGroups.get(comment.id) || [];
+  if (childComments.length) {
+    const childrenHost = document.createElement('div');
+    childrenHost.className = 'comment-children';
+    const visibleChildren = childComments.slice(0, 2);
+    const hiddenChildren = childComments.slice(2);
+
+    visibleChildren.forEach((child) => {
+      childrenHost.appendChild(createGalleryCommentElement(child, commentGroups, itemId, depth + 1));
+    });
+
+    if (hiddenChildren.length) {
+      const hiddenRepliesHost = document.createElement('div');
+      hiddenRepliesHost.hidden = true;
+      hiddenRepliesHost.className = 'comment-hidden-children';
+      hiddenChildren.forEach((child) => {
+        hiddenRepliesHost.appendChild(createGalleryCommentElement(child, commentGroups, itemId, depth + 1));
+      });
+
+      const collapseButton = document.createElement('button');
+      collapseButton.type = 'button';
+      collapseButton.className = 'reply-collapse-btn';
+      collapseButton.textContent = `View ${hiddenChildren.length} more repl${hiddenChildren.length === 1 ? 'y' : 'ies'}`;
+      collapseButton.addEventListener('click', () => {
+        const isHidden = hiddenRepliesHost.hidden;
+        hiddenRepliesHost.hidden = !isHidden;
+        collapseButton.textContent = isHidden
+          ? 'Hide extra replies'
+          : `View ${hiddenChildren.length} more repl${hiddenChildren.length === 1 ? 'y' : 'ies'}`;
+      });
+
+      childrenHost.appendChild(collapseButton);
+      childrenHost.appendChild(hiddenRepliesHost);
+    }
+
+    commentEl.appendChild(childrenHost);
+  }
+
+  return commentEl;
+}
+
+function renderGalleryComments(comments, itemId) {
   const commentsList = document.getElementById('commentsList');
   commentsList.innerHTML = '';
 
@@ -779,96 +1209,104 @@ function renderGalleryComments(comments) {
     return;
   }
 
-  comments.forEach(comment => {
-    const commentDate = new Date(comment.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const commentEl = document.createElement('div');
-    commentEl.className = 'comment';
-    commentEl.innerHTML = `
-      <p class="comment-author">
-        ${comment.author_name}
-        <span class="comment-date">${commentDate}</span>
-      </p>
-      <p class="comment-content">${comment.content}</p>
-    `;
-    commentsList.appendChild(commentEl);
+  const commentGroups = buildCommentGroups(comments);
+  const rootComments = commentGroups.get(0) || [];
+
+  rootComments.forEach((comment) => {
+    commentsList.appendChild(createGalleryCommentElement(comment, commentGroups, itemId));
   });
 }
 
-async function handleGalleryLike(itemId) {
+async function handleGalleryLikeToggle(itemId) {
   const likeButton = document.getElementById('likeButton');
-  const likeCountSpan = document.getElementById('likeCount');
+  if (!likeButton) return;
+
+  const isLiked = likeButton.dataset.liked === 'true';
   likeButton.disabled = true;
 
   try {
     const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/like`), {
-      method: 'POST',
+      method: isLiked ? 'DELETE' : 'POST',
       credentials: 'include'
     });
-    const result = await response.json();
+    const result = await response.json().catch(() => ({}));
     if (!response.ok) {
-      if (response.status === 409) {
-        likeButton.textContent = 'Liked!';
-        if (typeof result.likes === 'number') {
-          likeCountSpan.textContent = `${result.likes} likes`;
-        }
-        return;
-      }
       throw new Error(result.error || 'Failed to like item.');
     }
 
-    likeCountSpan.textContent = `${result.likes} likes`;
-    likeButton.textContent = 'Liked!';
+    setGalleryLikeButtonState(likeButton, Boolean(result.liked), typeof result.likes === 'number' ? result.likes : 0);
   } catch (error) {
     alert(error.message);
-    likeButton.disabled = false;
+  }
+
+  likeButton.disabled = false;
+}
+
+async function handleGallerySaveToggle(itemId) {
+  const saveButton = document.getElementById('saveButton');
+  if (!saveButton) return;
+
+  const isSaved = saveButton.dataset.saved === 'true';
+  saveButton.disabled = true;
+
+  try {
+    const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/save`), {
+      method: isSaved ? 'DELETE' : 'POST',
+      credentials: 'include'
+    });
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Failed to update saved item.');
+    }
+
+    setGallerySaveButtonState(saveButton, Boolean(result.saved));
+  } catch (error) {
+    alert(error.message);
+    setGallerySaveButtonState(saveButton, isSaved);
+  } finally {
+    saveButton.disabled = false;
   }
 }
 
-async function handleGalleryCommentSubmit(event, itemId) {
+async function handleGalleryCommentSubmit(event, itemId, parentCommentId = null) {
   event.preventDefault();
   const form = event.target;
-  const content = form.querySelector('#commentContent').value;
-  const submitButton = form.querySelector('button');
+  const textarea = form.querySelector('textarea');
+  const content = textarea?.value || '';
+  const submitButton = form.querySelector('button[type="submit"]');
+  const isReply = parentCommentId !== null;
+  const originalButtonText = submitButton.textContent;
 
   submitButton.disabled = true;
-  submitButton.textContent = 'Posting...';
+  submitButton.textContent = isReply ? 'Replying...' : 'Posting...';
 
   try {
     const response = await fetch(buildBackendUrl(`/api/gallery/${itemId}/comments`), {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, parentCommentId }),
     });
     const newComment = await response.json();
     if (!response.ok) throw new Error(newComment.error || 'Failed to post comment.');
 
-    // Refresh the comments list and count
-    const commentsList = document.getElementById('commentsList');
-    if (commentsList.querySelector('p')?.textContent.startsWith('No comments yet')) {
-      commentsList.innerHTML = '';
-    }
-    const commentCountSpan = document.getElementById('commentCount');
-    commentCountSpan.textContent = parseInt(commentCountSpan.textContent, 10) + 1;
-    
-    const commentDate = new Date(newComment.created_at).toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const commentEl = document.createElement('div');
-    commentEl.className = 'comment';
-    commentEl.innerHTML = `<p class="comment-author">${newComment.author_name}<span class="comment-date">${commentDate}</span></p><p class="comment-content">${newComment.content}</p>`;
-    commentsList.prepend(commentEl);
-
-    form.reset();
+    await openGalleryModal(itemId);
   } catch (error) {
     alert(error.message);
   } finally {
     submitButton.disabled = false;
-    submitButton.textContent = 'Post Comment';
+    submitButton.textContent = originalButtonText;
   }
 }
 
 (async () => {
   currentUser = await loadAuthState();
   await loadGallery();
+  const requestedItemId = new URLSearchParams(window.location.search).get('item');
+  if (requestedItemId) {
+    await openGalleryModal(requestedItemId);
+  }
 })();
 </script>
 <script src="navbar.js"></script>

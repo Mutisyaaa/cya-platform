@@ -50,6 +50,7 @@ const schemaBootstrapQuery = `
   CREATE TABLE IF NOT EXISTS blog_comments (
     id SERIAL PRIMARY KEY,
     blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
+    parent_comment_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE,
     author_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -61,9 +62,24 @@ const schemaBootstrapQuery = `
     PRIMARY KEY (blog_id, user_id)
   );
 
+  CREATE TABLE IF NOT EXISTS blog_saves (
+    blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (blog_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS blog_comment_likes (
+    comment_id INTEGER NOT NULL REFERENCES blog_comments(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, user_id)
+  );
+
   CREATE TABLE IF NOT EXISTS gallery_comments (
     id SERIAL PRIMARY KEY,
     gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
+    parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE,
     author_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -73,6 +89,20 @@ const schemaBootstrapQuery = `
     gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     PRIMARY KEY (gallery_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS gallery_saves (
+    gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (gallery_id, user_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS gallery_comment_likes (
+    comment_id INTEGER NOT NULL REFERENCES gallery_comments(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (comment_id, user_id)
   );
 
   CREATE TABLE IF NOT EXISTS services (
@@ -138,6 +168,18 @@ const schemaBootstrapQuery = `
     ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50),
     ADD COLUMN IF NOT EXISTS storage_public_id TEXT,
     ADD COLUMN IF NOT EXISTS storage_resource_type VARCHAR(50);
+
+  ALTER TABLE blog_saves
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+  ALTER TABLE gallery_saves
+    ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
+
+  ALTER TABLE blog_comments
+    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE;
+
+  ALTER TABLE gallery_comments
+    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE;
 `;
 
 const legacyLikesSchemaRepairQuery = `
@@ -405,6 +447,50 @@ async function getDashboardOverview(req, res) {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+}
+
+async function getAdminCommentsFeed() {
+  const result = await pool.query(`
+    SELECT *
+    FROM (
+      SELECT
+        'blog'::text AS content_type,
+        bc.id,
+        bc.blog_id AS source_id,
+        b.title AS source_title,
+        bc.parent_comment_id,
+        bc.author_name,
+        bc.content,
+        bc.created_at,
+        (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
+        (SELECT COUNT(*) FROM blog_comments child WHERE child.parent_comment_id = bc.id) AS reply_count
+      FROM blog_comments bc
+      JOIN blogs b ON b.id = bc.blog_id
+
+      UNION ALL
+
+      SELECT
+        'gallery'::text AS content_type,
+        gc.id,
+        gc.gallery_id AS source_id,
+        g.title AS source_title,
+        gc.parent_comment_id,
+        gc.author_name,
+        gc.content,
+        gc.created_at,
+        (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
+        (SELECT COUNT(*) FROM gallery_comments child WHERE child.parent_comment_id = gc.id) AS reply_count
+      FROM gallery_comments gc
+      JOIN gallery g ON g.id = gc.gallery_id
+    ) admin_comments
+    ORDER BY created_at DESC
+  `);
+
+  return result.rows.map((comment) => ({
+    ...comment,
+    likes: parseInt(comment.likes, 10) || 0,
+    reply_count: parseInt(comment.reply_count, 10) || 0,
+  }));
 }
 
 function isGoogleAuthReady() {
@@ -1030,6 +1116,49 @@ app.patch("/api/profile", ensureUserAuthenticated, async (req, res) => {
   }
 });
 
+app.get("/api/profile/saved-content", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [savedBlogsResult, savedGalleryResult] = await Promise.all([
+      pool.query(
+        `SELECT
+           b.id,
+           b.title,
+           b.content,
+           b.created_at,
+           bs.created_at AS saved_at
+         FROM blog_saves bs
+         JOIN blogs b ON b.id = bs.blog_id
+         WHERE bs.user_id = $1
+         ORDER BY bs.created_at DESC`,
+        [userId]
+      ),
+      pool.query(
+        `SELECT
+           g.id,
+           g.title,
+           g.image_url,
+           g.created_at,
+           gs.created_at AS saved_at
+         FROM gallery_saves gs
+         JOIN gallery g ON g.id = gs.gallery_id
+         WHERE gs.user_id = $1
+         ORDER BY gs.created_at DESC`,
+        [userId]
+      ),
+    ]);
+
+    return res.json({
+      blogs: savedBlogsResult.rows,
+      gallery: savedGalleryResult.rows,
+    });
+  } catch (error) {
+    console.error("Saved content load error:", error);
+    return res.status(500).json({ error: "Could not load saved content right now." });
+  }
+});
+
 app.get("/api/auth/logout", (req, res) => {
   req.logout(() => {
     res.json({ message: "Logged out" });
@@ -1512,20 +1641,47 @@ app.get("/api/blogs/:id", async (req, res) => {
 
     const blog = blogResult.rows[0];
 
-    const [commentsResult, likesResult, likedResult] = await Promise.all([
-      pool.query("SELECT * FROM blog_comments WHERE blog_id = $1 ORDER BY created_at DESC", [id]),
+    const commentsQuery = userId
+      ? `SELECT
+           bc.*,
+           (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
+           EXISTS(SELECT 1 FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id AND bcl.user_id = $2) AS user_has_liked
+         FROM blog_comments bc
+         WHERE bc.blog_id = $1
+         ORDER BY bc.created_at ASC`
+      : `SELECT
+           bc.*,
+           (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
+           false AS user_has_liked
+         FROM blog_comments bc
+         WHERE bc.blog_id = $1
+         ORDER BY bc.created_at ASC`;
+
+    const [commentsResult, likesResult, likedResult, savedResult] = await Promise.all([
+      pool.query(commentsQuery, userId ? [id, userId] : [id]),
       pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]),
       userId
         ? pool.query(
             "SELECT EXISTS(SELECT 1 FROM blog_likes WHERE blog_id = $1 AND user_id = $2) AS liked",
             [id, userId]
           )
-        : Promise.resolve({ rows: [{ liked: false }] })
+        : Promise.resolve({ rows: [{ liked: false }] }),
+      userId
+        ? pool.query(
+            "SELECT EXISTS(SELECT 1 FROM blog_saves WHERE blog_id = $1 AND user_id = $2) AS saved",
+            [id, userId]
+          )
+        : Promise.resolve({ rows: [{ saved: false }] })
     ]);
 
-    blog.comments = commentsResult.rows;
+    blog.comments = commentsResult.rows.map((comment) => ({
+      ...comment,
+      likes: parseInt(comment.likes, 10) || 0,
+      userHasLiked: Boolean(comment.user_has_liked),
+    }));
     blog.likes = parseInt(likesResult.rows[0].count, 10);
     blog.userHasLiked = Boolean(likedResult.rows[0].liked);
+    blog.userHasSaved = Boolean(savedResult.rows[0].saved);
 
     res.json(blog);
   } catch (err) {
@@ -1567,15 +1723,35 @@ app.post("/api/blogs/:id/comments", ensureUserAuthenticated, async (req, res) =>
   try {
     const { id } = req.params;
     const { content } = req.body;
+    const parentCommentId = req.body?.parentCommentId == null || req.body.parentCommentId === ""
+      ? null
+      : Number.parseInt(req.body.parentCommentId, 10);
     const authorName = req.user?.displayName || req.user?.emails?.[0]?.value || "Community Member";
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Comment content is required." });
     }
 
+    if (parentCommentId !== null && (!Number.isInteger(parentCommentId) || parentCommentId <= 0)) {
+      return res.status(400).json({ error: "A valid parent comment is required for replies." });
+    }
+
+    if (parentCommentId !== null) {
+      const parentResult = await pool.query(
+        "SELECT id FROM blog_comments WHERE id = $1 AND blog_id = $2",
+        [parentCommentId, id]
+      );
+
+      if (parentResult.rows.length === 0) {
+        return res.status(404).json({ error: "The comment you are replying to could not be found." });
+      }
+    }
+
     const result = await pool.query(
-      "INSERT INTO blog_comments (blog_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
-      [id, authorName, content.trim()]
+      `INSERT INTO blog_comments (blog_id, parent_comment_id, author_name, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, parentCommentId, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);
@@ -1589,22 +1765,135 @@ app.post("/api/blogs/:id/like", ensureUserAuthenticated, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
+    const blogResult = await pool.query("SELECT 1 FROM blogs WHERE id = $1", [id]);
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
     await pool.query(
-      "INSERT INTO blog_likes (blog_id, user_id) VALUES ($1, $2)",
+      `INSERT INTO blog_likes (blog_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (blog_id, user_id) DO NOTHING`,
       [id, userId]
     );
-    
+
     const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]);
     const likeCount = parseInt(likesResult.rows[0].count, 10);
 
-    res.status(201).json({ likes: likeCount });
+    res.status(200).json({ likes: likeCount, liked: true });
   } catch (err) {
-    if (err.code === '23505') { // unique_violation
-      const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [req.params.id]);
-      const likeCount = parseInt(likesResult.rows[0].count, 10);
-      return res.status(409).json({ error: "You have already liked this post.", likes: likeCount });
-    }
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/blogs/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const blogResult = await pool.query("SELECT 1 FROM blogs WHERE id = $1", [id]);
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    await pool.query("DELETE FROM blog_likes WHERE blog_id = $1 AND user_id = $2", [id, userId]);
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM blog_likes WHERE blog_id = $1", [id]);
+    const likeCount = parseInt(likesResult.rows[0].count, 10);
+
+    res.status(200).json({ likes: likeCount, liked: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/blog-comments/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const commentResult = await pool.query("SELECT 1 FROM blog_comments WHERE id = $1", [id]);
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    await pool.query(
+      `INSERT INTO blog_comment_likes (comment_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (comment_id, user_id) DO NOTHING`,
+      [id, userId]
+    );
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM blog_comment_likes WHERE comment_id = $1", [id]);
+    return res.status(200).json({
+      likes: parseInt(likesResult.rows[0].count, 10),
+      liked: true,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/blog-comments/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const commentResult = await pool.query("SELECT 1 FROM blog_comments WHERE id = $1", [id]);
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    await pool.query("DELETE FROM blog_comment_likes WHERE comment_id = $1 AND user_id = $2", [id, userId]);
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM blog_comment_likes WHERE comment_id = $1", [id]);
+    return res.status(200).json({
+      likes: parseInt(likesResult.rows[0].count, 10),
+      liked: false,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/blogs/:id/save", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const blogResult = await pool.query("SELECT 1 FROM blogs WHERE id = $1", [id]);
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    await pool.query(
+      `INSERT INTO blog_saves (blog_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (blog_id, user_id) DO NOTHING`,
+      [id, userId]
+    );
+
+    return res.status(200).json({ saved: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/blogs/:id/save", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const blogResult = await pool.query("SELECT 1 FROM blogs WHERE id = $1", [id]);
+    if (blogResult.rows.length === 0) {
+      return res.status(404).json({ error: "Blog post not found." });
+    }
+
+    await pool.query("DELETE FROM blog_saves WHERE blog_id = $1 AND user_id = $2", [id, userId]);
+
+    return res.status(200).json({ saved: false });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -1673,14 +1962,14 @@ app.get("/api/events", async (req, res) => {
         (SELECT COUNT(*) FROM event_rsvps er WHERE er.event_id = e.id) as rsvp_count
       FROM events e
       LEFT JOIN services s ON e.fellowship_id = s.id
-      WHERE e.event_date >= CURRENT_DATE
+      WHERE 1 = 1
     `;
     const queryParams = [];
     let paramIndex = 1;
 
     // Filter by user gender for events not specifically tied to a fellowship
     if (isAdminRequest) {
-      // Admin can review all upcoming events regardless of target gender.
+      // Admin can review every event regardless of target gender.
     } else if (userGender && (userGender === 'male' || userGender === 'female')) {
       baseQuery += ` AND (e.target_gender = 'all' OR e.target_gender = $${paramIndex++})`;
       queryParams.push(userGender);
@@ -1689,7 +1978,14 @@ app.get("/api/events", async (req, res) => {
       baseQuery += ` AND e.target_gender = 'all'`;
     }
 
-    baseQuery += ` ORDER BY e.event_date ASC, e.event_time ASC`;
+    baseQuery += `
+      ORDER BY
+        CASE WHEN e.event_date >= CURRENT_DATE THEN 0 ELSE 1 END ASC,
+        CASE WHEN e.event_date >= CURRENT_DATE THEN e.event_date END ASC,
+        CASE WHEN e.event_date >= CURRENT_DATE THEN e.event_time END ASC,
+        CASE WHEN e.event_date < CURRENT_DATE THEN e.event_date END DESC,
+        CASE WHEN e.event_date < CURRENT_DATE THEN e.event_time END DESC
+    `;
 
     if (userId) {
       result = await pool.query(
@@ -2299,20 +2595,47 @@ app.get("/api/gallery/:id", async (req, res) => {
 
     const item = itemResult.rows[0];
 
-    const [commentsResult, likesResult, likedResult] = await Promise.all([
-      pool.query("SELECT * FROM gallery_comments WHERE gallery_id = $1 ORDER BY created_at DESC", [id]),
+    const commentsQuery = userId
+      ? `SELECT
+           gc.*,
+           (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
+           EXISTS(SELECT 1 FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id AND gcl.user_id = $2) AS user_has_liked
+         FROM gallery_comments gc
+         WHERE gc.gallery_id = $1
+         ORDER BY gc.created_at ASC`
+      : `SELECT
+           gc.*,
+           (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
+           false AS user_has_liked
+         FROM gallery_comments gc
+         WHERE gc.gallery_id = $1
+         ORDER BY gc.created_at ASC`;
+
+    const [commentsResult, likesResult, likedResult, savedResult] = await Promise.all([
+      pool.query(commentsQuery, userId ? [id, userId] : [id]),
       pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]),
       userId
         ? pool.query(
             "SELECT EXISTS(SELECT 1 FROM gallery_likes WHERE gallery_id = $1 AND user_id = $2) AS liked",
             [id, userId]
           )
-        : Promise.resolve({ rows: [{ liked: false }] })
+        : Promise.resolve({ rows: [{ liked: false }] }),
+      userId
+        ? pool.query(
+            "SELECT EXISTS(SELECT 1 FROM gallery_saves WHERE gallery_id = $1 AND user_id = $2) AS saved",
+            [id, userId]
+          )
+        : Promise.resolve({ rows: [{ saved: false }] })
     ]);
 
-    item.comments = commentsResult.rows;
+    item.comments = commentsResult.rows.map((comment) => ({
+      ...comment,
+      likes: parseInt(comment.likes, 10) || 0,
+      userHasLiked: Boolean(comment.user_has_liked),
+    }));
     item.likes = parseInt(likesResult.rows[0].count, 10);
     item.userHasLiked = Boolean(likedResult.rows[0].liked);
+    item.userHasSaved = Boolean(savedResult.rows[0].saved);
 
     res.json(item);
   } catch (err) {
@@ -2325,22 +2648,135 @@ app.post("/api/gallery/:id/like", ensureUserAuthenticated, async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
 
+    const galleryResult = await pool.query("SELECT 1 FROM gallery WHERE id = $1", [id]);
+    if (galleryResult.rows.length === 0) {
+      return res.status(404).json({ error: "Gallery item not found." });
+    }
+
     await pool.query(
-      "INSERT INTO gallery_likes (gallery_id, user_id) VALUES ($1, $2)",
+      `INSERT INTO gallery_likes (gallery_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (gallery_id, user_id) DO NOTHING`,
       [id, userId]
     );
-    
+
     const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]);
     const likeCount = parseInt(likesResult.rows[0].count, 10);
 
-    res.status(201).json({ likes: likeCount });
+    res.status(200).json({ likes: likeCount, liked: true });
   } catch (err) {
-    if (err.code === '23505') { // unique_violation
-      const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [req.params.id]);
-      const likeCount = parseInt(likesResult.rows[0].count, 10);
-      return res.status(409).json({ error: "You have already liked this item.", likes: likeCount });
-    }
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/gallery/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const galleryResult = await pool.query("SELECT 1 FROM gallery WHERE id = $1", [id]);
+    if (galleryResult.rows.length === 0) {
+      return res.status(404).json({ error: "Gallery item not found." });
+    }
+
+    await pool.query("DELETE FROM gallery_likes WHERE gallery_id = $1 AND user_id = $2", [id, userId]);
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_likes WHERE gallery_id = $1", [id]);
+    const likeCount = parseInt(likesResult.rows[0].count, 10);
+
+    res.status(200).json({ likes: likeCount, liked: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/gallery-comments/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const commentResult = await pool.query("SELECT 1 FROM gallery_comments WHERE id = $1", [id]);
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    await pool.query(
+      `INSERT INTO gallery_comment_likes (comment_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (comment_id, user_id) DO NOTHING`,
+      [id, userId]
+    );
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_comment_likes WHERE comment_id = $1", [id]);
+    return res.status(200).json({
+      likes: parseInt(likesResult.rows[0].count, 10),
+      liked: true,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/gallery-comments/:id/like", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const commentResult = await pool.query("SELECT 1 FROM gallery_comments WHERE id = $1", [id]);
+    if (commentResult.rows.length === 0) {
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    await pool.query("DELETE FROM gallery_comment_likes WHERE comment_id = $1 AND user_id = $2", [id, userId]);
+
+    const likesResult = await pool.query("SELECT COUNT(*) FROM gallery_comment_likes WHERE comment_id = $1", [id]);
+    return res.status(200).json({
+      likes: parseInt(likesResult.rows[0].count, 10),
+      liked: false,
+    });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/api/gallery/:id/save", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const galleryResult = await pool.query("SELECT 1 FROM gallery WHERE id = $1", [id]);
+    if (galleryResult.rows.length === 0) {
+      return res.status(404).json({ error: "Gallery item not found." });
+    }
+
+    await pool.query(
+      `INSERT INTO gallery_saves (gallery_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (gallery_id, user_id) DO NOTHING`,
+      [id, userId]
+    );
+
+    return res.status(200).json({ saved: true });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete("/api/gallery/:id/save", ensureUserAuthenticated, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    const galleryResult = await pool.query("SELECT 1 FROM gallery WHERE id = $1", [id]);
+    if (galleryResult.rows.length === 0) {
+      return res.status(404).json({ error: "Gallery item not found." });
+    }
+
+    await pool.query("DELETE FROM gallery_saves WHERE gallery_id = $1 AND user_id = $2", [id, userId]);
+
+    return res.status(200).json({ saved: false });
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -2348,20 +2784,133 @@ app.post("/api/gallery/:id/comments", ensureUserAuthenticated, async (req, res) 
   try {
     const { id } = req.params;
     const { content } = req.body;
+    const parentCommentId = req.body?.parentCommentId == null || req.body.parentCommentId === ""
+      ? null
+      : Number.parseInt(req.body.parentCommentId, 10);
     const authorName = req.user?.displayName || req.user?.emails?.[0]?.value || "Community Member";
 
     if (!content || !content.trim()) {
       return res.status(400).json({ error: "Comment content is required." });
     }
 
+    if (parentCommentId !== null && (!Number.isInteger(parentCommentId) || parentCommentId <= 0)) {
+      return res.status(400).json({ error: "A valid parent comment is required for replies." });
+    }
+
+    if (parentCommentId !== null) {
+      const parentResult = await pool.query(
+        "SELECT id FROM gallery_comments WHERE id = $1 AND gallery_id = $2",
+        [parentCommentId, id]
+      );
+
+      if (parentResult.rows.length === 0) {
+        return res.status(404).json({ error: "The comment you are replying to could not be found." });
+      }
+    }
+
     const result = await pool.query(
-      "INSERT INTO gallery_comments (gallery_id, author_name, content) VALUES ($1, $2, $3) RETURNING *",
-      [id, authorName, content.trim()]
+      `INSERT INTO gallery_comments (gallery_id, parent_comment_id, author_name, content)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, parentCommentId, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/api/admin/comments", ensureAdmin, async (req, res) => {
+  try {
+    const comments = await getAdminCommentsFeed();
+    return res.json(comments);
+  } catch (error) {
+    console.error("Admin comments feed error:", error);
+    return res.status(500).json({ error: "Could not load comments right now." });
+  }
+});
+
+app.delete("/api/admin/comments/:contentType/:id", ensureAdmin, async (req, res) => {
+  const commentId = Number.parseInt(req.params.id, 10);
+  const { contentType } = req.params;
+
+  const commentTargetMap = {
+    blog: {
+      tableName: "blog_comments",
+      sourceTable: "blogs",
+      sourceColumn: "blog_id",
+    },
+    gallery: {
+      tableName: "gallery_comments",
+      sourceTable: "gallery",
+      sourceColumn: "gallery_id",
+    },
+  };
+
+  if (!Number.isInteger(commentId) || commentId <= 0) {
+    return res.status(400).json({ error: "A valid comment id is required." });
+  }
+
+  const target = commentTargetMap[contentType];
+  if (!target) {
+    return res.status(400).json({ error: "Unsupported comment type." });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const commentResult = await client.query(
+      `
+        SELECT c.id, c.author_name, c.parent_comment_id, c.content, s.title AS source_title
+        FROM ${target.tableName} c
+        JOIN ${target.sourceTable} s ON s.id = c.${target.sourceColumn}
+        WHERE c.id = $1
+      `,
+      [commentId]
+    );
+
+    if (commentResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ error: "Comment not found." });
+    }
+
+    const subtreeResult = await client.query(
+      `
+        WITH RECURSIVE comment_tree AS (
+          SELECT id
+          FROM ${target.tableName}
+          WHERE id = $1
+
+          UNION ALL
+
+          SELECT child.id
+          FROM ${target.tableName} child
+          JOIN comment_tree tree ON child.parent_comment_id = tree.id
+        )
+        SELECT COUNT(*) AS total
+        FROM comment_tree
+      `,
+      [commentId]
+    );
+
+    await client.query(`DELETE FROM ${target.tableName} WHERE id = $1`, [commentId]);
+    await client.query("COMMIT");
+
+    return res.status(200).json({
+      message: "Comment deleted successfully.",
+      contentType,
+      deletedComments: parseInt(subtreeResult.rows[0].total, 10) || 1,
+      sourceTitle: commentResult.rows[0].source_title,
+    });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Admin comment delete error:", error);
+    return res.status(500).json({ error: "Could not delete that comment right now." });
+  } finally {
+    client.release();
   }
 });
 

@@ -310,12 +310,28 @@ footer {
   }
 
   .blog-grid {
-    grid-template-columns: 1fr;
-    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .blog-card {
-    padding: 24px 18px;
+    padding: 18px 14px;
+  }
+
+  .blog-card h3 {
+    font-size: 18px;
+    line-height: 1.25;
+  }
+
+  .blog-card p {
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .read-more {
+    width: 100%;
+    text-align: center;
+    padding: 10px 14px;
   }
 
   footer {
@@ -323,6 +339,12 @@ footer {
     padding: 24px 16px;
   }
 
+}
+
+@media (max-width: 420px) {
+  .blog-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 </style>
@@ -353,6 +375,7 @@ footer {
     <a href="gallery.html">Gallery</a>
     <a href="blog.html" class="active">Blog</a>
     <a href="index.html#contact">Contact</a>
+    <div id="authSlot" class="auth-slot"></div>
   </div>
 </nav>
 

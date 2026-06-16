@@ -286,6 +286,21 @@ body {
   color: var(--text-secondary);
 }
 
+.tag-blog {
+  background: rgba(30, 64, 175, 0.12);
+  color: #1d4ed8;
+}
+
+.tag-gallery {
+  background: rgba(147, 51, 234, 0.12);
+  color: #7e22ce;
+}
+
+.tag-reply {
+  background: rgba(249, 115, 22, 0.12);
+  color: #c2410c;
+}
+
 .actions-cell {
   display: flex;
   justify-content: flex-end;
@@ -476,6 +491,10 @@ button.submit:hover {
   cursor: pointer;
   border-radius: 10px;
   padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
 }
 
 .secondary-btn:hover {
@@ -484,6 +503,79 @@ button.submit:hover {
 
 .entity-actions .delete-btn {
   margin-top: 0;
+}
+
+.comment-filter-bar {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.comment-admin-list {
+  display: grid;
+  gap: 18px;
+}
+
+.comment-admin-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 20px;
+  box-shadow: 0 10px 24px var(--shadow-color-light);
+  display: grid;
+  gap: 14px;
+}
+
+.comment-admin-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.comment-admin-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.comment-admin-source {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.comment-admin-content {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.comment-admin-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.comment-admin-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.comment-admin-links {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .admin-modal-overlay {
@@ -776,7 +868,8 @@ button.submit:hover {
 
 @media (max-width: 720px) {
   .form-grid,
-  .summary-strip {
+  .summary-strip,
+  .comment-filter-bar {
     grid-template-columns: 1fr;
   }
 
@@ -791,6 +884,12 @@ button.submit:hover {
 
   .entity-meta-row,
   .entity-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .comment-admin-head,
+  .comment-admin-actions {
     flex-direction: column;
     align-items: flex-start;
   }
@@ -880,6 +979,7 @@ button.submit:hover {
   <button onclick="showSection('overview')">Overview</button>
   <button onclick="showSection('gallery')">Gallery</button>
   <button onclick="showSection('blogs')">Blogs</button>
+  <button onclick="showSection('comments')">Comments</button>
   <button onclick="showSection('ministries')">Ministries</button>
   <button onclick="showSection('events')">Events</button>
   <button onclick="showSection('users')">Users</button>
@@ -920,6 +1020,58 @@ button.submit:hover {
       <div class="card">
         <h2>Existing Posts</h2>
         <div id="blogList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="comments" class="section">
+    <div class="section-stack">
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Comment Moderation</h2>
+          <p class="cell-subtext">Review blog and gallery discussions, then remove anything that should not remain visible. Deleting a parent comment also removes its replies.</p>
+        </div>
+        <div class="summary-strip">
+          <div class="summary-tile">
+            <span>Total Comments</span>
+            <strong id="commentTotalCount">0</strong>
+            <small>Everything currently published across blogs and gallery posts</small>
+          </div>
+          <div class="summary-tile">
+            <span>Blog Comments</span>
+            <strong id="commentBlogCount">0</strong>
+            <small>Replies and top-level comments on blog posts</small>
+          </div>
+          <div class="summary-tile">
+            <span>Gallery Comments</span>
+            <strong id="commentGalleryCount">0</strong>
+            <small>Discussion happening inside gallery items</small>
+          </div>
+        </div>
+        <div class="comment-filter-bar">
+          <div class="field-group">
+            <label for="commentTypeFilter">Content Type</label>
+            <select id="commentTypeFilter">
+              <option value="all">All Comments</option>
+              <option value="blog">Blogs Only</option>
+              <option value="gallery">Gallery Only</option>
+            </select>
+          </div>
+          <div class="field-group">
+            <label for="commentLevelFilter">Comment Level</label>
+            <select id="commentLevelFilter">
+              <option value="all">All Levels</option>
+              <option value="root">Top-Level Comments</option>
+              <option value="reply">Replies Only</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="panel-intro">
+          <h2>Recent Comment Activity</h2>
+        </div>
+        <div id="commentList"></div>
       </div>
     </div>
   </div>
@@ -1211,13 +1363,15 @@ function updateEventSummary(items) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const upcomingCount = items.filter((item) => {
+  const upcomingItems = items.filter((item) => {
     const eventDate = new Date(item.event_date);
     eventDate.setHours(0, 0, 0, 0);
     return eventDate >= today;
-  }).length;
+  });
 
-  const totalRsvps = items.reduce((sum, item) => sum + (parseInt(item.rsvp_count, 10) || 0), 0);
+  const upcomingCount = upcomingItems.length;
+
+  const totalRsvps = upcomingItems.reduce((sum, item) => sum + (parseInt(item.rsvp_count, 10) || 0), 0);
 
   document.getElementById("eventCount").textContent = items.length;
   document.getElementById("eventUpcomingCount").textContent = upcomingCount;
@@ -1231,6 +1385,105 @@ function updateMinistrySummary(items) {
   document.getElementById("ministryCount").textContent = items.length;
   document.getElementById("ministryFocusedCount").textContent = focusedCount;
   document.getElementById("ministryScheduledCount").textContent = scheduledCount;
+}
+
+let allAdminComments = [];
+
+function getCommentTypeMeta(contentType) {
+  const map = {
+    blog: { label: "Blog", className: "tag tag-blog" },
+    gallery: { label: "Gallery", className: "tag tag-gallery" }
+  };
+
+  return map[contentType] || { label: "Comment", className: "tag tag-neutral" };
+}
+
+function getCommentSourceHref(comment) {
+  if (comment.content_type === "gallery") {
+    return `gallery.html?item=${encodeURIComponent(comment.source_id)}`;
+  }
+
+  return `blog-post.html?id=${encodeURIComponent(comment.source_id)}`;
+}
+
+function updateCommentSummary(items) {
+  const blogCount = items.filter((item) => item.content_type === "blog").length;
+  const galleryCount = items.filter((item) => item.content_type === "gallery").length;
+
+  document.getElementById("commentTotalCount").textContent = items.length;
+  document.getElementById("commentBlogCount").textContent = blogCount;
+  document.getElementById("commentGalleryCount").textContent = galleryCount;
+}
+
+function renderAdminComments(items) {
+  const container = document.getElementById("commentList");
+
+  if (!items.length) {
+    container.innerHTML = renderEmptyState("No comments match this filter right now.");
+    return;
+  }
+
+  container.innerHTML = `<div class="comment-admin-list">${items.map((comment) => {
+    const typeMeta = getCommentTypeMeta(comment.content_type);
+    const replyCount = parseInt(comment.reply_count, 10) || 0;
+    const likeCount = parseInt(comment.likes, 10) || 0;
+    const isReply = comment.parent_comment_id != null;
+    const deleteLabel = replyCount > 0 ? "Delete comment with replies" : "Delete comment";
+
+    return `
+      <article class="comment-admin-card">
+        <div class="comment-admin-head">
+          <div class="primary-cell">
+            <strong>${escapeHtml(comment.author_name || "Community Member")}</strong>
+            <div class="comment-admin-meta">
+              <span class="${typeMeta.className}">${escapeHtml(typeMeta.label)}</span>
+              ${isReply ? '<span class="tag tag-reply">Reply</span>' : ""}
+              <span class="comment-admin-source">On ${escapeHtml(comment.source_title || "Untitled item")}</span>
+            </div>
+          </div>
+          <span class="grid-item-meta">${escapeHtml(formatTimestamp(comment.created_at))}</span>
+        </div>
+        <p class="comment-admin-content">${escapeHtml(comment.content || "")}</p>
+        <div class="comment-admin-stats">
+          <span>${likeCount} like${likeCount === 1 ? "" : "s"}</span>
+          <span>${replyCount} direct repl${replyCount === 1 ? "y" : "ies"}</span>
+          <span>Comment ID ${escapeHtml(comment.id)}</span>
+        </div>
+        <div class="comment-admin-actions">
+          <div class="comment-admin-links">
+            <a class="secondary-btn" href="${getCommentSourceHref(comment)}" target="_blank" rel="noopener noreferrer">Open Source</a>
+          </div>
+          <button
+            class="delete-btn delete-comment-btn"
+            type="button"
+            data-id="${comment.id}"
+            data-content-type="${comment.content_type}"
+            data-replies="${replyCount}"
+            aria-label="${escapeHtml(deleteLabel)}"
+          >
+            Delete
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("")}</div>`;
+}
+
+function applyCommentFilters() {
+  const typeFilter = document.getElementById("commentTypeFilter").value;
+  const levelFilter = document.getElementById("commentLevelFilter").value;
+
+  const filteredItems = allAdminComments.filter((comment) => {
+    const matchesType = typeFilter === "all" || comment.content_type === typeFilter;
+    const isReply = comment.parent_comment_id != null;
+    const matchesLevel = levelFilter === "all"
+      || (levelFilter === "reply" && isReply)
+      || (levelFilter === "root" && !isReply);
+
+    return matchesType && matchesLevel;
+  });
+
+  renderAdminComments(filteredItems);
 }
 
 function showStatus(message, isError = false) {
@@ -1349,6 +1602,7 @@ async function showSection(id) {
 
   if (id === 'gallery') await loadGallery();
   else if (id === 'blogs') await loadBlogs();
+  else if (id === 'comments') await loadComments();
   else if (id === 'users') await loadUsers();
   else if (id === 'events') await loadEvents();
   else if (id === 'ministries') await loadMinistries();
@@ -1425,6 +1679,25 @@ async function loadBlogs() {
   } catch (error) {
     showStatus(error.message, true);
     container.innerHTML = `<p style="color: red;">Failed to load blogs.</p>`;
+  }
+}
+
+async function loadComments() {
+  const container = document.getElementById("commentList");
+  container.innerHTML = '<div class="empty-state">Loading comments...</div>';
+
+  try {
+    const response = await fetch(buildBackendUrl('/api/admin/comments'), {
+      credentials: 'include'
+    });
+    const items = await (await ensureOk(response, "Loading comments")).json();
+
+    allAdminComments = Array.isArray(items) ? items : [];
+    updateCommentSummary(allAdminComments);
+    applyCommentFilters();
+  } catch (error) {
+    showStatus(error.message, true);
+    container.innerHTML = renderEmptyState('Failed to load comments.');
   }
 }
 
@@ -1781,6 +2054,9 @@ document.getElementById("ministryForm").addEventListener("submit", async functio
   }
 });
 
+document.getElementById("commentTypeFilter").addEventListener("change", applyCommentFilters);
+document.getElementById("commentLevelFilter").addEventListener("change", applyCommentFilters);
+
 async function logout() {
   try {
     await fetch(buildBackendUrl("/api/auth/logout"), {
@@ -1817,6 +2093,42 @@ document.querySelector('.main').addEventListener('click', async (e) => {
   if (e.target.matches('.view-rsvps-btn')) {
     await openEventRsvpModal(e.target.dataset.eventId);
     return;
+  }
+
+  if (e.target.matches('.delete-comment-btn')) {
+    const id = e.target.dataset.id;
+    const contentType = e.target.dataset.contentType;
+    const replyCount = Number.parseInt(e.target.dataset.replies || "0", 10) || 0;
+    const cascadeCopy = replyCount > 0
+      ? " This will also remove its replies."
+      : "";
+
+    if (!confirm(`Are you sure you want to delete this comment?${cascadeCopy}`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(buildBackendUrl(`/api/admin/comments/${contentType}/${id}`), {
+        method: 'DELETE',
+        credentials: 'include',
+        headers: {
+          "Accept": "application/json",
+          "X-Requested-With": "fetch"
+        }
+      });
+      const payload = await (await ensureOk(response, 'Delete comment')).json();
+      const deletedComments = Number.parseInt(payload.deletedComments, 10) || 1;
+      const deletedCopy = deletedComments > 1
+        ? ` Removed ${deletedComments} comments including replies.`
+        : " Comment removed successfully.";
+
+      showStatus(`Comment moderation complete.${deletedCopy}`);
+      await loadComments();
+      return;
+    } catch (error) {
+      showStatus(error.message, true);
+      return;
+    }
   }
 
   if (e.target.matches('.delete-btn')) {

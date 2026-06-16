@@ -356,6 +356,100 @@ body {
   font-weight: 700;
 }
 
+.saved-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+}
+
+.saved-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.saved-entry,
+.saved-empty {
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  background: var(--bg-soft);
+}
+
+.saved-entry {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+}
+
+.saved-empty {
+  padding: 18px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.saved-media,
+.saved-media-fallback {
+  width: 88px;
+  height: 88px;
+  border-radius: 18px;
+}
+
+.saved-media {
+  object-fit: cover;
+  background: #12060b;
+}
+
+.saved-media-fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, rgba(200, 16, 46, 0.18), rgba(158, 13, 35, 0.05));
+  color: var(--primary-red);
+  font-size: 32px;
+}
+
+.saved-copy {
+  min-width: 0;
+}
+
+.saved-copy h3 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.saved-copy p {
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+.saved-meta {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  font-weight: 700;
+}
+
+.saved-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  text-decoration: none;
+  color: var(--primary-red);
+  font-weight: 700;
+}
+
+.saved-link:hover {
+  color: var(--dark-red);
+}
+
 .avatar-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -514,7 +608,8 @@ body {
 
 @media (max-width: 900px) {
   .hero-card,
-  .layout {
+  .layout,
+  .saved-layout {
     grid-template-columns: 1fr;
   }
 
@@ -557,6 +652,10 @@ body {
   .pill-link {
     width: 100%;
     text-align: center;
+  }
+
+  .saved-entry {
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -657,6 +756,32 @@ body {
       </div>
     </aside>
   </section>
+
+  <section class="saved-layout">
+    <div class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Saved Blogs</h2>
+          <p>Posts you want to come back to later will stay here.</p>
+        </div>
+      </div>
+      <div id="savedBlogsList" class="saved-stack">
+        <div class="saved-empty">Loading your saved blog posts...</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-heading">
+        <div>
+          <h2>Saved Gallery</h2>
+          <p>Keep your favorite photos and videos close by.</p>
+        </div>
+      </div>
+      <div id="savedGalleryList" class="saved-stack">
+        <div class="saved-empty">Loading your saved gallery items...</div>
+      </div>
+    </div>
+  </section>
 </main>
 
 <script>
@@ -697,6 +822,8 @@ const avatarUploadInput = document.getElementById("avatarUploadInput");
 const selectedFileName = document.getElementById("selectedFileName");
 const logoutButton = document.getElementById("logoutButton");
 const themeToggleButton = document.getElementById("themeToggleButton");
+const savedBlogsList = document.getElementById("savedBlogsList");
+const savedGalleryList = document.getElementById("savedGalleryList");
 
 let currentUser = null;
 let currentAvatarUrl = "";
@@ -746,6 +873,15 @@ function escapeAttribute(value) {
     .replace(/"/g, "&quot;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function getAvatarThemeSubtitle(theme) {
@@ -871,6 +1007,94 @@ function getChibiBackPropMarkup(theme) {
       `;
     default:
       return "";
+  }
+}
+
+function formatSavedDate(value) {
+  if (!value) return "Recently saved";
+
+  return new Date(value).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
+function renderSavedBlogs(items) {
+  if (!items.length) {
+    savedBlogsList.innerHTML = `<div class="saved-empty">No saved blog posts yet. Save one from the blog page and it will appear here.</div>`;
+    return;
+  }
+
+  savedBlogsList.innerHTML = items.map((item) => {
+    const preview = item.content.length > 120
+      ? `${item.content.slice(0, 120)}...`
+      : item.content;
+
+    return `
+      <article class="saved-entry">
+        <div class="saved-media-fallback" aria-hidden="true">B</div>
+        <div class="saved-copy">
+          <div class="saved-meta">
+            <span>Saved ${escapeHtml(formatSavedDate(item.saved_at))}</span>
+            <span>Posted ${escapeHtml(formatSavedDate(item.created_at))}</span>
+          </div>
+          <h3>${escapeHtml(item.title)}</h3>
+          <p>${escapeHtml(preview)}</p>
+          <a class="saved-link" href="/blog-post.html?id=${encodeURIComponent(item.id)}">Open blog post</a>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+function renderSavedGallery(items) {
+  if (!items.length) {
+    savedGalleryList.innerHTML = `<div class="saved-empty">No saved gallery items yet. Save one from the gallery page and it will appear here.</div>`;
+    return;
+  }
+
+  savedGalleryList.innerHTML = items.map((item) => {
+    const mediaUrl = buildBackendUrl(item.image_url);
+    const isVideo = /\.(mp4|webm|ogg|mov)$/i.test(item.image_url || "");
+    const mediaMarkup = isVideo
+      ? `<video class="saved-media" src="${escapeAttribute(mediaUrl)}" muted playsinline preload="metadata"></video>`
+      : `<img class="saved-media" src="${escapeAttribute(mediaUrl)}" alt="${escapeAttribute(item.title)}">`;
+
+    return `
+      <article class="saved-entry">
+        ${mediaMarkup}
+        <div class="saved-copy">
+          <div class="saved-meta">
+            <span>Saved ${escapeHtml(formatSavedDate(item.saved_at))}</span>
+            <span>Posted ${escapeHtml(formatSavedDate(item.created_at))}</span>
+          </div>
+          <h3>${escapeHtml(item.title)}</h3>
+          <p>${isVideo ? "Saved video from the gallery." : "Saved image from the gallery."}</p>
+          <a class="saved-link" href="/gallery.html?item=${encodeURIComponent(item.id)}">Open gallery item</a>
+        </div>
+      </article>
+    `;
+  }).join("");
+}
+
+async function loadSavedContent() {
+  try {
+    const response = await fetch(buildBackendUrl("/api/profile/saved-content"), {
+      credentials: "include"
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || "Could not load your saved content right now.");
+    }
+
+    renderSavedBlogs(Array.isArray(result.blogs) ? result.blogs : []);
+    renderSavedGallery(Array.isArray(result.gallery) ? result.gallery : []);
+  } catch (error) {
+    const message = escapeHtml(error.message || "Could not load your saved content right now.");
+    savedBlogsList.innerHTML = `<div class="saved-empty">${message}</div>`;
+    savedGalleryList.innerHTML = `<div class="saved-empty">${message}</div>`;
   }
 }
 
@@ -1090,6 +1314,7 @@ async function loadProfile() {
 
     const user = await response.json();
     populateProfile(user);
+    await loadSavedContent();
     loadingState.style.display = "none";
     loadingState.hidden = true;
     profileApp.style.display = "block";

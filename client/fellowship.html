@@ -799,6 +799,7 @@ footer {
     <a href="gallery.html">Gallery</a>
     <a href="blog.html">Blog</a>
     <a href="index.html#contact">Contact</a>
+    <div id="authSlot" class="auth-slot"></div>
   </div>
 </nav>
 
@@ -1098,20 +1099,37 @@ function renderComposer() {
 }
 
 function updateHeroStats() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingEvents = allEvents.filter((event) => {
+    if (!event.event_date) return false;
+    const eventDate = new Date(event.event_date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  });
+
   document.getElementById("heroPostCount").textContent = allPosts.length;
-  document.getElementById("heroEventCount").textContent = allEvents.length;
+  document.getElementById("heroEventCount").textContent = upcomingEvents.length;
   document.getElementById("heroFellowshipCount").textContent = allFellowships.length;
 }
 
 function renderEventRail() {
   const host = document.getElementById("eventRail");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const upcomingEvents = allEvents.filter((event) => {
+    if (!event.event_date) return false;
+    const eventDate = new Date(event.event_date);
+    eventDate.setHours(0, 0, 0, 0);
+    return eventDate >= today;
+  });
 
-  if (!allEvents.length) {
+  if (!upcomingEvents.length) {
     host.innerHTML = `<div class="ghost-card">No upcoming fellowship events are available right now.</div>`;
     return;
   }
 
-  host.innerHTML = allEvents.slice(0, 5).map((event) => `
+  host.innerHTML = upcomingEvents.slice(0, 5).map((event) => `
     <div class="rail-item">
       <h5>${escapeHtml(event.title)}</h5>
       <div class="rail-meta">${escapeHtml(new Date(event.event_date).toLocaleDateString())}${event.event_time ? ` at ${escapeHtml(event.event_time.substring(0, 5))}` : ""}</div>
