@@ -223,18 +223,27 @@ nav {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  object-fit: cover;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 30% 28%, rgba(255,255,255,0.28), transparent 32%),
-    linear-gradient(145deg, var(--primary-red), var(--dark-red));
-  color: var(--text-on-primary);
-  font-weight: 700;
   box-shadow:
     inset 0 0 0 1px rgba(255,255,255,0.16),
     0 6px 14px rgba(17,24,39,0.18);
+}
+
+.profile-avatar {
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+
+.profile-fallback {
+  background: var(--button-bg);
+  color: var(--primary-red);
+}
+
+.profile-fallback svg {
+  width: 18px;
+  height: 18px;
 }
 
 .profile-name {
@@ -1314,15 +1323,6 @@ function buildLoginUrl() {
   return loginUrl.toString();
 }
 
-function getInitials(name = "User") {
-  return name
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0].toUpperCase())
-    .join("");
-}
-
 function getAvatarUrl(user) {
   return user.avatarUrl || (user.photos && user.photos[0] ? user.photos[0].value : "");
 }
@@ -1357,8 +1357,14 @@ async function syncAuthState() {
   }
 }
 
-function getFallbackAvatarMarkup(name) {
-  return `<span class="profile-fallback">${getInitials(name)}</span>`;
+function getFallbackAvatarMarkup() {
+  return `
+    <span class="profile-fallback" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false">
+        <path fill="currentColor" d="M12 12.75a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.2 0-7.75 2.17-7.75 5.17 0 .46.37.83.83.83h13.84a.83.83 0 0 0 .83-.83c0-3-3.55-5.17-7.75-5.17Z"/>
+      </svg>
+    </span>
+  `;
 }
 
 function closeProfileMenu() {
@@ -1407,7 +1413,7 @@ function renderLoggedIn(user) {
     : "";
   const avatarMarkup = photo
     ? `<img class="profile-avatar" src="${photo}" alt="${displayName}" referrerpolicy="no-referrer">`
-    : getFallbackAvatarMarkup(displayName);
+    : getFallbackAvatarMarkup();
 
   authSlot.innerHTML = `
     <button class="profile-toggle" type="button" aria-expanded="false">
@@ -1433,7 +1439,7 @@ function renderLoggedIn(user) {
 
   if (avatar) {
     avatar.addEventListener("error", () => {
-      avatar.outerHTML = getFallbackAvatarMarkup(displayName);
+      avatar.outerHTML = getFallbackAvatarMarkup();
     }, { once: true });
   }
 

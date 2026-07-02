@@ -51,6 +51,7 @@ const schemaBootstrapQuery = `
     id SERIAL PRIMARY KEY,
     blog_id INTEGER NOT NULL REFERENCES blogs(id) ON DELETE CASCADE,
     parent_comment_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE,
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     author_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -80,6 +81,7 @@ const schemaBootstrapQuery = `
     id SERIAL PRIMARY KEY,
     gallery_id INTEGER NOT NULL REFERENCES gallery(id) ON DELETE CASCADE,
     parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE,
+    author_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
     author_name VARCHAR(255) NOT NULL,
     content TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -176,10 +178,12 @@ const schemaBootstrapQuery = `
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 
   ALTER TABLE blog_comments
-    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE;
+    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES blog_comments(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS author_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
 
   ALTER TABLE gallery_comments
-    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE;
+    ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE,
+    ADD COLUMN IF NOT EXISTS author_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
 `;
 
 const legacyLikesSchemaRepairQuery = `
@@ -458,14 +462,19 @@ async function getAdminCommentsFeed() {
         bc.id,
         bc.blog_id AS source_id,
         b.title AS source_title,
+        bc.author_id,
         bc.parent_comment_id,
-        bc.author_name,
+        COALESCE(u.name, bc.author_name) AS author_name,
+        u.email AS author_email,
+        u.avatar_url AS author_avatar_url,
+        COALESCE(u.is_admin, false) AS author_is_admin,
         bc.content,
         bc.created_at,
         (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
         (SELECT COUNT(*) FROM blog_comments child WHERE child.parent_comment_id = bc.id) AS reply_count
       FROM blog_comments bc
       JOIN blogs b ON b.id = bc.blog_id
+      LEFT JOIN users u ON u.id = bc.author_id
 
       UNION ALL
 
@@ -474,14 +483,19 @@ async function getAdminCommentsFeed() {
         gc.id,
         gc.gallery_id AS source_id,
         g.title AS source_title,
+        gc.author_id,
         gc.parent_comment_id,
-        gc.author_name,
+        COALESCE(u.name, gc.author_name) AS author_name,
+        u.email AS author_email,
+        u.avatar_url AS author_avatar_url,
+        COALESCE(u.is_admin, false) AS author_is_admin,
         gc.content,
         gc.created_at,
         (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
         (SELECT COUNT(*) FROM gallery_comments child WHERE child.parent_comment_id = gc.id) AS reply_count
       FROM gallery_comments gc
       JOIN gallery g ON g.id = gc.gallery_id
+      LEFT JOIN users u ON u.id = gc.author_id
     ) admin_comments
     ORDER BY created_at DESC
   `);
@@ -717,32 +731,6 @@ function buildSafeSpreadsheetFileName(title) {
     .slice(0, 60);
 
   return `${slug || "event-rsvps"}-rsvps.xls`;
-}
-
-function isAllowedAvatarUrl(value) {
-  if (typeof value !== "string") {
-    return false;
-  }
-
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return false;
-  }
-
-  if (trimmed.startsWith("/uploads/")) {
-    return true;
-  }
-
-  if (trimmed.startsWith("data:image/")) {
-    return true;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch (error) {
-    return false;
-  }
 }
 
 function deleteLocalUploadIfPresent(imageUrl) {
@@ -1063,14 +1051,9 @@ app.get("/api/auth/user", (req, res) => {
 app.patch("/api/profile", ensureUserAuthenticated, async (req, res) => {
   try {
     const providedName = typeof req.body?.displayName === "string" ? req.body.displayName.trim() : "";
-    const providedAvatarUrl = typeof req.body?.avatarUrl === "string" ? req.body.avatarUrl.trim() : "";
 
     if (!isValidDisplayName(providedName)) {
       return res.status(400).json({ error: "Display name must be between 2 and 60 characters." });
-    }
-
-    if (providedAvatarUrl && !isAllowedAvatarUrl(providedAvatarUrl)) {
-      return res.status(400).json({ error: "Please choose a valid avatar." });
     }
 
     const currentUserResult = await pool.query(
@@ -1082,26 +1065,18 @@ app.patch("/api/profile", ensureUserAuthenticated, async (req, res) => {
       return res.status(404).json({ error: "User account not found." });
     }
 
-    const currentUser = currentUserResult.rows[0];
-    const nextAvatarUrl = providedAvatarUrl || currentUser.avatar_url || null;
-
     const updateResult = await pool.query(
       `UPDATE users
        SET name = $1,
-           avatar_url = $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
+       WHERE id = $2
        RETURNING id, name, email, gender, google_id, avatar_url, is_admin`,
-      [providedName, nextAvatarUrl, req.user.id]
+      [providedName, req.user.id]
     );
 
     const updatedUser = updateResult.rows[0];
     const sessionUser = buildSessionUser(updatedUser);
     await loginUpdatedUser(req, sessionUser);
-
-    if (currentUser.avatar_url && currentUser.avatar_url !== updatedUser.avatar_url) {
-      deleteLocalUploadIfPresent(currentUser.avatar_url);
-    }
 
     return res.json({
       message: "Profile updated successfully.",
@@ -1644,16 +1619,26 @@ app.get("/api/blogs/:id", async (req, res) => {
     const commentsQuery = userId
       ? `SELECT
            bc.*,
+           COALESCE(u.name, bc.author_name) AS author_display_name,
+           u.avatar_url AS author_avatar_url,
+           u.email AS author_email,
+           COALESCE(u.is_admin, false) AS author_is_admin,
            (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
            EXISTS(SELECT 1 FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id AND bcl.user_id = $2) AS user_has_liked
          FROM blog_comments bc
+         LEFT JOIN users u ON u.id = bc.author_id
          WHERE bc.blog_id = $1
          ORDER BY bc.created_at ASC`
       : `SELECT
            bc.*,
+           COALESCE(u.name, bc.author_name) AS author_display_name,
+           u.avatar_url AS author_avatar_url,
+           u.email AS author_email,
+           COALESCE(u.is_admin, false) AS author_is_admin,
            (SELECT COUNT(*) FROM blog_comment_likes bcl WHERE bcl.comment_id = bc.id) AS likes,
            false AS user_has_liked
          FROM blog_comments bc
+         LEFT JOIN users u ON u.id = bc.author_id
          WHERE bc.blog_id = $1
          ORDER BY bc.created_at ASC`;
 
@@ -1676,8 +1661,10 @@ app.get("/api/blogs/:id", async (req, res) => {
 
     blog.comments = commentsResult.rows.map((comment) => ({
       ...comment,
+      author_name: comment.author_display_name || comment.author_name,
       likes: parseInt(comment.likes, 10) || 0,
       userHasLiked: Boolean(comment.user_has_liked),
+      authorIsAdmin: Boolean(comment.author_is_admin),
     }));
     blog.likes = parseInt(likesResult.rows[0].count, 10);
     blog.userHasLiked = Boolean(likedResult.rows[0].liked);
@@ -1748,10 +1735,10 @@ app.post("/api/blogs/:id/comments", ensureUserAuthenticated, async (req, res) =>
     }
 
     const result = await pool.query(
-      `INSERT INTO blog_comments (blog_id, parent_comment_id, author_name, content)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO blog_comments (blog_id, parent_comment_id, author_id, author_name, content)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [id, parentCommentId, authorName, content.trim()]
+      [id, parentCommentId, req.user.id, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);
@@ -2598,16 +2585,26 @@ app.get("/api/gallery/:id", async (req, res) => {
     const commentsQuery = userId
       ? `SELECT
            gc.*,
+           COALESCE(u.name, gc.author_name) AS author_display_name,
+           u.avatar_url AS author_avatar_url,
+           u.email AS author_email,
+           COALESCE(u.is_admin, false) AS author_is_admin,
            (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
            EXISTS(SELECT 1 FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id AND gcl.user_id = $2) AS user_has_liked
          FROM gallery_comments gc
+         LEFT JOIN users u ON u.id = gc.author_id
          WHERE gc.gallery_id = $1
          ORDER BY gc.created_at ASC`
       : `SELECT
            gc.*,
+           COALESCE(u.name, gc.author_name) AS author_display_name,
+           u.avatar_url AS author_avatar_url,
+           u.email AS author_email,
+           COALESCE(u.is_admin, false) AS author_is_admin,
            (SELECT COUNT(*) FROM gallery_comment_likes gcl WHERE gcl.comment_id = gc.id) AS likes,
            false AS user_has_liked
          FROM gallery_comments gc
+         LEFT JOIN users u ON u.id = gc.author_id
          WHERE gc.gallery_id = $1
          ORDER BY gc.created_at ASC`;
 
@@ -2630,8 +2627,10 @@ app.get("/api/gallery/:id", async (req, res) => {
 
     item.comments = commentsResult.rows.map((comment) => ({
       ...comment,
+      author_name: comment.author_display_name || comment.author_name,
       likes: parseInt(comment.likes, 10) || 0,
       userHasLiked: Boolean(comment.user_has_liked),
+      authorIsAdmin: Boolean(comment.author_is_admin),
     }));
     item.likes = parseInt(likesResult.rows[0].count, 10);
     item.userHasLiked = Boolean(likedResult.rows[0].liked);
@@ -2809,10 +2808,10 @@ app.post("/api/gallery/:id/comments", ensureUserAuthenticated, async (req, res) 
     }
 
     const result = await pool.query(
-      `INSERT INTO gallery_comments (gallery_id, parent_comment_id, author_name, content)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO gallery_comments (gallery_id, parent_comment_id, author_id, author_name, content)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [id, parentCommentId, authorName, content.trim()]
+      [id, parentCommentId, req.user.id, authorName, content.trim()]
     );
 
     res.status(201).json(result.rows[0]);

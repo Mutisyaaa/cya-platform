@@ -97,18 +97,27 @@
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  object-fit: cover;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background:
-    radial-gradient(circle at 30% 28%, rgba(255, 255, 255, 0.28), transparent 32%),
-    linear-gradient(145deg, var(--primary-red, #c8102e), var(--dark-red, #9e0d23));
-  color: var(--text-on-primary, #ffffff);
-  font-weight: 700;
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.16),
     0 6px 14px rgba(17, 24, 39, 0.18);
+}
+
+.profile-avatar {
+  object-fit: cover;
+  background: var(--bg-secondary, #ffffff);
+}
+
+.profile-fallback {
+  background: var(--button-bg, rgba(0, 0, 0, 0.05));
+  color: var(--primary-red, #c8102e);
+}
+
+.profile-fallback svg {
+  width: 18px;
+  height: 18px;
 }
 
 .profile-menu {

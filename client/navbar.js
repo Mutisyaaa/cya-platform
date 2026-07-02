@@ -107,21 +107,18 @@
     return new URL(path, backendOrigin).toString();
   }
 
-  function getInitials(name = "User") {
-    return name
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join("") || "U";
-  }
-
   function getAvatarUrl(user) {
     return user?.avatarUrl || (user?.photos?.[0] ? user.photos[0].value : "");
   }
 
-  function getFallbackAvatarMarkup(name) {
-    return `<span class="profile-fallback">${getInitials(name)}</span>`;
+  function getFallbackAvatarMarkup() {
+    return `
+      <span class="profile-fallback" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path fill="currentColor" d="M12 12.75a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.2 0-7.75 2.17-7.75 5.17 0 .46.37.83.83.83h13.84a.83.83 0 0 0 .83-.83c0-3-3.55-5.17-7.75-5.17Z"/>
+        </svg>
+      </span>
+    `;
   }
 
   function closeProfileMenu() {
@@ -176,7 +173,7 @@
       : "";
     const avatarMarkup = photo
       ? `<img class="profile-avatar" src="${photo}" alt="${displayName}" referrerpolicy="no-referrer">`
-      : getFallbackAvatarMarkup(displayName);
+      : getFallbackAvatarMarkup();
 
     authSlot.innerHTML = `
       <button class="profile-toggle" type="button" aria-expanded="false" aria-label="Open profile menu">
@@ -202,7 +199,7 @@
 
     if (avatar) {
       avatar.addEventListener("error", () => {
-        avatar.outerHTML = getFallbackAvatarMarkup(displayName);
+        avatar.outerHTML = getFallbackAvatarMarkup();
       }, { once: true });
     }
 

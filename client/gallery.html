@@ -468,10 +468,65 @@ nav {
   margin-bottom: 8px;
 }
 
+.comment-author-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.comment-avatar,
+.comment-avatar-fallback {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(200, 16, 46, 0.14), rgba(158, 13, 35, 0.05));
+  color: var(--primary-red);
+}
+
+.comment-avatar {
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+
+.comment-avatar-fallback svg {
+  width: 18px;
+  height: 18px;
+}
+
 .comment-meta {
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
+}
+
+.comment-meta-block {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.comment-meta-topline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.comment-role-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(200, 16, 46, 0.12);
+  color: var(--primary-red);
 }
 
 .comment-toolbar {
@@ -897,6 +952,22 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function getCommentProfileIconMarkup() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 12.75a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.2 0-7.75 2.17-7.75 5.17 0 .46.37.83.83.83h13.84a.83.83 0 0 0 .83-.83c0-3-3.55-5.17-7.75-5.17Z"></path>
+    </svg>
+  `;
+}
+
+function getCommentAvatarMarkup(comment) {
+  if (comment.author_avatar_url) {
+    return `<img class="comment-avatar" src="${escapeHtml(comment.author_avatar_url)}" alt="${escapeHtml(comment.author_name || "Comment author")}" referrerpolicy="no-referrer">`;
+  }
+
+  return `<span class="comment-avatar-fallback" aria-hidden="true">${getCommentProfileIconMarkup()}</span>`;
+}
+
 function getHeartIconMarkup() {
   return `
     <svg class="fill-on-active" viewBox="0 0 24 24" aria-hidden="true">
@@ -1107,9 +1178,17 @@ function createGalleryCommentElement(comment, commentGroups, itemId, depth = 0) 
   const header = document.createElement('div');
   header.className = 'comment-header';
   header.innerHTML = `
-    <div class="comment-meta">
-      <span class="comment-author">${escapeHtml(comment.author_name)}</span>
-      <span class="comment-date">${escapeHtml(commentDate)}</span>
+    <div class="comment-author-group">
+      ${getCommentAvatarMarkup(comment)}
+      <div class="comment-meta-block">
+        <div class="comment-meta-topline">
+          <span class="comment-author">${escapeHtml(comment.author_name)}</span>
+          ${comment.authorIsAdmin ? '<span class="comment-role-badge">Admin</span>' : ''}
+        </div>
+        <div class="comment-meta">
+          <span class="comment-date">${escapeHtml(commentDate)}</span>
+        </div>
+      </div>
     </div>
   `;
 

@@ -527,6 +527,37 @@ button.submit:hover {
   gap: 14px;
 }
 
+.comment-admin-author {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.comment-admin-avatar,
+.comment-admin-avatar-fallback {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, rgba(200, 16, 46, 0.14), rgba(158, 13, 35, 0.05));
+  color: var(--primary-red);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+}
+
+.comment-admin-avatar {
+  object-fit: cover;
+  background: var(--bg-primary);
+}
+
+.comment-admin-avatar-fallback svg {
+  width: 22px;
+  height: 22px;
+}
+
 .comment-admin-head {
   display: flex;
   justify-content: space-between;
@@ -544,6 +575,13 @@ button.submit:hover {
 .comment-admin-source {
   color: var(--text-secondary);
   font-size: 13px;
+}
+
+.comment-admin-email {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .comment-admin-content {
@@ -1406,6 +1444,22 @@ function getCommentSourceHref(comment) {
   return `blog-post.html?id=${encodeURIComponent(comment.source_id)}`;
 }
 
+function getCommentAuthorIconMarkup() {
+  return `
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="currentColor" d="M12 12.75a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm0 2.25c-4.2 0-7.75 2.17-7.75 5.17 0 .46.37.83.83.83h13.84a.83.83 0 0 0 .83-.83c0-3-3.55-5.17-7.75-5.17Z"/>
+    </svg>
+  `;
+}
+
+function getCommentAuthorAvatarMarkup(comment) {
+  if (comment.author_avatar_url) {
+    return `<img class="comment-admin-avatar" src="${escapeHtml(comment.author_avatar_url)}" alt="${escapeHtml(comment.author_name || "Comment author")}" referrerpolicy="no-referrer">`;
+  }
+
+  return `<span class="comment-admin-avatar-fallback" aria-hidden="true">${getCommentAuthorIconMarkup()}</span>`;
+}
+
 function updateCommentSummary(items) {
   const blogCount = items.filter((item) => item.content_type === "blog").length;
   const galleryCount = items.filter((item) => item.content_type === "gallery").length;
@@ -1433,12 +1487,17 @@ function renderAdminComments(items) {
     return `
       <article class="comment-admin-card">
         <div class="comment-admin-head">
-          <div class="primary-cell">
-            <strong>${escapeHtml(comment.author_name || "Community Member")}</strong>
-            <div class="comment-admin-meta">
-              <span class="${typeMeta.className}">${escapeHtml(typeMeta.label)}</span>
-              ${isReply ? '<span class="tag tag-reply">Reply</span>' : ""}
-              <span class="comment-admin-source">On ${escapeHtml(comment.source_title || "Untitled item")}</span>
+          <div class="comment-admin-author">
+            ${getCommentAuthorAvatarMarkup(comment)}
+            <div class="primary-cell">
+              <strong>${escapeHtml(comment.author_name || "Community Member")}</strong>
+              <div class="comment-admin-meta">
+                <span class="${typeMeta.className}">${escapeHtml(typeMeta.label)}</span>
+                ${comment.author_is_admin ? '<span class="tag tag-neutral">Admin</span>' : '<span class="tag tag-neutral">Member</span>'}
+                ${isReply ? '<span class="tag tag-reply">Reply</span>' : ""}
+                <span class="comment-admin-source">On ${escapeHtml(comment.source_title || "Untitled item")}</span>
+              </div>
+              <div class="comment-admin-email">${escapeHtml(comment.author_email || "Profile details unavailable")}</div>
             </div>
           </div>
           <span class="grid-item-meta">${escapeHtml(formatTimestamp(comment.created_at))}</span>
