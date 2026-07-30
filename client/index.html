@@ -448,16 +448,38 @@ nav {
 }
 
 .event-spotlight {
-  background: linear-gradient(180deg, rgba(24, 10, 14, 0.94), rgba(14, 6, 9, 0.98));
+  background:
+    linear-gradient(115deg, rgba(9, 7, 14, 0.98) 0%, rgba(24, 11, 27, 0.9) 43%, rgba(69, 21, 49, 0.68) 100%),
+    var(--event-image, url("event-fellowship-bg.png")) center / cover no-repeat;
   color: #f5f2f4;
   border-radius: 22px;
   padding: 24px 22px;
   border: 1px solid rgba(255,255,255,0.08);
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(185, 167, 255, 0.04);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 100%;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.event-spotlight::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 88% 4%, rgba(245, 158, 11, 0.2), transparent 32%),
+    linear-gradient(180deg, rgba(255,255,255,0.04), transparent 34%, rgba(3, 3, 8, 0.2));
+  pointer-events: none;
+  z-index: -1;
+}
+
+.event-spotlight > div,
+.event-spotlight > a {
+  position: relative;
+  z-index: 1;
 }
 
 .event-spotlight-label {
@@ -499,18 +521,21 @@ nav {
   justify-content: flex-start;
   padding: 11px 13px;
   border-radius: 14px;
-  background: rgba(255,255,255,0.06);
+  background: rgba(8, 7, 14, 0.42);
   border: 1px solid rgba(255,255,255,0.08);
   color: #f5f2f4;
   font-weight: 700;
+  backdrop-filter: blur(8px);
 }
 
 .event-countdown-card {
   margin-top: 18px;
   padding: 16px 15px;
   border-radius: 18px;
-  background: linear-gradient(135deg, #0f0f10, #1a1a1d);
+  background: linear-gradient(135deg, rgba(10, 9, 15, 0.82), rgba(35, 18, 39, 0.72));
+  border: 1px solid rgba(255,255,255,0.08);
   color: #ffffff;
+  backdrop-filter: blur(10px);
 }
 
 .event-countdown-label {
@@ -1004,6 +1029,7 @@ footer {
   .event-spotlight {
     border-radius: 20px;
     padding: 22px 18px;
+    background-position: 68% center;
   }
 
   .event-spotlight h3 {
@@ -1246,13 +1272,13 @@ footer {
     <button class="close-btn" onclick="closeForgotPasswordModal()">&times;</button>
     <h2>Reset Password</h2>
     <p class="profile-completion-copy">
-      Enter your email address and we’ll send you a link to choose a new password.
+      Enter your email address to continue to the password reset page.
     </p>
     <div id="forgotPasswordError" class="auth-error"></div>
     <div id="forgotPasswordSuccess" class="auth-success"></div>
     <form id="forgotPasswordForm" class="auth-form">
       <input type="email" id="forgotPasswordEmail" name="email" placeholder="Email Address" required>
-      <button type="submit" id="forgotPasswordSubmitBtn">Send Reset Link</button>
+      <button type="submit" id="forgotPasswordSubmitBtn">Continue to Reset</button>
     </form>
   </div>
 </div>
@@ -1286,6 +1312,7 @@ const forgotPasswordError = document.getElementById('forgotPasswordError');
 const forgotPasswordSuccess = document.getElementById('forgotPasswordSuccess');
 const forgotPasswordEmail = document.getElementById('forgotPasswordEmail');
 const forgotPasswordSubmitBtn = document.getElementById('forgotPasswordSubmitBtn');
+let pendingPasswordResetTab = null;
 const genderPromptModal = document.getElementById('genderPromptModal');
 const genderPromptForm = document.getElementById('genderPromptForm');
 const genderPromptError = document.getElementById('genderPromptError');
@@ -1634,7 +1661,8 @@ forgotPasswordForm.addEventListener('submit', async (e) => {
   forgotPasswordError.style.display = 'none';
   forgotPasswordSuccess.style.display = 'none';
   forgotPasswordSubmitBtn.disabled = true;
-  forgotPasswordSubmitBtn.textContent = 'Sending...';
+  forgotPasswordSubmitBtn.textContent = 'Opening...';
+  pendingPasswordResetTab = window.open('', '_blank');
 
   try {
     const response = await fetch(buildBackendUrl('/api/auth/forgot-password'), {
@@ -1650,19 +1678,41 @@ forgotPasswordForm.addEventListener('submit', async (e) => {
       throw new Error(result.error || 'Could not send reset email right now.');
     }
 
-    let message = result.message || 'If an account with that email exists, a reset link has been sent.';
+    let message = result.message || 'If an account with that email exists, continue with the password reset.';
     if (result.previewUrl) {
-      message += ` Open this link to continue: ${result.previewUrl}`;
+      if (pendingPasswordResetTab && !pendingPasswordResetTab.closed) {
+        pendingPasswordResetTab.location.href = result.previewUrl;
+        pendingPasswordResetTab.focus();
+        message = 'The password reset page has been opened in a new tab.';
+      } else {
+        message = 'Your browser blocked the new tab. Use the link below to continue.';
+        const resetLink = document.createElement('a');
+        resetLink.href = result.previewUrl;
+        resetLink.target = '_blank';
+        resetLink.rel = 'noopener noreferrer';
+        resetLink.textContent = 'Open password reset page';
+        forgotPasswordSuccess.textContent = `${message} `;
+        forgotPasswordSuccess.appendChild(resetLink);
+        forgotPasswordSuccess.style.display = 'block';
+        return;
+      }
+    } else if (pendingPasswordResetTab && !pendingPasswordResetTab.closed) {
+      pendingPasswordResetTab.close();
     }
 
     forgotPasswordSuccess.innerText = message;
     forgotPasswordSuccess.style.display = 'block';
   } catch (error) {
+    if (pendingPasswordResetTab && !pendingPasswordResetTab.closed) {
+      pendingPasswordResetTab.close();
+    }
+
     forgotPasswordError.innerText = error.message || 'Could not send reset email right now.';
     forgotPasswordError.style.display = 'block';
   } finally {
+    pendingPasswordResetTab = null;
     forgotPasswordSubmitBtn.disabled = false;
-    forgotPasswordSubmitBtn.textContent = 'Send Reset Link';
+    forgotPasswordSubmitBtn.textContent = 'Continue to Reset';
   }
 });
 
@@ -1743,6 +1793,7 @@ async function loadHeroContent() {
     const heroEventText = document.getElementById('heroEventText');
     const heroEventCountdown = document.getElementById('heroEventCountdown');
     const heroEventBtn = document.getElementById('heroEventBtn');
+    const heroEventSpotlight = document.querySelector('.event-spotlight');
 
     try {
         const response = await fetch(buildBackendUrl('/api/events'));
@@ -1760,6 +1811,13 @@ async function loadHeroContent() {
         });
 
         if (upcomingEvent) {
+            if (upcomingEvent.image_url) {
+                const eventImageUrl = buildBackendUrl(upcomingEvent.image_url).replace(/"/g, '%22');
+                heroEventSpotlight.style.setProperty('--event-image', `url("${eventImageUrl}")`);
+            } else {
+                heroEventSpotlight.style.removeProperty('--event-image');
+            }
+
             const dateOnly = upcomingEvent.event_date.split('T')[0];
             const targetDate = new Date(`${dateOnly}T${upcomingEvent.event_time || '00:00:00'}`);
 
@@ -1789,6 +1847,7 @@ async function loadHeroContent() {
         }
 
         heroEventTitle.textContent = 'More Gatherings Are On The Way';
+        heroEventSpotlight.style.removeProperty('--event-image');
         heroEventMeta.textContent = 'Watch this space';
         heroEventText.textContent = 'No upcoming event is listed right now, but the theme remains our call for the season. Check back soon for the next gathering.';
         heroEventCountdown.textContent = 'New event details will appear here soon.';

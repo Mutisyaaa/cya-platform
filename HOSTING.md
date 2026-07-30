@@ -82,6 +82,8 @@ or:
 
 For local development, if SMTP is not configured, the server logs a preview reset link instead of sending an email.
 
+In non-production, Forgot password opens the reset page in a new tab by default. Set `PASSWORD_RESET_DIRECT_LINK=false` to force email delivery, or set it to `true` only when you intentionally want direct-link resets. Direct-link mode exposes the one-time reset URL to the browser and should generally be limited to local development.
+
 For Gmail SMTP, use:
 
 - `SMTP_HOST=smtp.gmail.com`

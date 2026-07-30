@@ -124,6 +124,10 @@ const schemaBootstrapQuery = `
     event_time TIME, 
     fellowship_id INTEGER REFERENCES services(id) ON DELETE SET NULL,
     target_gender VARCHAR(10) DEFAULT 'all',
+    image_url TEXT,
+    image_storage_provider VARCHAR(50),
+    image_storage_public_id TEXT,
+    image_storage_resource_type VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -170,6 +174,12 @@ const schemaBootstrapQuery = `
     ADD COLUMN IF NOT EXISTS storage_provider VARCHAR(50),
     ADD COLUMN IF NOT EXISTS storage_public_id TEXT,
     ADD COLUMN IF NOT EXISTS storage_resource_type VARCHAR(50);
+
+  ALTER TABLE events
+    ADD COLUMN IF NOT EXISTS image_url TEXT,
+    ADD COLUMN IF NOT EXISTS image_storage_provider VARCHAR(50),
+    ADD COLUMN IF NOT EXISTS image_storage_public_id TEXT,
+    ADD COLUMN IF NOT EXISTS image_storage_resource_type VARCHAR(50);
 
   ALTER TABLE blog_saves
     ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
@@ -595,6 +605,22 @@ function isPasswordResetEmailConfigured() {
   return true;
 }
 
+function isPasswordResetDirectLinkEnabled() {
+  const configuredValue = String(process.env.PASSWORD_RESET_DIRECT_LINK || "")
+    .trim()
+    .toLowerCase();
+
+  if (configuredValue === "true") {
+    return true;
+  }
+
+  if (configuredValue === "false") {
+    return false;
+  }
+
+  return !isProduction;
+}
+
 function createPasswordResetTransport() {
   if (!nodemailer) {
     return null;
@@ -634,11 +660,16 @@ function createPasswordResetTransport() {
 
 async function sendPasswordResetEmail({ req, email, name, token }) {
   const resetUrl = buildPasswordResetUrl(req, token);
+  if (isPasswordResetDirectLinkEnabled()) {
+    console.info(`Password reset direct-link mode for ${email}: ${resetUrl}`);
+    return { delivered: false, previewUrl: resetUrl, direct: true };
+  }
+
   const previewOnly = !isProduction && !isPasswordResetEmailConfigured();
 
   if (previewOnly) {
     console.info(`Password reset preview for ${email}: ${resetUrl}`);
-    return { delivered: false, previewUrl: resetUrl };
+    return { delivered: false, previewUrl: resetUrl, direct: true };
   }
 
   const transport = createPasswordResetTransport();
@@ -672,7 +703,7 @@ async function sendPasswordResetEmail({ req, email, name, token }) {
     `,
   });
 
-  return { delivered: true, previewUrl: null };
+  return { delivered: true, previewUrl: null, direct: false };
 }
 
 function normalizeEmail(email) {
@@ -1426,6 +1457,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     return res.status(200).json({
       message: "If an account with that email exists, a password reset link has been sent.",
       previewUrl: mailResult.previewUrl,
+      directReset: Boolean(mailResult.direct),
     });
   } catch (error) {
     console.error("Forgot password error:", error);
@@ -2016,28 +2048,122 @@ app.get("/api/events", async (req, res) => {
   }
 });
 
-app.post("/api/events", ensureAdmin, async (req, res) => {
-  try {
-    const { title, date, time, description, fellowship_id, target_gender } = req.body;
+app.post(
+  "/api/events",
+  ensureAdmin,
+  (req, res, next) => {
+    eventImageUpload.single("event_image")(req, res, (err) => {
+      if (err) {
+        console.error("EVENT IMAGE UPLOAD ERROR:", err);
+        return res.status(400).json({ error: err.message || "Could not upload that event photo." });
+      }
 
-    const result = await pool.query(
-      "INSERT INTO events (title, event_date, event_time, description, fellowship_id, target_gender) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [title, date, time || null, description, fellowship_id || null, target_gender || 'all']
-    );
+      next();
+    });
+  },
+  async (req, res) => {
+    let imageUrl = null;
+    let imageStorageProvider = null;
+    let imageStoragePublicId = null;
+    let imageStorageResourceType = null;
 
-    res.status(201).json(result.rows[0]);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    try {
+      const { title, date, time, description, fellowship_id, target_gender } = req.body || {};
+
+      if (!title?.trim() || !date) {
+        if (req.file && !isCloudinaryConfigured()) {
+          deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+        }
+
+        return res.status(400).json({ error: "Event title and date are required." });
+      }
+
+      if (req.file) {
+        if (isCloudinaryConfigured()) {
+          const uploadedAsset = await uploadToCloudinary(req.file);
+          imageUrl = uploadedAsset.imageUrl;
+          imageStorageProvider = "cloudinary";
+          imageStoragePublicId = uploadedAsset.publicId;
+          imageStorageResourceType = uploadedAsset.resourceType;
+        } else {
+          imageUrl = `/uploads/${req.file.filename}`;
+          imageStorageProvider = "local";
+        }
+      }
+
+      const result = await pool.query(
+        `INSERT INTO events (
+          title,
+          event_date,
+          event_time,
+          description,
+          fellowship_id,
+          target_gender,
+          image_url,
+          image_storage_provider,
+          image_storage_public_id,
+          image_storage_resource_type
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+        [
+          title,
+          date,
+          time || null,
+          description,
+          fellowship_id || null,
+          target_gender || 'all',
+          imageUrl,
+          imageStorageProvider,
+          imageStoragePublicId,
+          imageStorageResourceType,
+        ]
+      );
+
+      res.status(201).json(result.rows[0]);
+    } catch (err) {
+      if (imageStorageProvider === "cloudinary" && imageStoragePublicId && isCloudinaryConfigured()) {
+        try {
+          await destroyCloudinaryAsset(imageStoragePublicId, imageStorageResourceType || "image");
+        } catch (cleanupError) {
+          console.error(`Failed to clean up Cloudinary event photo: ${imageStoragePublicId}`, cleanupError);
+        }
+      } else {
+        deleteLocalUploadIfPresent(imageUrl);
+      }
+
+      res.status(500).json({ error: err.message });
+    }
   }
-});
+);
 
 app.delete("/api/events/:id", ensureAdmin, async (req, res) => {
   try {
     const { id } = req.params;
+    const eventResult = await pool.query(
+      `SELECT image_url, image_storage_provider, image_storage_public_id, image_storage_resource_type
+       FROM events
+       WHERE id = $1`,
+      [id]
+    );
+
+    if (eventResult.rows.length === 0) {
+      return res.status(404).json({ error: "Event not found." });
+    }
+
+    const event = eventResult.rows[0];
     const result = await pool.query("DELETE FROM events WHERE id = $1", [id]);
 
     if (result.rowCount === 0) {
       return res.status(404).json({ error: "Event not found." });
+    }
+
+    if (event.image_storage_provider === "cloudinary" && event.image_storage_public_id && isCloudinaryConfigured()) {
+      try {
+        await destroyCloudinaryAsset(event.image_storage_public_id, event.image_storage_resource_type || "image");
+      } catch (cleanupError) {
+        console.error(`Failed to delete Cloudinary event photo: ${event.image_storage_public_id}`, cleanupError);
+      }
+    } else {
+      deleteLocalUploadIfPresent(event.image_url);
     }
 
     res.status(200).json({ message: "Event deleted successfully." });
@@ -2386,6 +2512,14 @@ const avatarUpload = multer({
   fileFilter: avatarFileFilter,
   limits: {
     fileSize: 4 * 1024 * 1024,
+  },
+});
+
+const eventImageUpload = multer({
+  storage: getAvatarUploadStorage(),
+  fileFilter: avatarFileFilter,
+  limits: {
+    fileSize: 8 * 1024 * 1024,
   },
 });
 

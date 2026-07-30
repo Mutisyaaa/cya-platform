@@ -33,6 +33,7 @@
   --bg-secondary: white;
   --text-primary: #222;
   --text-secondary: #666;
+  --text-muted: #888;
   --text-on-primary: white;
   --border-color: #e5e5e5;
   --shadow-color-light: rgba(0,0,0,0.05);
@@ -48,6 +49,7 @@
   --bg-secondary: #1e1e1e;
   --text-primary: #e0e0e0;
   --text-secondary: #a0a0a0;
+  --text-muted: #8d8d8d;
   --border-color: #333;
   --shadow-color-light: rgba(255,255,255,0.05);
   --shadow-color-heavy: rgba(255,255,255,0.12);
@@ -181,6 +183,19 @@ body {
   color: var(--text-secondary);
   font-size: 13px;
   font-weight: 600;
+}
+
+.field-hint {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.field-help {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .field-span {
@@ -1182,7 +1197,7 @@ button.submit:hover {
         <div class="panel-intro">
           <h2>Event Planner</h2>
         </div>
-        <form id="eventForm" class="admin-form">
+        <form id="eventForm" class="admin-form" enctype="multipart/form-data">
           <div class="form-grid">
             <div class="field-group field-span">
               <label for="event_title">Event Title</label>
@@ -1213,6 +1228,11 @@ button.submit:hover {
             <div class="field-group field-span">
               <label for="event_description">Event Description</label>
               <textarea id="event_description" name="description" placeholder="Add a short event description or key details"></textarea>
+            </div>
+            <div class="field-group field-span">
+              <label for="event_image">Hero Photo <span class="field-hint">Optional</span></label>
+              <input id="event_image" type="file" name="event_image" accept="image/*">
+              <small class="field-help">This photo will appear behind the event in the homepage hero. Maximum 8 MB.</small>
             </div>
           </div>
           <button class="submit" type="submit">Create Event</button>
@@ -2061,17 +2081,16 @@ document.getElementById("blogForm").addEventListener("submit", async function(e)
 
 document.getElementById("eventForm").addEventListener("submit", async function(e) {
   e.preventDefault();
-  const data = Object.fromEntries(new FormData(this));
+  const data = new FormData(this);
 
   try {
     const response = await fetch(buildBackendUrl("/api/events"), {
       method: "POST",
-      headers: { 
-        "Content-Type": "application/json",
+      headers: {
         "Accept": "application/json",
         "X-Requested-With": "fetch"
       },
-      body: JSON.stringify(data),
+      body: data,
       credentials: "include"
     });
 
