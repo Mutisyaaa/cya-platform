@@ -355,6 +355,7 @@ footer {
 
 </style>
 <link rel="stylesheet" href="mobile-navbar.css">
+<link rel="stylesheet" href="aos.css">
 </head>
 
 <body>
@@ -392,28 +393,13 @@ footer {
 
 <section class="blog-section">
   <div class="blog-grid">
-
-    <!-- Static example posts for now -->
-    <div class="blog-card">
-      <h3>Walking in Faith</h3>
-      <div class="meta">By Admin | March 2026</div>
-      <p>
-        Faith is trusting God even when the path ahead seems unclear.
-        Here is how we can grow deeper in daily faith.
-      </p>
-      <a href="#" class="read-more">Read More</a>
+    <div class="church-loader">
+      <div class="emblem-wrapper">
+        <div class="emblem-halo"></div>
+        <img src="favicon.png" alt="AIC Ziwani" class="loader-emblem">
+      </div>
+      <span class="loader-message">Gathering devotional blogs...</span>
     </div>
-
-    <div class="blog-card">
-      <h3>Serving with Purpose</h3>
-      <div class="meta">By Admin | March 2026</div>
-      <p>
-        Serving is not just an action, it is a calling.
-        Discover how purpose transforms community impact.
-      </p>
-      <a href="#" class="read-more">Read More</a>
-    </div>
-
   </div>
 </section>
 
@@ -464,7 +450,7 @@ async function loadBlogs() {
       return;
     }
 
-    blogs.forEach(blog => {
+    blogs.forEach((blog, index) => {
       const createdAt = new Date(blog.created_at).toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
@@ -472,7 +458,7 @@ async function loadBlogs() {
       });
 
       const card = `
-        <div class="blog-card">
+        <div class="blog-card" data-aos="fade-up" data-aos-delay="${(index % 3 + 1) * 100}">
           <h3>${blog.title}</h3>
           <div class="meta">By Admin | ${createdAt}</div>
           <p>${blog.content.substring(0, 150)}${blog.content.length > 150 ? '...' : ''}</p>
@@ -481,6 +467,10 @@ async function loadBlogs() {
       `;
       container.innerHTML += card;
     });
+
+    if (window.AOS) {
+      AOS.refreshHard();
+    }
 
   } catch (error) {
     console.error("Error loading blogs:", error);
@@ -493,6 +483,17 @@ async function loadBlogs() {
 document.addEventListener('DOMContentLoaded', loadBlogs);
 </script>
 <script src="navbar.js"></script>
+<script src="aos.js"></script>
+<script>
+  if (window.AOS) {
+    AOS.init({
+      duration: 600,
+      once: true,
+      offset: 80,
+      disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    });
+  }
+</script>
 
 <script src="/pwa.js" defer></script>
 </body>

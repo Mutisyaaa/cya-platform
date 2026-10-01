@@ -204,10 +204,21 @@ nav {
 }
 
 .hero-stat {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 18px;
-  padding: 18px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 20px;
+  padding: 20px 22px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.hero-stat:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .hero-stat span {
@@ -215,13 +226,77 @@ nav {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.72);
+  color: rgba(255, 255, 255, 0.76);
+  font-weight: 600;
 }
 
 .hero-stat strong {
   display: block;
   margin-top: 8px;
-  font-size: 28px;
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease, text-shadow 0.2s ease, color 0.2s ease;
+}
+
+.hero-stat strong.rolling-number {
+  color: #ffffff;
+  text-shadow: 0 0 18px rgba(255, 255, 255, 0.75);
+  transform: scale(1.05);
+}
+
+.hero-stat strong.roll-complete {
+  animation: numberSettlePop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes numberSettlePop {
+  0% {
+    transform: scale(1.08);
+    text-shadow: 0 0 18px rgba(255, 255, 255, 0.8);
+  }
+  60% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+    text-shadow: none;
+  }
+}
+
+.board-count {
+  min-width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.board-count.rolling-number {
+  transform: scale(1.1);
+  background: rgba(200, 16, 46, 0.12);
+  color: var(--primary-red);
+}
+
+.board-count.roll-complete {
+  animation: numberSettlePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-stat strong.rolling-number,
+  .hero-stat strong.roll-complete,
+  .board-count.rolling-number,
+  .board-count.roll-complete {
+    animation: none !important;
+    transform: none !important;
+    text-shadow: none !important;
+  }
 }
 
 .page-shell {
@@ -779,6 +854,7 @@ footer {
 }
 </style>
 <link rel="stylesheet" href="mobile-navbar.css">
+<link rel="stylesheet" href="aos.css">
 </head>
 
 <body>
@@ -809,7 +885,7 @@ footer {
   </div>
 </nav>
 
-<section class="hero">
+<section class="hero" data-aos="slide-up">
   <div class="hero-shell">
     <h2>Fellowship Hub For Real Conversations And Shared Planning</h2>
     <p>The fellowship page is now centered on discussion, gender-specific spaces and a shared planning board so men and women can raise matters that affect them, respond to one another and organize the next steps together.</p>
@@ -830,7 +906,7 @@ footer {
   </div>
 </section>
 
-<main class="page-shell">
+<main class="page-shell" data-aos="slide-up">
   <div class="hub-grid">
     <section>
       <div class="panel">
@@ -847,7 +923,15 @@ footer {
         <div id="hubStatus" class="hub-status" style="display:none;"></div>
       </div>
 
-      <div class="boards-grid" id="boardsHost"></div>
+      <div class="boards-grid" id="boardsHost">
+        <div class="church-loader">
+          <div class="emblem-wrapper">
+            <div class="emblem-halo"></div>
+            <img src="favicon.png" alt="AIC Ziwani" class="loader-emblem">
+          </div>
+          <span class="loader-message">Opening fellowship discussions...</span>
+        </div>
+      </div>
     </section>
 
     <aside class="side-stack">
@@ -1104,6 +1188,52 @@ function renderComposer() {
   document.getElementById("postComposer").addEventListener("submit", handlePostSubmit);
 }
 
+function animateCountUp(element, targetValue, duration = 1200, delay = 0) {
+  if (!element) return;
+  const target = Math.max(0, parseInt(targetValue, 10) || 0);
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    element.textContent = target;
+    return;
+  }
+
+  const startValue = parseInt(element.textContent, 10) || 0;
+  if (startValue === target && element.dataset.animatedValue === String(target)) {
+    return;
+  }
+
+  element.dataset.animatedValue = String(target);
+
+  setTimeout(() => {
+    element.classList.add('rolling-number');
+    const startTime = performance.now();
+
+    function easeOutExpo(x) {
+      return x === 1 ? 1 : 1 - Math.pow(2, -10 * x);
+    }
+
+    function step(currentTime) {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(1, elapsed / duration);
+      const easedProgress = easeOutExpo(progress);
+
+      const currentNumber = Math.round(startValue + (target - startValue) * easedProgress);
+      element.textContent = currentNumber;
+
+      if (progress < 1) {
+        requestAnimationFrame(step);
+      } else {
+        element.textContent = target;
+        element.classList.remove('rolling-number');
+        element.classList.add('roll-complete');
+        setTimeout(() => element.classList.remove('roll-complete'), 500);
+      }
+    }
+
+    requestAnimationFrame(step);
+  }, delay);
+}
+
 function updateHeroStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -1114,9 +1244,13 @@ function updateHeroStats() {
     return eventDate >= today;
   });
 
-  document.getElementById("heroPostCount").textContent = allPosts.length;
-  document.getElementById("heroEventCount").textContent = upcomingEvents.length;
-  document.getElementById("heroFellowshipCount").textContent = allFellowships.length;
+  const postCountEl = document.getElementById("heroPostCount");
+  const eventCountEl = document.getElementById("heroEventCount");
+  const fellowshipCountEl = document.getElementById("heroFellowshipCount");
+
+  animateCountUp(postCountEl, allPosts.length, 1200, 0);
+  animateCountUp(eventCountEl, upcomingEvents.length, 1100, 120);
+  animateCountUp(fellowshipCountEl, allFellowships.length, 1000, 240);
 }
 
 function renderEventRail() {
@@ -1197,7 +1331,7 @@ function renderComments(comments) {
 
 function renderPostCard(post) {
   return `
-    <article class="post-card">
+    <article class="post-card" data-aos="fade-up">
       <div class="post-topline">
         <span class="post-chip ${post.category === "planning" ? "chip-planning" : "chip-discussion"}">${CATEGORY_LABELS[post.category] || "Discussion"}</span>
         <span class="post-time">${escapeHtml(formatRelativeTime(post.created_at))}</span>
@@ -1241,6 +1375,16 @@ function renderBoards() {
   host.innerHTML = getVisibleBoardTargets()
     .map((target) => renderBoard(target))
     .join("");
+
+  host.querySelectorAll('.board-count').forEach((el, index) => {
+    const target = parseInt(el.textContent, 10) || 0;
+    el.textContent = '0';
+    animateCountUp(el, target, 750, index * 80);
+  });
+
+  if (window.AOS) {
+    AOS.refreshHard();
+  }
 }
 
 async function handlePostSubmit(event) {
@@ -1333,6 +1477,17 @@ document.getElementById("boardsHost").addEventListener("submit", (event) => {
 document.addEventListener("DOMContentLoaded", initializePage);
 </script>
 <script src="navbar.js"></script>
+<script src="aos.js"></script>
+<script>
+  if (window.AOS) {
+    AOS.init({
+      duration: 600,
+      once: true,
+      offset: 80,
+      disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    });
+  }
+</script>
 
 <script src="/pwa.js" defer></script>
 </body>

@@ -534,6 +534,7 @@ footer {
 }
 </style>
 <link rel="stylesheet" href="mobile-navbar.css">
+<link rel="stylesheet" href="aos.css">
 </head>
 
 <body>
@@ -569,7 +570,7 @@ footer {
   <p>Stay updated with what’s happening at AIC Ziwani, including past and upcoming gatherings.</p>
 </section>
 
-<section class="events-section">
+<section class="events-section" data-aos="slide-up">
   <h2 class="section-title">Events Calendar</h2>
   <div class="calendar-container">
     <div class="calendar-header">
@@ -584,7 +585,15 @@ footer {
   </div>
 
   <h2 class="section-title" style="margin-top: 60px;">Event Details</h2>
-  <div class="events-grid" id="eventsContainer"></div>
+  <div class="events-grid" id="eventsContainer">
+    <div class="church-loader">
+      <div class="emblem-wrapper">
+        <div class="emblem-halo"></div>
+        <img src="favicon.png" alt="AIC Ziwani" class="loader-emblem">
+      </div>
+      <span class="loader-message">Loading church gatherings...</span>
+    </div>
+  </div>
 </section>
 
 <footer>
@@ -697,7 +706,7 @@ footer {
       }
 
       const card = `
-        <div class="event-card">
+        <div class="event-card" data-aos="slide-up">
           ${isUpcoming ? '<div class="upcoming-badge">Upcoming</div>' : ''}
           <h3>${event.title}</h3>
           <div class="event-date">
@@ -714,6 +723,10 @@ footer {
 
       container.innerHTML += card;
     });
+
+    if (window.AOS) {
+      AOS.refreshHard();
+    }
   }
 
   function renderCalendar() {
@@ -866,6 +879,17 @@ footer {
   initializePage();
 </script>
 <script src="navbar.js"></script>
+<script src="aos.js"></script>
+<script>
+  if (window.AOS) {
+    AOS.init({
+      duration: 600,
+      once: true,
+      offset: 80,
+      disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    });
+  }
+</script>
 
 <script src="/pwa.js" defer></script>
 </body>

@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v1";
+const CACHE_NAME = "cya-shell-v7";
 
 const APP_SHELL = [
   "/",
@@ -14,6 +14,8 @@ const APP_SHELL = [
   "/reset-password.html",
   "/style.css",
   "/mobile-navbar.css",
+  "/aos.css",
+  "/aos.js",
   "/navbar.js",
   "/backend-origin.js",
   "/pwa.js",
