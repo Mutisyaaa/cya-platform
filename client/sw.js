@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v21";
+const CACHE_NAME = "cya-shell-v22";
 
 const APP_SHELL = [
   "/",
@@ -25,6 +25,8 @@ const APP_SHELL = [
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
+  "/notification-icon.png",
+  "/notification-icon-512.png",
   "/favicon.ico",
   "/favicon.png",
   "/logo.png"
@@ -116,8 +118,8 @@ self.addEventListener("push", (event) => {
   const title = data.title || "AIC Ziwani CYA";
   const options = {
     body: data.body || "New announcement from CYA!",
-    icon: data.icon || "/icon-192.png",
-    badge: data.badge || "/icon-192.png",
+    icon: data.icon || "/notification-icon.png",
+    badge: data.badge || "/notification-icon.png",
     data: {
       url: data.url || "/"
     },

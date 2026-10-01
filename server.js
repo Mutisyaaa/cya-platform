@@ -3201,8 +3201,8 @@ app.post("/api/push/send-test", async (req, res) => {
       title: "AIC Ziwani CYA",
       body: "Notifications are working! You will receive church youth updates and service reminders here.",
       url: "/",
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      icon: "/notification-icon.png",
+      badge: "/notification-icon.png",
       tag: "cya-test-welcome"
     });
 
@@ -3267,8 +3267,8 @@ app.post("/api/admin/push/send", ensureAdmin, async (req, res) => {
       title: title.trim(),
       body: body.trim(),
       url: url && url.trim() ? url.trim() : "/",
-      icon: "/icon-192.png",
-      badge: "/icon-192.png",
+      icon: "/notification-icon.png",
+      badge: "/notification-icon.png",
       tag: "cya-broadcast-" + Date.now()
     });
 

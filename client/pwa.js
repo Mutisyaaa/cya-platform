@@ -572,7 +572,7 @@
     pushBannerEl.setAttribute("role", "region");
     pushBannerEl.setAttribute("aria-label", "Notification permission prompt");
     pushBannerEl.innerHTML = `
-      <img src="/icon-192.png" alt="CYA Icon" class="cya-install-icon" />
+      <img src="/notification-icon.png" alt="CYA Notification Icon" class="cya-install-icon" />
       <div class="cya-install-text">
         <div class="cya-install-title">AIC Ziwani CYA</div>
         <div class="cya-install-desc">Enable notifications for youth events and fellowship updates</div>
