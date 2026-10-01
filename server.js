@@ -11,6 +11,17 @@ const pool = require("./db");
 const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const passport = require("passport");
+const webpush = require("web-push");
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BPhWNyjuYmtrqlyDLnrMus6Ahk-EgSRty_PCI3_6I03mKUdlu16be5Mqr2lRhbUAFTvdv_lLkw-QdoKaUvfiwKA";
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "mBjPLffqcVzP0vvX0Ay3oRPhwfhdG9plIyFAGwADhtw";
+const VAPID_SUBJECT = process.env.VAPID_SUBJECT || "mailto:aicyouthziwani@gmail.com";
+
+try {
+  webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+} catch (vapidError) {
+  console.warn("VAPID details setup warning:", vapidError.message);
+}
 
 let nodemailer = null;
 try {
@@ -165,6 +176,17 @@ const schemaBootstrapQuery = `
     expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
     used_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    endpoint TEXT UNIQUE NOT NULL,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
   );
 
   ALTER TABLE users
@@ -3083,6 +3105,175 @@ app.get("/api/stats/gallery", ensureAdmin, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// PUSH NOTIFICATION ROUTES
+app.get("/api/push/public-key", (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post("/api/push/subscribe", async (req, res) => {
+  const { subscription, userAgent } = req.body || {};
+  if (!subscription || !subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+    return res.status(400).json({ error: "Invalid push subscription object." });
+  }
+
+  const userId = req.user?.id || null;
+  const endpoint = subscription.endpoint;
+  const p256dh = subscription.keys.p256dh;
+  const auth = subscription.keys.auth;
+  const clientUa = (userAgent || req.headers["user-agent"] || "").slice(0, 500);
+
+  try {
+    await pool.query(
+      `INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth, user_agent, updated_at)
+       VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP)
+       ON CONFLICT (endpoint)
+       DO UPDATE SET
+         user_id = COALESCE(EXCLUDED.user_id, push_subscriptions.user_id),
+         p256dh = EXCLUDED.p256dh,
+         auth = EXCLUDED.auth,
+         user_agent = EXCLUDED.user_agent,
+         updated_at = CURRENT_TIMESTAMP`,
+      [userId, endpoint, p256dh, auth, clientUa]
+    );
+
+    return res.json({ success: true, message: "Push subscription saved successfully." });
+  } catch (error) {
+    console.error("Push subscribe error:", error);
+    return res.status(500).json({ error: "Failed to save push subscription." });
+  }
+});
+
+app.post("/api/push/unsubscribe", async (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) {
+    return res.status(400).json({ error: "Endpoint is required to unsubscribe." });
+  }
+
+  try {
+    await pool.query("DELETE FROM push_subscriptions WHERE endpoint = $1", [endpoint]);
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Push unsubscribe error:", error);
+    return res.status(500).json({ error: "Failed to unsubscribe." });
+  }
+});
+
+app.get("/api/push/status", async (req, res) => {
+  const endpoint = req.query.endpoint;
+  if (!endpoint) {
+    return res.json({ isSubscribed: false });
+  }
+  try {
+    const result = await pool.query("SELECT id FROM push_subscriptions WHERE endpoint = $1", [endpoint]);
+    return res.json({ isSubscribed: result.rows.length > 0 });
+  } catch (error) {
+    return res.json({ isSubscribed: false });
+  }
+});
+
+app.get("/api/admin/push/stats", ensureAdmin, async (req, res) => {
+  try {
+    const totalResult = await pool.query("SELECT COUNT(*) FROM push_subscriptions");
+    const userResult = await pool.query("SELECT COUNT(*) FROM push_subscriptions WHERE user_id IS NOT NULL");
+    const total = parseInt(totalResult.rows[0].count, 10);
+    const userCount = parseInt(userResult.rows[0].count, 10);
+    return res.json({
+      totalSubscribers: total,
+      userSubscribers: userCount,
+      guestSubscribers: total - userCount
+    });
+  } catch (error) {
+    console.error("Admin push stats error:", error);
+    return res.status(500).json({ error: "Failed to fetch push statistics." });
+  }
+});
+
+app.post("/api/admin/push/send", ensureAdmin, async (req, res) => {
+  const { title, body, url, targetGender } = req.body || {};
+  if (!title || !body) {
+    return res.status(400).json({ error: "Title and message body are required." });
+  }
+
+  try {
+    let query = `
+      SELECT ps.id, ps.endpoint, ps.p256dh, ps.auth, ps.user_id, u.gender
+      FROM push_subscriptions ps
+      LEFT JOIN users u ON ps.user_id = u.id
+    `;
+    const params = [];
+    if (targetGender && ["male", "female"].includes(targetGender)) {
+      query += ` WHERE u.gender = $1 OR ps.user_id IS NULL`;
+      params.push(targetGender);
+    }
+
+    const result = await pool.query(query, params);
+    const subscriptions = result.rows;
+
+    if (subscriptions.length === 0) {
+      return res.json({
+        success: true,
+        sentCount: 0,
+        failedCount: 0,
+        cleanedCount: 0,
+        message: "No active subscribers found."
+      });
+    }
+
+    const payload = JSON.stringify({
+      title: title.trim(),
+      body: body.trim(),
+      url: url && url.trim() ? url.trim() : "/",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: "cya-broadcast-" + Date.now()
+    });
+
+    let sentCount = 0;
+    let failedCount = 0;
+    const staleIds = [];
+
+    await Promise.all(
+      subscriptions.map(async (sub) => {
+        const pushSubscription = {
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: sub.p256dh,
+            auth: sub.auth
+          }
+        };
+
+        try {
+          await webpush.sendNotification(pushSubscription, payload);
+          sentCount++;
+        } catch (error) {
+          failedCount++;
+          if (error.statusCode === 404 || error.statusCode === 410) {
+            staleIds.push(sub.id);
+          } else {
+            console.warn("Push delivery error for endpoint:", sub.endpoint.slice(0, 30), error.message);
+          }
+        }
+      })
+    );
+
+    if (staleIds.length > 0) {
+      await pool.query("DELETE FROM push_subscriptions WHERE id = ANY($1::int[])", [staleIds]);
+    }
+
+    return res.json({
+      success: true,
+      sentCount,
+      failedCount,
+      cleanedCount: staleIds.length,
+      message: `Notification sent to ${sentCount} device${sentCount === 1 ? "" : "s"}.`
+    });
+  } catch (error) {
+    console.error("Admin push broadcast error:", error);
+    return res.status(500).json({ error: "Failed to broadcast push notification." });
+  }
+});
+
 
 // Catch-all for 404 Not Found for API routes
 app.use((req, res, next) => {

@@ -416,4 +416,97 @@
       setTimeout(showBanner, 3000);
     }
   }
+
+  function urlB64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
+
+  window.cyaPush = {
+    isSupported() {
+      return (
+        "serviceWorker" in navigator &&
+        "PushManager" in window &&
+        "Notification" in window
+      );
+    },
+
+    getPermissionState() {
+      if (!("Notification" in window)) return "unsupported";
+      return Notification.permission;
+    },
+
+    async getSubscription() {
+      if (!this.isSupported()) return null;
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        return await reg.pushManager.getSubscription();
+      } catch {
+        return null;
+      }
+    },
+
+    async subscribe() {
+      if (!this.isSupported()) {
+        throw new Error("Push notifications are not supported on this device.");
+      }
+
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        throw new Error("Notification permission was not granted.");
+      }
+
+      const keyRes = await fetch("/api/push/public-key");
+      const { publicKey } = await keyRes.json();
+      if (!publicKey) {
+        throw new Error("Server push key is unavailable.");
+      }
+
+      const reg = await navigator.serviceWorker.ready;
+      let subscription = await reg.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await reg.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlB64ToUint8Array(publicKey)
+        });
+      }
+
+      const saveRes = await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          subscription: subscription.toJSON(),
+          userAgent: navigator.userAgent
+        })
+      });
+
+      if (!saveRes.ok) {
+        throw new Error("Failed to register subscription with server.");
+      }
+
+      return subscription;
+    },
+
+    async unsubscribe() {
+      if (!this.isSupported()) return false;
+      const reg = await navigator.serviceWorker.ready;
+      const subscription = await reg.pushManager.getSubscription();
+      if (subscription) {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ endpoint: subscription.endpoint })
+        }).catch(() => {});
+        return await subscription.unsubscribe();
+      }
+      return true;
+    }
+  };
 })();
+

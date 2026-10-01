@@ -643,6 +643,16 @@ body {
           <div id="infoGender">-</div>
         </div>
       </div>
+
+      <div class="notification-panel" style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--border-color);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+          <strong style="font-size: 15px;">Push Notifications</strong>
+          <span id="pushStatusBadge" class="hero-chip" style="font-size: 11px; padding: 4px 10px; background: var(--button-bg); color: var(--text-secondary);">Checking...</span>
+        </div>
+        <p class="helper-text" style="margin-bottom: 14px;">Receive instant alerts on this device about youth services, fellowship events and church announcements.</p>
+        <button id="pushToggleBtn" class="primary-button" type="button" style="width: 100%; font-size: 13px; padding: 10px 16px;">Enable Notifications</button>
+        <div id="pushFeedback" class="helper-text" style="margin-top: 8px; font-size: 12px; display: none;"></div>
+      </div>
     </aside>
   </section>
 
@@ -1009,6 +1019,91 @@ logoutButton.addEventListener("click", async () => {
     window.location.href = "/index.html";
   }
 });
+
+const pushStatusBadge = document.getElementById("pushStatusBadge");
+const pushToggleBtn = document.getElementById("pushToggleBtn");
+const pushFeedback = document.getElementById("pushFeedback");
+
+function setPushFeedback(msg, isError = false) {
+  if (!pushFeedback) return;
+  if (!msg) {
+    pushFeedback.style.display = "none";
+    pushFeedback.textContent = "";
+    return;
+  }
+  pushFeedback.style.display = "block";
+  pushFeedback.style.color = isError ? "var(--primary-red)" : "#2e7d32";
+  pushFeedback.textContent = msg;
+}
+
+async function updatePushUi() {
+  if (!pushStatusBadge || !pushToggleBtn) return;
+  if (!window.cyaPush || !window.cyaPush.isSupported()) {
+    pushStatusBadge.textContent = "Unsupported";
+    pushToggleBtn.disabled = true;
+    pushToggleBtn.textContent = "Not Supported on Browser";
+    return;
+  }
+
+  const permission = window.cyaPush.getPermissionState();
+  if (permission === "denied") {
+    pushStatusBadge.textContent = "Blocked";
+    pushStatusBadge.style.background = "#ffebee";
+    pushStatusBadge.style.color = "#c8102e";
+    pushToggleBtn.disabled = true;
+    pushToggleBtn.textContent = "Blocked in Browser Settings";
+    setPushFeedback("Notifications were blocked. Please enable notifications in your browser site settings.", true);
+    return;
+  }
+
+  try {
+    const sub = await window.cyaPush.getSubscription();
+    if (sub) {
+      pushStatusBadge.textContent = "Active";
+      pushStatusBadge.style.background = "#e8f5e9";
+      pushStatusBadge.style.color = "#2e7d32";
+      pushToggleBtn.disabled = false;
+      pushToggleBtn.textContent = "Disable Notifications";
+      pushToggleBtn.className = "secondary-button";
+    } else {
+      pushStatusBadge.textContent = "Off";
+      pushStatusBadge.style.background = "var(--button-bg)";
+      pushStatusBadge.style.color = "var(--text-secondary)";
+      pushToggleBtn.disabled = false;
+      pushToggleBtn.textContent = "Enable Notifications";
+      pushToggleBtn.className = "primary-button";
+    }
+  } catch (err) {
+    console.warn("Could not check push subscription:", err);
+  }
+}
+
+if (pushToggleBtn) {
+  pushToggleBtn.addEventListener("click", async () => {
+    setPushFeedback("");
+    pushToggleBtn.disabled = true;
+    const isSubscribing = pushToggleBtn.textContent.includes("Enable");
+    pushToggleBtn.textContent = isSubscribing ? "Enabling..." : "Disabling...";
+
+    try {
+      if (isSubscribing) {
+        await window.cyaPush.subscribe();
+        setPushFeedback("Notifications enabled successfully!");
+      } else {
+        await window.cyaPush.unsubscribe();
+        setPushFeedback("Notifications turned off on this device.");
+      }
+    } catch (err) {
+      setPushFeedback(err.message || "Failed to update notification settings.", true);
+    } finally {
+      await updatePushUi();
+    }
+  });
+
+  window.addEventListener("load", () => {
+    setTimeout(updatePushUi, 600);
+  });
+}
 
 loadProfile();
 </script>

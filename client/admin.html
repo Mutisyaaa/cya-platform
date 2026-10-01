@@ -1042,6 +1042,7 @@ button.submit:hover {
   <button onclick="showSection('ministries')">Ministries</button>
   <button onclick="showSection('events')">Events</button>
   <button onclick="showSection('users')">Users</button>
+  <button onclick="showSection('notifications')">Notifications</button>
   <button onclick="window.location.href='/'">Back To Site</button>
   <button onclick="logout()">Logout</button>
 </div>
@@ -1274,6 +1275,68 @@ button.submit:hover {
     <div class="card">
       <h2>Registered Users</h2>
       <div id="userList"></div>
+    </div>
+  </div>
+
+  <div id="notifications" class="section">
+    <div class="section-content-grid">
+      <div class="card">
+        <h2>Send Push Notification</h2>
+        <form id="pushNotificationForm">
+          <label style="display:block; font-weight:600; margin-bottom:6px; font-size:14px;">Notification Title</label>
+          <input type="text" id="pushTitleInput" name="title" placeholder="e.g. Youth Fellowship Tomorrow!" required style="width:100%; margin-bottom:14px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--input-bg); color:var(--text-primary);">
+          
+          <label style="display:block; font-weight:600; margin-bottom:6px; font-size:14px;">Message Body</label>
+          <textarea id="pushBodyInput" name="body" placeholder="e.g. Join us at 2:00 PM for fellowship, worship and Scripture study!" required rows="3" style="width:100%; margin-bottom:14px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--input-bg); color:var(--text-primary); font-family:inherit;"></textarea>
+
+          <label style="display:block; font-weight:600; margin-bottom:6px; font-size:14px;">Target Link (opens when clicked)</label>
+          <input type="text" id="pushUrlInput" name="url" value="/events.html" placeholder="e.g. /events.html or /fellowship.html" style="width:100%; margin-bottom:14px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--input-bg); color:var(--text-primary);">
+
+          <label style="display:block; font-weight:600; margin-bottom:6px; font-size:14px;">Target Audience</label>
+          <select id="pushTargetGender" name="targetGender" style="width:100%; margin-bottom:18px; padding:10px; border:1px solid var(--border-color); border-radius:8px; background:var(--input-bg); color:var(--text-primary);">
+            <option value="all">All Active Subscribers (Everyone)</option>
+            <option value="male">Brothers Fellowship Only</option>
+            <option value="female">Sisters Fellowship Only</option>
+          </select>
+
+          <button id="sendPushBtn" class="submit" type="submit" style="width:100%; padding:12px; background:var(--primary-red); color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer;">Broadcast Notification</button>
+        </form>
+        <div id="pushSendStatus" style="margin-top:14px; padding:12px; border-radius:8px; display:none; font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>Push Audience & Status</h2>
+        <div class="stats-grid" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:12px; margin-bottom:20px;">
+          <div class="stat-item" style="padding:14px; background:var(--input-bg); border-radius:8px; text-align:center;">
+            <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">Total Devices</h3>
+            <p id="pushTotalSubscribers" style="font-size:24px; font-weight:700; color:var(--primary-red); margin:0;">0</p>
+          </div>
+          <div class="stat-item" style="padding:14px; background:var(--input-bg); border-radius:8px; text-align:center;">
+            <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">Registered Users</h3>
+            <p id="pushUserSubscribers" style="font-size:24px; font-weight:700; margin:0;">0</p>
+          </div>
+          <div class="stat-item" style="padding:14px; background:var(--input-bg); border-radius:8px; text-align:center;">
+            <h3 style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">Guest Devices</h3>
+            <p id="pushGuestSubscribers" style="font-size:24px; font-weight:700; margin:0;">0</p>
+          </div>
+        </div>
+
+        <h3 style="font-size:15px; margin-bottom:10px;">Live Notification Preview</h3>
+        <div style="background:var(--input-bg); border:1px solid var(--border-color); border-radius:14px; padding:14px; display:flex; gap:12px; align-items:flex-start;">
+          <img src="/icon-192.png" alt="CYA App Icon" width="44" height="44" style="border-radius:10px; background:#ffffff; box-shadow:0 2px 6px rgba(0,0,0,0.1); flex-shrink:0;">
+          <div style="flex:1; min-width:0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:3px;">
+              <strong id="previewTitle" style="font-size:14px; font-weight:700; color:var(--text-primary);">AIC Ziwani CYA</strong>
+              <span style="font-size:11px; color:var(--text-secondary);">now</span>
+            </div>
+            <p id="previewBody" style="font-size:13px; color:var(--text-secondary); margin:0; line-height:1.4;">Notification message will appear here...</p>
+          </div>
+        </div>
+
+        <p class="helper-text" style="margin-top:16px; font-size:12px; color:var(--text-secondary); line-height:1.5;">
+          Subscribers receive notifications instantly on Android, Windows, Mac and iOS (when added to Home Screen). Expired devices are pruned automatically.
+        </p>
+      </div>
     </div>
   </div>
 
@@ -1692,6 +1755,7 @@ async function showSection(id) {
   else if (id === 'events') await loadEvents();
   else if (id === 'ministries') await loadMinistries();
   else if (id === 'overview') await loadStats();
+  else if (id === 'notifications') await loadPushStats();
 }
 
 async function loadGallery() {
@@ -2261,6 +2325,88 @@ document.querySelector('.main').addEventListener('click', async (e) => {
     }
   }
 });
+
+async function loadPushStats() {
+  try {
+    const res = await fetch(buildBackendUrl("/api/admin/push/stats"), { credentials: "include" });
+    if (!res.ok) return;
+    const data = await res.json();
+    document.getElementById("pushTotalSubscribers").textContent = data.totalSubscribers || 0;
+    document.getElementById("pushUserSubscribers").textContent = data.userSubscribers || 0;
+    document.getElementById("pushGuestSubscribers").textContent = data.guestSubscribers || 0;
+  } catch (err) {
+    console.warn("Could not load push statistics:", err);
+  }
+}
+
+const pushTitleInput = document.getElementById("pushTitleInput");
+const pushBodyInput = document.getElementById("pushBodyInput");
+const previewTitle = document.getElementById("previewTitle");
+const previewBody = document.getElementById("previewBody");
+
+if (pushTitleInput && previewTitle) {
+  pushTitleInput.addEventListener("input", () => {
+    previewTitle.textContent = pushTitleInput.value.trim() || "AIC Ziwani CYA";
+  });
+}
+
+if (pushBodyInput && previewBody) {
+  pushBodyInput.addEventListener("input", () => {
+    previewBody.textContent = pushBodyInput.value.trim() || "Notification message will appear here...";
+  });
+}
+
+const pushForm = document.getElementById("pushNotificationForm");
+if (pushForm) {
+  pushForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById("sendPushBtn");
+    const statusEl = document.getElementById("pushSendStatus");
+
+    const title = pushTitleInput.value.trim();
+    const body = pushBodyInput.value.trim();
+    const url = document.getElementById("pushUrlInput")?.value.trim() || "/events.html";
+    const targetGender = document.getElementById("pushTargetGender")?.value || "all";
+
+    if (!title || !body) return;
+
+    btn.disabled = true;
+    btn.textContent = "Broadcasting...";
+    statusEl.style.display = "block";
+    statusEl.style.background = "#eef2ff";
+    statusEl.style.color = "#3730a3";
+    statusEl.textContent = "Broadcasting notification to registered devices...";
+
+    try {
+      const res = await fetch(buildBackendUrl("/api/admin/push/send"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ title, body, url, targetGender })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to broadcast notification.");
+      }
+
+      statusEl.style.background = "#e8f5e9";
+      statusEl.style.color = "#2e7d32";
+      statusEl.textContent = `Success! Notification delivered to ${data.sentCount} device${data.sentCount === 1 ? "" : "s"}.${data.cleanedCount ? ` (${data.cleanedCount} expired devices cleaned up)` : ""}`;
+      pushForm.reset();
+      previewTitle.textContent = "AIC Ziwani CYA";
+      previewBody.textContent = "Notification message will appear here...";
+      await loadPushStats();
+    } catch (err) {
+      statusEl.style.background = "#ffebee";
+      statusEl.style.color = "#c8102e";
+      statusEl.textContent = `Error: ${err.message}`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Broadcast Notification";
+    }
+  });
+}
 
 async function initializeDashboard() {
   try {

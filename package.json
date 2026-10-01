@@ -9,7 +9,8 @@
     "nodemailer": "^8.0.7",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "pg": "^8.20.0"
+    "pg": "^8.20.0",
+    "web-push": "^3.6.7"
   },
   "name": "cya-platform",
   "version": "1.0.0",
