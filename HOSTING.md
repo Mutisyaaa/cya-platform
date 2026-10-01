@@ -115,7 +115,7 @@ Example:
 - `API_ORIGIN=https://cya-platform-api.onrender.com`
 - `CORS_ALLOWED_ORIGINS=https://cya-frontend.onrender.com`
 
-The frontend loads `runtime-config.js` to discover `API_ORIGIN`, and reset links also include the backend origin automatically.
+The frontend loads `runtime-config.js` to discover `API_ORIGIN` and reset links also include the backend origin automatically.
 
 ## Google login callback
 

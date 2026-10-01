@@ -1330,7 +1330,7 @@ app.post("/api/auth/register", async (req, res) => {
     const normalizedGender = typeof gender === "string" ? gender.trim().toLowerCase() : "";
 
     if (!name || !email || !password || (!isBootstrapAdmin && !normalizedGender)) {
-      return res.status(400).json({ error: isBootstrapAdmin ? "Name, email, and password are required." : "Name, email, password, and gender are required." });
+      return res.status(400).json({ error: isBootstrapAdmin ? "Name, email and password are required." : "Name, email, password and gender are required." });
     }
 
     if (normalizedGender && !isValidUserGender(normalizedGender)) {
