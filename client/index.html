@@ -74,10 +74,22 @@
   font-family: Arial, sans-serif;
 }
 
+@keyframes appEntrance {
+  0% {
+    opacity: 0.88;
+    transform: translateY(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 body {
   background: var(--bg-primary);
   color: var(--text-primary);
   scroll-behavior: smooth;
+  animation: appEntrance 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ================= NAVBAR ================= */
