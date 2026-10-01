@@ -1,8 +1,9 @@
-const CACHE_NAME = "cya-shell-v7";
+const CACHE_NAME = "cya-shell-v8";
 
 const APP_SHELL = [
   "/",
   "/index.html",
+  "/contact.html",
   "/events.html",
   "/fellowship.html",
   "/gallery.html",
@@ -12,6 +13,8 @@ const APP_SHELL = [
   "/admin-gallery.html",
   "/profile.html",
   "/reset-password.html",
+  "/rev-patrick-odhiambo.jpg",
+  "/pastor-jeffer-wambua.jpg",
   "/style.css",
   "/mobile-navbar.css",
   "/aos.css",
