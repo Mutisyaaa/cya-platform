@@ -5,6 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#c8102e">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <link rel="apple-touch-icon" href="/favicon.png">
   <script>
     (function() {
       const { protocol, hostname, port, pathname, search, hash } = window.location;
@@ -193,5 +198,6 @@ form.addEventListener("submit", async function(e) {
 });
 </script>
 
+  <script src="/pwa.js" defer></script>
 </body>
 </html>
