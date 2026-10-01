@@ -651,6 +651,7 @@ body {
         </div>
         <p class="helper-text" style="margin-bottom: 14px;">Receive instant alerts on this device about youth services, fellowship events and church announcements.</p>
         <button id="pushToggleBtn" class="primary-button" type="button" style="width: 100%; font-size: 13px; padding: 10px 16px;">Enable Notifications</button>
+        <button id="pushTestBtn" class="secondary-button" type="button" style="width: 100%; font-size: 13px; padding: 10px 16px; margin-top: 8px; display: none;">Send Test Notification</button>
         <div id="pushFeedback" class="helper-text" style="margin-top: 8px; font-size: 12px; display: none;"></div>
       </div>
     </aside>
@@ -1058,6 +1059,8 @@ async function updatePushUi() {
 
   try {
     const sub = await window.cyaPush.getSubscription();
+const pushTestBtn = document.getElementById("pushTestBtn");
+
     if (sub) {
       pushStatusBadge.textContent = "Active";
       pushStatusBadge.style.background = "#e8f5e9";
@@ -1065,6 +1068,7 @@ async function updatePushUi() {
       pushToggleBtn.disabled = false;
       pushToggleBtn.textContent = "Disable Notifications";
       pushToggleBtn.className = "secondary-button";
+      if (pushTestBtn) pushTestBtn.style.display = "block";
     } else {
       pushStatusBadge.textContent = "Off";
       pushStatusBadge.style.background = "var(--button-bg)";
@@ -1072,6 +1076,7 @@ async function updatePushUi() {
       pushToggleBtn.disabled = false;
       pushToggleBtn.textContent = "Enable Notifications";
       pushToggleBtn.className = "primary-button";
+      if (pushTestBtn) pushTestBtn.style.display = "none";
     }
   } catch (err) {
     console.warn("Could not check push subscription:", err);
@@ -1087,8 +1092,8 @@ if (pushToggleBtn) {
 
     try {
       if (isSubscribing) {
-        await window.cyaPush.subscribe();
-        setPushFeedback("Notifications enabled successfully!");
+        await window.cyaPush.subscribe(true);
+        setPushFeedback("Notifications enabled successfully! Welcome alert sent to your device.");
       } else {
         await window.cyaPush.unsubscribe();
         setPushFeedback("Notifications turned off on this device.");
@@ -1099,6 +1104,23 @@ if (pushToggleBtn) {
       await updatePushUi();
     }
   });
+
+  if (pushTestBtn) {
+    pushTestBtn.addEventListener("click", async () => {
+      setPushFeedback("");
+      pushTestBtn.disabled = true;
+      pushTestBtn.textContent = "Sending test alert...";
+      try {
+        await window.cyaPush.sendTest();
+        setPushFeedback("Test notification sent! Check your notification tray or lock screen.");
+      } catch (err) {
+        setPushFeedback(err.message || "Failed to deliver test notification.", true);
+      } finally {
+        pushTestBtn.disabled = false;
+        pushTestBtn.textContent = "Send Test Notification";
+      }
+    });
+  }
 
   window.addEventListener("load", () => {
     setTimeout(updatePushUi, 600);

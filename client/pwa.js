@@ -417,6 +417,16 @@
     }
   }
 
+  function getApiUrl(endpointPath) {
+    if (typeof buildBackendUrl === "function") {
+      return buildBackendUrl(endpointPath);
+    }
+    if (window.CYABackendOrigin && typeof window.CYABackendOrigin.buildBackendUrl === "function") {
+      return window.CYABackendOrigin.buildBackendUrl(endpointPath);
+    }
+    return endpointPath;
+  }
+
   function urlB64ToUint8Array(base64String) {
     const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
     const base64 = (base64String + padding).replace(/\-/g, "+").replace(/_/g, "/");
@@ -452,7 +462,7 @@
       }
     },
 
-    async subscribe() {
+    async subscribe(sendWelcomeTest = true) {
       if (!this.isSupported()) {
         throw new Error("Push notifications are not supported on this device.");
       }
@@ -462,7 +472,7 @@
         throw new Error("Notification permission was not granted.");
       }
 
-      const keyRes = await fetch("/api/push/public-key");
+      const keyRes = await fetch(getApiUrl("/api/push/public-key"), { credentials: "include" });
       const { publicKey } = await keyRes.json();
       if (!publicKey) {
         throw new Error("Server push key is unavailable.");
@@ -477,9 +487,10 @@
         });
       }
 
-      const saveRes = await fetch("/api/push/subscribe", {
+      const saveRes = await fetch(getApiUrl("/api/push/subscribe"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           subscription: subscription.toJSON(),
           userAgent: navigator.userAgent
@@ -490,7 +501,34 @@
         throw new Error("Failed to register subscription with server.");
       }
 
+      if (sendWelcomeTest) {
+        fetch(getApiUrl("/api/push/send-test"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ endpoint: subscription.endpoint })
+        }).catch((e) => console.warn("Could not trigger welcome notification:", e));
+      }
+
       return subscription;
+    },
+
+    async sendTest() {
+      const sub = await this.getSubscription();
+      if (!sub) {
+        throw new Error("Device is not subscribed yet. Please enable notifications first.");
+      }
+      const res = await fetch(getApiUrl("/api/push/send-test"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ endpoint: sub.endpoint })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to deliver test notification.");
+      }
+      return data;
     },
 
     async unsubscribe() {
@@ -498,9 +536,10 @@
       const reg = await navigator.serviceWorker.ready;
       const subscription = await reg.pushManager.getSubscription();
       if (subscription) {
-        await fetch("/api/push/unsubscribe", {
+        await fetch(getApiUrl("/api/push/unsubscribe"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          credentials: "include",
           body: JSON.stringify({ endpoint: subscription.endpoint })
         }).catch(() => {});
         return await subscription.unsubscribe();
@@ -508,5 +547,94 @@
       return true;
     }
   };
+
+  const PUSH_PROMPT_DISMISS_KEY = "cya_push_prompt_dismissed_until";
+
+  function isPushPromptDismissed() {
+    const until = safeStorageGet(PUSH_PROMPT_DISMISS_KEY);
+    if (!until) return false;
+    return Date.now() < Number(until);
+  }
+
+  function dismissPushPrompt(days = 7) {
+    safeStorageSet(PUSH_PROMPT_DISMISS_KEY, String(Date.now() + days * 24 * 60 * 60 * 1000));
+    hidePushBanner();
+  }
+
+  let pushBannerEl = null;
+
+  function createPushBanner() {
+    if (pushBannerEl) return pushBannerEl;
+    injectStyles();
+
+    pushBannerEl = document.createElement("div");
+    pushBannerEl.className = "cya-install-banner";
+    pushBannerEl.setAttribute("role", "region");
+    pushBannerEl.setAttribute("aria-label", "Notification permission prompt");
+    pushBannerEl.innerHTML = `
+      <img src="/icon-192.png" alt="CYA Icon" class="cya-install-icon" />
+      <div class="cya-install-text">
+        <div class="cya-install-title">AIC Ziwani CYA</div>
+        <div class="cya-install-desc">Enable notifications for youth events and fellowship updates</div>
+      </div>
+      <div class="cya-install-actions">
+        <button type="button" class="cya-install-btn" id="cyaPushEnableActionBtn">Enable</button>
+        <button type="button" class="cya-install-dismiss" id="cyaPushDismissActionBtn" aria-label="Dismiss">✕</button>
+      </div>
+    `;
+
+    document.body.appendChild(pushBannerEl);
+
+    const enableBtn = pushBannerEl.querySelector("#cyaPushEnableActionBtn");
+    const dismissBtn = pushBannerEl.querySelector("#cyaPushDismissActionBtn");
+
+    enableBtn.addEventListener("click", async () => {
+      enableBtn.disabled = true;
+      enableBtn.textContent = "...";
+      try {
+        await window.cyaPush.subscribe(true);
+        hidePushBanner();
+      } catch (err) {
+        console.warn("Could not subscribe from banner:", err.message);
+        hidePushBanner();
+      }
+    });
+
+    dismissBtn.addEventListener("click", () => {
+      dismissPushPrompt(7);
+    });
+
+    return pushBannerEl;
+  }
+
+  function showPushBanner() {
+    if (!window.cyaPush || !window.cyaPush.isSupported()) return;
+    if (window.cyaPush.getPermissionState() !== "default") return;
+    if (isPushPromptDismissed()) return;
+
+    const el = createPushBanner();
+    requestAnimationFrame(() => {
+      el.classList.add("cya-visible");
+    });
+  }
+
+  function hidePushBanner() {
+    if (pushBannerEl) {
+      pushBannerEl.classList.remove("cya-visible");
+    }
+  }
+
+  window.addEventListener("load", () => {
+    setTimeout(() => {
+      if (window.cyaPush && window.cyaPush.isSupported() && window.cyaPush.getPermissionState() === "default") {
+        if (isRunningStandalone()) {
+          showPushBanner();
+        } else if (!bannerEl || !bannerEl.classList.contains("cya-visible")) {
+          showPushBanner();
+        }
+      }
+    }, 4500);
+  });
 })();
+
 

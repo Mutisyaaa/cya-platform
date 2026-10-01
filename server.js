@@ -3172,6 +3172,49 @@ app.get("/api/push/status", async (req, res) => {
   }
 });
 
+app.post("/api/push/send-test", async (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) {
+    return res.status(400).json({ error: "Endpoint is required for test notification." });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT endpoint, p256dh, auth FROM push_subscriptions WHERE endpoint = $1",
+      [endpoint]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Subscription not found. Please subscribe first." });
+    }
+
+    const sub = result.rows[0];
+    const pushSubscription = {
+      endpoint: sub.endpoint,
+      keys: {
+        p256dh: sub.p256dh,
+        auth: sub.auth
+      }
+    };
+
+    const payload = JSON.stringify({
+      title: "AIC Ziwani CYA",
+      body: "Notifications are working! You will receive church youth updates and service reminders here.",
+      url: "/",
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      tag: "cya-test-welcome"
+    });
+
+    await webpush.sendNotification(pushSubscription, payload);
+    return res.json({ success: true, message: "Test notification sent successfully." });
+  } catch (error) {
+    console.error("Test notification error:", error);
+    return res.status(500).json({ error: "Failed to deliver test notification: " + error.message });
+  }
+});
+
+
 app.get("/api/admin/push/stats", ensureAdmin, async (req, res) => {
   try {
     const totalResult = await pool.query("SELECT COUNT(*) FROM push_subscriptions");
