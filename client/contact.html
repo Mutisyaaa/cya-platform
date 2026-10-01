@@ -978,6 +978,16 @@ footer {
   .member-photo-frame {
     height: 240px;
   }
+
+  .service-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .service-item-time {
+    white-space: normal;
+  }
 }
 </style>
 <link rel="stylesheet" href="mobile-navbar.css">
@@ -1285,23 +1295,43 @@ footer {
 
           <div class="service-times-list">
             <div class="service-item">
-              <span class="service-item-name">Sunday First Service</span>
-              <span class="service-item-time">8:00 AM – 10:30 AM</span>
+              <div>
+                <span class="service-item-name">Sunday Bible Study</span>
+                <span style="display: block; font-size: 11px; color: var(--text-secondary);">Interactive Scripture study and reflection</span>
+              </div>
+              <span class="service-item-time">8:25 AM – 10:00 AM</span>
             </div>
+
+            <div class="service-item">
+              <div>
+                <span class="service-item-name">Sunday Church Service</span>
+                <span style="display: block; font-size: 11px; color: var(--text-secondary);">Main congregational worship and sermon</span>
+              </div>
+              <span class="service-item-time">10:30 AM – 12:30 PM</span>
+            </div>
+
             <div class="service-item" style="border-color: rgba(200, 16, 46, 0.3); background: rgba(200, 16, 46, 0.03);">
               <div>
-                <span class="service-item-name" style="color: var(--primary-red);">Youth Service (CYA)</span>
-                <span style="display: block; font-size: 11px; color: var(--text-secondary);">High-energy worship & Word</span>
+                <span class="service-item-name" style="color: var(--primary-red);">Youth Fellowship (CYA)</span>
+                <span style="display: block; font-size: 11px; color: var(--text-secondary);">High-energy praise, Word and youth community</span>
               </div>
-              <span class="service-item-time" style="background: var(--primary-red); color: #fff;">11:00 AM – 1:00 PM</span>
+              <span class="service-item-time" style="background: var(--primary-red); color: #fff;">1:00 PM – 3:00 PM</span>
             </div>
+
             <div class="service-item">
-              <span class="service-item-name">Midweek Fellowship & Prayers</span>
-              <span class="service-item-time">Wednesdays 5:30 PM</span>
+              <div>
+                <span class="service-item-name">Midweek Fellowship</span>
+                <span style="display: block; font-size: 11px; color: var(--text-secondary);">Midweek prayer and fellowship</span>
+              </div>
+              <span class="service-item-time">Every 1st & 3rd Week</span>
             </div>
+
             <div class="service-item">
-              <span class="service-item-name">Music Team Rehearsals</span>
-              <span class="service-item-time">Saturdays 2:00 PM</span>
+              <div>
+                <span class="service-item-name">Online Bible Studies</span>
+                <span style="display: block; font-size: 11px; color: var(--text-secondary);">Virtual Friday evening discipleship</span>
+              </div>
+              <span class="service-item-time">Fridays 8:45 PM – 10:00 PM</span>
             </div>
           </div>
 
