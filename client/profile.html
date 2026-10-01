@@ -1111,7 +1111,26 @@ if (pushToggleBtn) {
       pushTestBtn.disabled = true;
       pushTestBtn.textContent = "Sending test alert...";
       try {
-        await window.cyaPush.sendTest();
+        if (window.cyaPush && typeof window.cyaPush.sendTest === "function") {
+          await window.cyaPush.sendTest();
+        } else {
+          const sub = window.cyaPush && typeof window.cyaPush.getSubscription === "function"
+            ? await window.cyaPush.getSubscription()
+            : null;
+          if (!sub) {
+            throw new Error("Device is not subscribed yet. Please click Enable Notifications first.");
+          }
+          const res = await fetch(buildBackendUrl("/api/push/send-test"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({ endpoint: sub.endpoint })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(data.error || "Failed to deliver test notification.");
+          }
+        }
         setPushFeedback("Test notification sent! Check your notification tray or lock screen.");
       } catch (err) {
         setPushFeedback(err.message || "Failed to deliver test notification.", true);
@@ -1129,6 +1148,6 @@ if (pushToggleBtn) {
 
 loadProfile();
 </script>
-<script src="/pwa.js" defer></script>
+<script src="/pwa.js?v=21" defer></script>
 </body>
 </html>
