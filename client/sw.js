@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v8";
+const CACHE_NAME = "cya-shell-v9";
 
 const APP_SHELL = [
   "/",
@@ -73,7 +73,7 @@ self.addEventListener("fetch", (event) => {
 
 async function networkFirstNavigation(request) {
   try {
-    const response = await fetch(request);
+    const response = await fetch(request, { cache: "no-cache" });
     if (response.ok) {
       const cache = await caches.open(CACHE_NAME);
       await cache.put(request, response.clone());

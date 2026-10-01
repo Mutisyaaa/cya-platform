@@ -221,15 +221,18 @@ nav {
   transition: 0.3s ease;
 }
 
-.gallery-item img {
+.gallery-item img,
+.gallery-item video {
   width: 100%;
   height: 280px;
   object-fit: cover;
   transition: 0.4s ease;
+  display: block;
 }
 
-.gallery-item:hover img {
-  transform: scale(1.1);
+.gallery-item:hover img,
+.gallery-item:hover video {
+  transform: scale(1.06);
 }
 
 .gallery-title {
@@ -1301,6 +1304,11 @@ nav {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  [data-aos] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
   .comment-hidden-children {
     transition: none !important;
   }
@@ -1360,12 +1368,6 @@ footer {
 @media (max-width: 640px) {
   nav {
     padding: 12px 14px;
-    gap: 14px;
-    align-items: flex-start;
-  }
-
-  .logo-area {
-    width: 100%;
   }
 
   .logo-area img {
@@ -1378,26 +1380,6 @@ footer {
 
   .church-name span {
     font-size: 11px;
-  }
-
-  .nav-links {
-    width: 100%;
-    margin-left: 0;
-    justify-content: flex-start;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: none;
-  }
-
-  .nav-links::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav-links a {
-    flex: 0 0 auto;
-    white-space: nowrap;
-    padding: 10px 14px;
   }
 
   .page-header {
@@ -1413,21 +1395,27 @@ footer {
   }
 
   .gallery-section {
-    padding: 56px 16px;
+    padding: 36px 12px 60px;
   }
 
   .gallery-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
+    gap: 10px;
   }
 
-  .gallery-item img {
-    height: 170px;
+  .gallery-item {
+    border-radius: 14px;
+  }
+
+  .gallery-item img,
+  .gallery-item video {
+    height: 175px;
   }
 
   .gallery-title {
-    padding: 8px;
+    padding: 8px 6px;
     font-size: 12px;
+    line-height: 1.25;
   }
 
   .modal-overlay {
@@ -1551,9 +1539,19 @@ footer {
 
 }
 
-@media (max-width: 420px) {
+@media (max-width: 360px) {
   .gallery-grid {
-    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .gallery-item img,
+  .gallery-item video {
+    height: 145px;
+  }
+
+  .gallery-title {
+    font-size: 11px;
+    padding: 6px 4px;
   }
 }
 </style>
@@ -1711,29 +1709,37 @@ async function loadGallery() {
     const container = document.getElementById("galleryContainer");
     container.innerHTML = "";
 
-    allGalleryItems.forEach(item => {
+    const cardsHtml = allGalleryItems.map(item => {
       const fileUrl = buildBackendUrl(item.image_url);
       const isVideo = item.image_url.match(/\.(mp4|webm|ogg|mov)$/i);
       
       let mediaMarkup = "";
       if (isVideo) {
-        mediaMarkup = `<video src="${fileUrl}" style="width: 100%; height: 280px; object-fit: cover; pointer-events: none;"></video>`;
+        mediaMarkup = `<video src="${fileUrl}" muted playsinline preload="metadata" style="pointer-events: none;"></video>`;
       } else {
-        mediaMarkup = `<img src="${fileUrl}" alt="${item.title}">`;
+        mediaMarkup = `<img src="${fileUrl}" alt="${item.title}" loading="lazy">`;
       }
 
-      const card = `
+      return `
         <div class="gallery-item" data-id="${item.id}" data-aos="fade-up">
           ${mediaMarkup}
           <div class="gallery-title">${item.title}</div>
         </div>
       `;
-      container.innerHTML += card;
-    });
+    }).join("");
+
+    container.innerHTML = cardsHtml;
 
     if (window.AOS) {
       AOS.refreshHard();
+      window.dispatchEvent(new Event('scroll'));
     }
+
+    setTimeout(() => {
+      document.querySelectorAll('.gallery-item').forEach(item => {
+        item.classList.add('aos-animate');
+      });
+    }, 350);
 
     document.querySelectorAll('.gallery-item').forEach(item => {
       item.addEventListener('click', () => openGalleryModal(item.dataset.id));
@@ -2738,7 +2744,7 @@ async function handleGalleryCommentSubmit(event, itemId, parentCommentId = null)
     AOS.init({
       duration: 600,
       once: true,
-      offset: 80,
+      offset: 40,
       disable: () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
     });
   }

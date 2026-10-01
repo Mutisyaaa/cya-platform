@@ -927,7 +927,15 @@ app.get("/runtime-config.js", (req, res) => {
   res.set("Cache-Control", "no-store");
   res.send(runtimeConfig);
 });
-app.use(express.static(clientDir));
+app.use(express.static(clientDir, {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith("sw.js")) {
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    } else if (filePath.endsWith(".html")) {
+      res.setHeader("Cache-Control", "no-cache, must-revalidate");
+    }
+  }
+}));
 app.use("/uploads", express.static(uploadsDir));
 
 function isCloudinaryConfigured() {
