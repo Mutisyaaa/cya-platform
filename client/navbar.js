@@ -307,6 +307,27 @@
     return;
   }
 
+  try {
+    const direction = sessionStorage.getItem("cya_tab_direction");
+    if (direction) {
+      document.documentElement.dataset.tabDirection = direction;
+      sessionStorage.removeItem("cya_tab_direction");
+      setTimeout(() => {
+        delete document.documentElement.dataset.tabDirection;
+      }, 450);
+    }
+  } catch (_) {}
+
+  if ("onpagereveal" in window) {
+    window.addEventListener("pagereveal", (e) => {
+      if (e.viewTransition && document.documentElement.dataset.tabDirection) {
+        try {
+          e.viewTransition.types.add(document.documentElement.dataset.tabDirection);
+        } catch (_) {}
+      }
+    });
+  }
+
   function setupBottomNav() {
     let nav = document.querySelector(".cya-bottom-nav");
 
@@ -353,6 +374,11 @@
       nav.className = "cya-bottom-nav";
       nav.setAttribute("aria-label", "Mobile Bottom Navigation");
 
+      const pillEl = document.createElement("div");
+      pillEl.className = "cya-sliding-pill";
+      pillEl.setAttribute("aria-hidden", "true");
+      nav.appendChild(pillEl);
+
       tabs.forEach((tab) => {
         const link = document.createElement("a");
         link.className = "cya-tab-item";
@@ -381,6 +407,14 @@
         document.addEventListener("DOMContentLoaded", () => document.body?.appendChild(nav));
       }
     } else {
+      let pillEl = nav.querySelector(".cya-sliding-pill");
+      if (!pillEl) {
+        pillEl = document.createElement("div");
+        pillEl.className = "cya-sliding-pill";
+        pillEl.setAttribute("aria-hidden", "true");
+        nav.prepend(pillEl);
+      }
+
       nav.querySelectorAll(".cya-tab-item").forEach((link) => {
         const tabId = link.dataset.tabId;
         const tabDef = tabs.find((t) => t.id === tabId);
@@ -394,9 +428,52 @@
       });
     }
 
-    nav.querySelectorAll(".cya-tab-item").forEach((link) => {
+    const pill = nav.querySelector(".cya-sliding-pill");
+
+    function syncPillToActiveTab(animate) {
+      const activeTab = nav.querySelector(".cya-tab-item.active");
+      if (!activeTab || !pill) return;
+      const iconWrap = activeTab.querySelector(".cya-tab-icon-wrap");
+      if (!iconWrap) return;
+
+      const navRect = nav.getBoundingClientRect();
+      const iconRect = iconWrap.getBoundingClientRect();
+
+      if (navRect.width === 0 || iconRect.width === 0) {
+        requestAnimationFrame(() => syncPillToActiveTab(false));
+        return;
+      }
+
+      const left = iconRect.left - navRect.left;
+      const top = iconRect.top - navRect.top;
+
+      pill.style.transition = animate ? "transform 0.28s cubic-bezier(0.2, 0.9, 0.3, 1), opacity 0.18s ease" : "none";
+      pill.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+      pill.style.width = `${iconRect.width}px`;
+      pill.style.height = `${iconRect.height}px`;
+      pill.style.opacity = "1";
+    }
+
+    requestAnimationFrame(() => syncPillToActiveTab(false));
+    window.addEventListener("resize", () => syncPillToActiveTab(false), { passive: true });
+    window.addEventListener("orientationchange", () => setTimeout(() => syncPillToActiveTab(false), 60), { passive: true });
+
+    nav.querySelectorAll(".cya-tab-item").forEach((link, index) => {
       if (link.dataset.hasTapHandler) return;
       link.dataset.hasTapHandler = "true";
+
+      const prefetchDestination = () => {
+        const href = link.getAttribute("href");
+        if (!href || href === "#" || link.dataset.prefetched) return;
+        link.dataset.prefetched = "true";
+        const linkEl = document.createElement("link");
+        linkEl.rel = "prefetch";
+        linkEl.href = href;
+        document.head.appendChild(linkEl);
+      };
+
+      link.addEventListener("pointerenter", prefetchDestination, { passive: true });
+      link.addEventListener("touchstart", prefetchDestination, { passive: true });
 
       link.addEventListener("click", (event) => {
         if (navigator.vibrate) {
@@ -408,6 +485,38 @@
         if (link.classList.contains("active")) {
           event.preventDefault();
           window.scrollTo({ top: 0, behavior: "smooth" });
+          const icon = link.querySelector(".cya-tab-icon");
+          if (icon) {
+            icon.classList.remove("cya-icon-bounce");
+            void icon.offsetWidth;
+            icon.classList.add("cya-icon-bounce");
+          }
+          return;
+        }
+
+        const items = Array.from(nav.querySelectorAll(".cya-tab-item"));
+        const currentActive = nav.querySelector(".cya-tab-item.active");
+        const currentIndex = items.indexOf(currentActive);
+        const targetIndex = items.indexOf(link);
+        const direction = currentIndex !== -1 && targetIndex > currentIndex ? "forward" : "backward";
+        try {
+          sessionStorage.setItem("cya_tab_direction", direction);
+        } catch (_) {}
+
+        items.forEach((t) => {
+          t.classList.remove("active");
+          t.removeAttribute("aria-current");
+        });
+        link.classList.add("active");
+        link.setAttribute("aria-current", "page");
+
+        syncPillToActiveTab(true);
+
+        const icon = link.querySelector(".cya-tab-icon");
+        if (icon) {
+          icon.classList.remove("cya-icon-bounce");
+          void icon.offsetWidth;
+          icon.classList.add("cya-icon-bounce");
         }
       });
     });
