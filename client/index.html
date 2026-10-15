@@ -1575,7 +1575,7 @@ footer {
   }
 }
 </style>
-<link rel="stylesheet" href="mobile-navbar.css?v=30">
+<link rel="stylesheet" href="mobile-navbar.css?v=31">
 <link rel="stylesheet" href="aos.css">
 </head>
 
@@ -2474,19 +2474,25 @@ forgotPasswordForm.addEventListener('submit', async (e) => {
         pendingPasswordResetTab.location.href = result.previewUrl;
         pendingPasswordResetTab.focus();
         message = 'The password reset page has been opened in a new tab.';
-      } else {
-        message = 'Your browser blocked the new tab. Use the link below to continue.';
+        forgotPasswordSuccess.innerHTML = '';
+        const note = document.createElement('span');
+        note.textContent = `${message} `;
         const resetLink = document.createElement('a');
         resetLink.href = result.previewUrl;
         resetLink.target = '_blank';
         resetLink.rel = 'noopener noreferrer';
-        resetLink.textContent = 'Open password reset page';
-        forgotPasswordSuccess.textContent = `${message} `;
+        resetLink.textContent = 'Click here if it did not open';
+        forgotPasswordSuccess.appendChild(note);
         forgotPasswordSuccess.appendChild(resetLink);
         forgotPasswordSuccess.style.display = 'block';
         return;
       }
-    } else if (pendingPasswordResetTab && !pendingPasswordResetTab.closed) {
+
+      window.location.assign(result.previewUrl);
+      return;
+    }
+
+    if (pendingPasswordResetTab && !pendingPasswordResetTab.closed) {
       pendingPasswordResetTab.close();
     }
 
@@ -2497,7 +2503,7 @@ forgotPasswordForm.addEventListener('submit', async (e) => {
       pendingPasswordResetTab.close();
     }
 
-    forgotPasswordError.innerText = error.message || 'Could not send reset email right now.';
+    forgotPasswordError.innerText = error.message || 'Could not start password reset right now.';
     forgotPasswordError.style.display = 'block';
   } finally {
     pendingPasswordResetTab = null;
@@ -2701,7 +2707,7 @@ window.addEventListener('pageshow', () => {
   syncAuthState();
 });
 </script>
-<script src="navbar.js?v=30"></script>
+<script src="navbar.js?v=31"></script>
 <script src="aos.js"></script>
 <script>
   if (window.AOS) {
@@ -2775,6 +2781,6 @@ window.addEventListener('pageshow', () => {
   </a>
 </nav>
 
-<script src="/pwa.js?v=30" defer></script>
+<script src="/pwa.js?v=31" defer></script>
 </body>
 </html>

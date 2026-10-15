@@ -640,7 +640,7 @@ function isPasswordResetDirectLinkEnabled() {
     return false;
   }
 
-  return !isPasswordResetEmailConfigured();
+  return true;
 }
 
 function createPasswordResetTransport() {
@@ -682,50 +682,53 @@ function createPasswordResetTransport() {
 
 async function sendPasswordResetEmail({ req, email, name, token }) {
   const resetUrl = buildPasswordResetUrl(req, token);
-  if (isPasswordResetDirectLinkEnabled()) {
-    console.info(`Password reset direct-link mode for ${email}: ${resetUrl}`);
+  const directLinkConfigured = String(process.env.PASSWORD_RESET_DIRECT_LINK || "").trim().toLowerCase();
+
+  if (directLinkConfigured === "true" || !isPasswordResetEmailConfigured()) {
+    console.info(`Password reset direct link mode for ${email}: ${resetUrl}`);
     return { delivered: false, previewUrl: resetUrl, direct: true };
   }
 
-  const previewOnly = !isProduction && !isPasswordResetEmailConfigured();
+  try {
+    const transport = createPasswordResetTransport();
+    if (!transport) {
+      console.warn(`Could not build password reset email transport for ${email}. Falling back to direct reset link: ${resetUrl}`);
+      return { delivered: false, previewUrl: resetUrl, direct: true };
+    }
 
-  if (previewOnly) {
-    console.info(`Password reset preview for ${email}: ${resetUrl}`);
+    const from = process.env.SMTP_FROM?.trim() || "no-reply@cya-platform.com";
+    const appName = process.env.APP_NAME?.trim() || "AIC Ziwani";
+    const safeName = name?.trim() || "there";
+
+    await transport.sendMail({
+      from,
+      to: email,
+      subject: `${appName} password reset`,
+      text: [
+        `Hi ${safeName},`,
+        "",
+        "We received a request to reset your password.",
+        `Use this link to set a new password: ${resetUrl}`,
+        "",
+        "This link expires in 1 hour.",
+        "If you did not request this, you can safely ignore this email.",
+      ].join("\n"),
+      html: `
+        <p>Hi ${safeName},</p>
+        <p>We received a request to reset your password.</p>
+        <p><a href="${resetUrl}">Set a new password</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you did not request this, you can safely ignore this email.</p>
+      `,
+    });
+
+    console.info(`Password reset email delivered successfully to ${email}`);
+    const shouldReturnDirectUrl = directLinkConfigured !== "false";
+    return { delivered: true, previewUrl: shouldReturnDirectUrl ? resetUrl : null, direct: false };
+  } catch (sendError) {
+    console.error(`Password reset email delivery failed for ${email}. Falling back to direct reset link. Reason:`, sendError);
     return { delivered: false, previewUrl: resetUrl, direct: true };
   }
-
-  const transport = createPasswordResetTransport();
-  if (!transport) {
-    throw new Error("Password reset email is not configured.");
-  }
-
-  const from = process.env.SMTP_FROM?.trim();
-  const appName = process.env.APP_NAME?.trim() || "AIC Ziwani";
-  const safeName = name?.trim() || "there";
-
-  await transport.sendMail({
-    from,
-    to: email,
-    subject: `${appName} password reset`,
-    text: [
-      `Hi ${safeName},`,
-      "",
-      "We received a request to reset your password.",
-      `Use this link to set a new password: ${resetUrl}`,
-      "",
-      "This link expires in 1 hour.",
-      "If you did not request this, you can safely ignore this email.",
-    ].join("\n"),
-    html: `
-      <p>Hi ${safeName},</p>
-      <p>We received a request to reset your password.</p>
-      <p><a href="${resetUrl}">Set a new password</a></p>
-      <p>This link expires in 1 hour.</p>
-      <p>If you did not request this, you can safely ignore this email.</p>
-    `,
-  });
-
-  return { delivered: true, previewUrl: null, direct: false };
 }
 
 function normalizeEmail(email) {
@@ -748,16 +751,35 @@ function isStrongPassword(password) {
 }
 
 function getAppBaseUrl(req) {
+  const originHeader = req?.get ? (req.get("origin") || req.get("referer")) : null;
+  if (originHeader) {
+    try {
+      const parsed = new URL(originHeader);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.origin;
+      }
+    } catch {
+      // Ignore URL parsing errors.
+    }
+  }
+
   const configuredOrigin = process.env.APP_ORIGIN?.trim();
-  if (configuredOrigin) {
+  if (hasUsableEnvValue(configuredOrigin)) {
     return configuredOrigin.replace(/\/+$/, "");
   }
 
-  return `${req.protocol}://${req.get("host")}`;
+  const proto = (req?.get && req.get("x-forwarded-proto")) || req?.protocol || "https";
+  const host = (req?.get && req.get("host")) || "localhost:3000";
+  return `${proto}://${host}`;
 }
 
 function getApiBaseUrl(req) {
-  return `${req.protocol}://${req.get("host")}`;
+  const configuredApi = process.env.API_ORIGIN?.trim();
+  if (hasUsableEnvValue(configuredApi)) {
+    return configuredApi.replace(/\/+$/, "");
+  }
+
+  return getAppBaseUrl(req);
 }
 
 function buildPasswordResetUrl(req, token) {
@@ -1375,7 +1397,8 @@ app.post("/api/auth/register", async (req, res) => {
       return res.status(400).json({ error: "Please choose a valid gender." });
     }
 
-    const userCheck = await pool.query("SELECT id FROM users WHERE email = $1", [email]);
+    const normalizedEmail = normalizeEmail(email);
+    const userCheck = await pool.query("SELECT id FROM users WHERE LOWER(email) = LOWER($1)", [normalizedEmail]);
     if (userCheck.rows.length > 0) {
       return res.status(409).json({ error: "An account with that email already exists." });
     }
@@ -1383,7 +1406,7 @@ app.post("/api/auth/register", async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
     const result = await pool.query(
       "INSERT INTO users (name, email, password_hash, gender, is_admin) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [name, email, passwordHash, isBootstrapAdmin ? null : normalizedGender, isBootstrapAdmin]
+      [name, normalizedEmail, passwordHash, isBootstrapAdmin ? null : normalizedGender, isBootstrapAdmin]
     );
 
     const newUser = buildSessionUser(result.rows[0]);
@@ -1409,7 +1432,7 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ error: "Email and password are required." });
     }
 
-    const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
+    const result = await pool.query("SELECT * FROM users WHERE LOWER(email) = LOWER($1)", [email]);
     const row = result.rows[0];
 
     if (!row || !row.password_hash || !(await bcrypt.compare(password, row.password_hash))) {
@@ -1452,12 +1475,8 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       return res.status(400).json({ error: "Email is required." });
     }
 
-    if (!isPasswordResetEmailConfigured() && !isPasswordResetDirectLinkEnabled()) {
-      return res.status(503).json({ error: "Password reset is not configured right now." });
-    }
-
     const userResult = await pool.query(
-      "SELECT id, name, email FROM users WHERE email = $1",
+      "SELECT id, name, email FROM users WHERE LOWER(email) = LOWER($1)",
       [email]
     );
 
