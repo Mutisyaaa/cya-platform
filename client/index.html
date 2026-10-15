@@ -1575,7 +1575,7 @@ footer {
   }
 }
 </style>
-<link rel="stylesheet" href="mobile-navbar.css?v=29">
+<link rel="stylesheet" href="mobile-navbar.css?v=30">
 <link rel="stylesheet" href="aos.css">
 </head>
 
@@ -1790,7 +1790,7 @@ footer {
         <div id="confirmPasswordMatch" class="password-match-row" style="display:none;"></div>
       </div>
       <div id="forgotPasswordRow" class="auth-support-row">
-        <a onclick="openForgotPasswordModal()">Forgot password?</a>
+        <a href="#" onclick="openForgotPasswordModal(event); return false;" role="button">Forgot password?</a>
       </div>
       <button type="submit" id="authSubmitBtn">Login</button>
     </form>
@@ -1801,7 +1801,7 @@ footer {
     </a>
     <div class="auth-switch">
       <span id="authSwitchText">Don't have an account?</span>
-      <a onclick="toggleAuthMode()">Sign up</a>
+      <a href="#" onclick="toggleAuthMode(event); return false;" role="button">Sign up</a>
     </div>
   </div>
 </div>
@@ -2269,21 +2269,24 @@ function closeAuthModal() {
   resetPasswordControls();
 }
 
-function openForgotPasswordModal() {
-  const currentEmail = document.getElementById('authEmail').value.trim();
+function openForgotPasswordModal(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  const emailInput = document.getElementById('authEmail');
+  const currentEmail = emailInput ? emailInput.value.trim() : '';
   closeAuthModal();
-  forgotPasswordError.style.display = 'none';
-  forgotPasswordSuccess.style.display = 'none';
-  forgotPasswordForm.reset();
-  forgotPasswordEmail.value = currentEmail;
-  forgotPasswordModal.classList.add('open');
+  if (forgotPasswordError) forgotPasswordError.style.display = 'none';
+  if (forgotPasswordSuccess) forgotPasswordSuccess.style.display = 'none';
+  if (forgotPasswordForm) forgotPasswordForm.reset();
+  if (forgotPasswordEmail) forgotPasswordEmail.value = currentEmail;
+  if (forgotPasswordModal) forgotPasswordModal.classList.add('open');
 }
 
-function closeForgotPasswordModal() {
-  forgotPasswordModal.classList.remove('open');
-  forgotPasswordError.style.display = 'none';
-  forgotPasswordSuccess.style.display = 'none';
-  forgotPasswordForm.reset();
+function closeForgotPasswordModal(e) {
+  if (e && e.preventDefault) e.preventDefault();
+  if (forgotPasswordModal) forgotPasswordModal.classList.remove('open');
+  if (forgotPasswordError) forgotPasswordError.style.display = 'none';
+  if (forgotPasswordSuccess) forgotPasswordSuccess.style.display = 'none';
+  if (forgotPasswordForm) forgotPasswordForm.reset();
 }
 
 function shouldPromptForGender(user) {
@@ -2313,7 +2316,8 @@ function getProfileCompletionReturnTarget() {
   return null;
 }
 
-function toggleAuthMode() {
+function toggleAuthMode(e) {
+  if (e && e.preventDefault) e.preventDefault();
   isLoginMode = !isLoginMode;
   document.getElementById('authError').style.display = 'none';
   document.getElementById('authForm').reset();
@@ -2697,7 +2701,7 @@ window.addEventListener('pageshow', () => {
   syncAuthState();
 });
 </script>
-<script src="navbar.js?v=29"></script>
+<script src="navbar.js?v=30"></script>
 <script src="aos.js"></script>
 <script>
   if (window.AOS) {
@@ -2771,6 +2775,6 @@ window.addEventListener('pageshow', () => {
   </a>
 </nav>
 
-<script src="/pwa.js?v=29" defer></script>
+<script src="/pwa.js?v=30" defer></script>
 </body>
 </html>

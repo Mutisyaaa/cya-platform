@@ -640,7 +640,7 @@ function isPasswordResetDirectLinkEnabled() {
     return false;
   }
 
-  return !isProduction;
+  return !isPasswordResetEmailConfigured();
 }
 
 function createPasswordResetTransport() {
@@ -1452,7 +1452,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       return res.status(400).json({ error: "Email is required." });
     }
 
-    if (isProduction && !isPasswordResetEmailConfigured()) {
+    if (!isPasswordResetEmailConfigured() && !isPasswordResetDirectLinkEnabled()) {
       return res.status(503).json({ error: "Password reset is not configured right now." });
     }
 
