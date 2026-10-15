@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v22";
+const CACHE_NAME = "cya-shell-v23";
 
 const APP_SHELL = [
   "/",
@@ -25,6 +25,8 @@ const APP_SHELL = [
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
+  "/icon-maskable-512.png",
+  "/apple-touch-icon.png",
   "/notification-icon.png",
   "/notification-icon-512.png",
   "/favicon.ico",
