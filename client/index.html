@@ -545,13 +545,40 @@ nav {
 }
 
 .hero-btn.secondary {
-  background: transparent;
-  color: var(--text-on-primary);
-  border: 1px solid rgba(185, 167, 255, 0.42);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  max-width: max-content;
+  padding: 12px 26px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-top: 1px solid rgba(255, 255, 255, 0.48);
+  border-radius: 999px;
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.38);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .hero-btn.secondary:hover {
-  background: rgba(185, 167, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.26) 0%, rgba(255, 255, 255, 0.10) 100%);
+  border-color: rgba(255, 255, 255, 0.45);
+  border-top-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28), 0 0 20px rgba(255, 255, 255, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.55);
+  transform: translateY(-3px);
+  color: #ffffff;
+}
+
+.hero-btn.secondary:active {
+  transform: translateY(0) scale(0.97);
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .theme-footnote {
@@ -1143,7 +1170,13 @@ footer {
 
   .hero-actions {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
+  }
+
+  .hero-btn.secondary {
+    width: auto;
+    max-width: max-content;
+    padding: 11px 22px;
   }
 
   .event-spotlight {
@@ -2225,6 +2258,6 @@ window.addEventListener('pageshow', () => {
 })();
 </script>
 
-<script src="/pwa.js?v=24" defer></script>
+<script src="/pwa.js?v=25" defer></script>
 </body>
 </html>
