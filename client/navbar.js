@@ -252,10 +252,19 @@
 
       const user = await response.json();
       if (user?.displayName) {
+        const photo = getAvatarUrl(user);
+        if (photo) {
+          try {
+            localStorage.setItem("cya_user_avatar", photo);
+          } catch (_) {}
+        }
         renderLoggedIn(user);
         return;
       }
 
+      try {
+        localStorage.removeItem("cya_user_avatar");
+      } catch (_) {}
       renderLoggedOut();
     } catch (error) {
       console.error("Could not load shared auth state:", error);
@@ -288,3 +297,122 @@
 
   syncSharedAuthState();
 })();
+
+(function initializeBottomNav() {
+  if (typeof document === "undefined") return;
+
+  const pathname = window.location.pathname.toLowerCase();
+  const filename = pathname.split("/").pop() || "";
+  if (filename.startsWith("admin") || filename.includes("reset-password")) {
+    return;
+  }
+
+  function renderBottomNav() {
+    if (document.querySelector(".cya-bottom-nav")) {
+      return;
+    }
+
+    const nav = document.createElement("nav");
+    nav.className = "cya-bottom-nav";
+    nav.setAttribute("aria-label", "Mobile Bottom Navigation");
+
+    const tabs = [
+      {
+        id: "home",
+        label: "Home",
+        href: "/index.html",
+        matches: (file) => file === "" || file === "index.html",
+        svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-4.5a1 1 0 0 1-1-1v-4.5h-4v4.5a1 1 0 0 1-1 1H4.5A1.5 1.5 0 0 1 3 20v-9.5z"/></svg>'
+      },
+      {
+        id: "events",
+        label: "Events",
+        href: "/events.html",
+        matches: (file) => file.includes("events"),
+        svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>'
+      },
+      {
+        id: "fellowship",
+        label: "Fellowship",
+        href: "/fellowship.html",
+        matches: (file) => file.includes("fellowship"),
+        svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+      },
+      {
+        id: "gallery",
+        label: "Gallery",
+        href: "/gallery.html",
+        matches: (file) => file.includes("gallery") && !file.startsWith("admin"),
+        svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'
+      },
+      {
+        id: "profile",
+        label: "Profile",
+        href: "/profile.html",
+        matches: (file) => file.includes("profile"),
+        svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+      }
+    ];
+
+    tabs.forEach((tab) => {
+      const link = document.createElement("a");
+      link.className = "cya-tab-item";
+      link.href = tab.href;
+      link.setAttribute("aria-label", tab.label);
+      link.dataset.tabId = tab.id;
+
+      const isActive = tab.matches(filename);
+      if (isActive) {
+        link.classList.add("active");
+        link.setAttribute("aria-current", "page");
+      }
+
+      link.innerHTML = `
+        <span class="cya-tab-indicator" aria-hidden="true"></span>
+        <span class="cya-tab-icon-wrap" aria-hidden="true">${tab.svg}</span>
+        <span class="cya-tab-label">${tab.label}</span>
+      `;
+
+      link.addEventListener("click", (event) => {
+        if (navigator.vibrate) {
+          try {
+            navigator.vibrate(8);
+          } catch (_) {}
+        }
+
+        if (link.classList.contains("active")) {
+          event.preventDefault();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+
+      nav.appendChild(link);
+    });
+
+    document.body.appendChild(nav);
+
+    try {
+      const cachedAvatar = localStorage.getItem("cya_user_avatar");
+      if (cachedAvatar) {
+        const profileTab = nav.querySelector('[data-tab-id="profile"] .cya-tab-icon-wrap');
+        if (profileTab) {
+          const img = document.createElement("img");
+          img.className = "cya-tab-avatar";
+          img.src = cachedAvatar;
+          img.alt = "Profile";
+          img.loading = "lazy";
+          img.onerror = () => { img.remove(); };
+          profileTab.innerHTML = "";
+          profileTab.appendChild(img);
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", renderBottomNav);
+  } else {
+    renderBottomNav();
+  }
+})();
+

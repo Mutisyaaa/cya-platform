@@ -104,6 +104,11 @@
         opacity: 1;
         pointer-events: auto;
       }
+      @media (max-width: 768px) {
+        .cya-install-banner {
+          bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+        }
+      }
       .cya-install-icon {
         width: 44px;
         height: 44px;
