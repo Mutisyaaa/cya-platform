@@ -1355,12 +1355,20 @@ function sendGalleryUploadResponse(req, res, statusCode, payload) {
 
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { name, email, password, gender } = req.body;
+    const { name, email, password, confirmPassword, gender } = req.body;
     const isBootstrapAdmin = isBootstrapAdminEmail(email);
     const normalizedGender = typeof gender === "string" ? gender.trim().toLowerCase() : "";
 
     if (!name || !email || !password || (!isBootstrapAdmin && !normalizedGender)) {
       return res.status(400).json({ error: isBootstrapAdmin ? "Name, email and password are required." : "Name, email, password and gender are required." });
+    }
+
+    if (!isStrongPassword(password)) {
+      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    }
+
+    if (typeof confirmPassword === "string" && confirmPassword !== password) {
+      return res.status(400).json({ error: "Passwords do not match." });
     }
 
     if (normalizedGender && !isValidUserGender(normalizedGender)) {

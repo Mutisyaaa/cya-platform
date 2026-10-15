@@ -1042,6 +1042,203 @@ footer {
   text-decoration: none;
 }
 
+/* Password Field Wrap & Visibility Toggle */
+.password-field-wrap {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.password-field-wrap input {
+  width: 100%;
+  padding-right: 42px !important;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-secondary, #666) !important;
+  cursor: pointer;
+  padding: 6px !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  width: 32px !important;
+  height: 32px !important;
+  min-height: 0 !important;
+  box-shadow: none !important;
+  line-height: 1 !important;
+  transition: color 0.2s ease, transform 0.15s ease, background-color 0.2s ease;
+  z-index: 2;
+}
+
+.password-toggle-btn:hover {
+  color: var(--primary-red, #c8102e) !important;
+  background: rgba(0, 0, 0, 0.05) !important;
+  transform: translateY(-50%) scale(1.05);
+}
+
+[data-theme="dark"] .password-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.password-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.caps-lock-warning {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #f59e0b;
+  margin-top: -6px;
+  margin-bottom: 2px;
+}
+
+.caps-lock-warning svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+/* Password Strength Checker */
+.password-checker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: -6px;
+  margin-bottom: 2px;
+}
+
+.strength-meter {
+  height: 4px;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+[data-theme="dark"] .strength-meter {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.strength-meter-bar {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  transition: width 0.28s ease, background-color 0.28s ease;
+}
+
+.strength-meter-bar.weak {
+  width: 25%;
+  background-color: #ef4444;
+}
+
+.strength-meter-bar.fair {
+  width: 55%;
+  background-color: #f59e0b;
+}
+
+.strength-meter-bar.good {
+  width: 80%;
+  background-color: #10b981;
+}
+
+.strength-meter-bar.strong {
+  width: 100%;
+  background-color: #059669;
+}
+
+.strength-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: var(--text-secondary, #666);
+}
+
+.strength-value {
+  font-weight: 600;
+}
+
+.strength-value.weak { color: #ef4444; }
+.strength-value.fair { color: #f59e0b; }
+.strength-value.good { color: #10b981; }
+.strength-value.strong { color: #059669; }
+
+.password-requirements {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.req-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary, #666);
+  transition: color 0.2s ease;
+}
+
+.req-item svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.req-item.valid {
+  color: #10b981;
+  font-weight: 500;
+}
+
+.req-item.valid svg {
+  transform: scale(1.1);
+  stroke: #10b981;
+}
+
+/* Password Match Row */
+.password-match-row {
+  margin-top: 6px;
+  margin-bottom: 2px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.password-match-row svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.password-match-row.match {
+  color: #10b981;
+}
+
+.password-match-row.mismatch {
+  color: #ef4444;
+}
+
 .auth-success {
   display: none;
   background: rgba(11, 122, 66, 0.12);
@@ -1241,7 +1438,8 @@ footer {
   .auth-modal {
     margin: 0;
     padding: 28px 18px;
-    max-width: none;
+    max-width: min(100%, 400px);
+    width: 100%;
   }
 
   footer {
@@ -1551,7 +1749,46 @@ footer {
         <option value="female">Female</option>
       </select>
       <input type="email" id="authEmail" name="email" placeholder="Email Address" required>
-      <input type="password" id="authPassword" name="password" placeholder="Password" required>
+      <div class="password-field-wrap">
+        <input type="password" id="authPassword" name="password" placeholder="Password" required autocomplete="current-password">
+        <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('authPassword', this)" aria-label="Toggle password visibility" title="Show password">
+          <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+        </button>
+      </div>
+      <div id="capsLockWarning" class="caps-lock-warning" role="alert">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 9v4"></path><path d="M12 17h.01"></path><path d="m3.34 19 8.66-15 8.66 15H3.34z"></path></svg>
+        <span>Caps Lock is ON</span>
+      </div>
+      <div id="passwordChecker" class="password-checker" style="display:none;">
+        <div class="strength-meter">
+          <div id="strengthBar" class="strength-meter-bar"></div>
+        </div>
+        <div class="strength-label-row">
+          <span>Password strength</span>
+          <span id="strengthText" class="strength-value">—</span>
+        </div>
+        <div class="password-requirements">
+          <div id="reqLength" class="req-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><polyline points="9 12 11 14 15 10" class="req-check" style="display:none;"></polyline></svg>
+            <span>At least 8 characters</span>
+          </div>
+          <div id="reqComplexity" class="req-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8"></circle><polyline points="9 12 11 14 15 10" class="req-check" style="display:none;"></polyline></svg>
+            <span>Mix of letters and numbers or symbols</span>
+          </div>
+        </div>
+      </div>
+      <div id="authConfirmGroup" style="display:none;">
+        <div class="password-field-wrap">
+          <input type="password" id="authConfirmPassword" name="confirmPassword" placeholder="Confirm Password" autocomplete="new-password">
+          <button type="button" class="password-toggle-btn" onclick="togglePasswordVisibility('authConfirmPassword', this)" aria-label="Toggle password visibility" title="Show password">
+            <svg class="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            <svg class="eye-closed" style="display:none;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>
+          </button>
+        </div>
+        <div id="confirmPasswordMatch" class="password-match-row" style="display:none;"></div>
+      </div>
       <div id="forgotPasswordRow" class="auth-support-row">
         <a onclick="openForgotPasswordModal()">Forgot password?</a>
       </div>
@@ -1843,10 +2080,193 @@ function openAuthModal() {
   document.getElementById('googleLoginBtn').href = buildLoginUrl();
 }
 
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPassword = input.type === 'password';
+  input.type = isPassword ? 'text' : 'password';
+
+  const eyeOpen = btnEl.querySelector('.eye-open');
+  const eyeClosed = btnEl.querySelector('.eye-closed');
+  if (eyeOpen && eyeClosed) {
+    eyeOpen.style.display = isPassword ? 'none' : 'block';
+    eyeClosed.style.display = isPassword ? 'block' : 'none';
+  }
+  btnEl.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+  btnEl.setAttribute('title', isPassword ? 'Hide password' : 'Show password');
+}
+
+function evaluatePasswordStrength(password) {
+  const val = password || '';
+  const hasMinLength = val.length >= 8;
+  const hasLetters = /[a-zA-Z]/.test(val);
+  const hasNumbersOrSymbols = /[0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~`]/.test(val);
+  const hasComplexity = hasLetters && hasNumbersOrSymbols;
+
+  let score = 0;
+  if (val.length === 0) {
+    score = 0;
+  } else if (!hasMinLength) {
+    score = 1;
+  } else {
+    score = 2;
+    if (hasComplexity) score++;
+    if (/[a-z]/.test(val) && /[A-Z]/.test(val) && /[0-9]/.test(val)) score++;
+    if (val.length >= 10 && /[^a-zA-Z0-9]/.test(val)) score++;
+  }
+
+  let label = 'Weak';
+  let levelClass = 'weak';
+  if (score >= 5) {
+    label = 'Strong';
+    levelClass = 'strong';
+  } else if (score >= 4) {
+    label = 'Good';
+    levelClass = 'good';
+  } else if (score >= 3) {
+    label = 'Fair';
+    levelClass = 'fair';
+  } else if (score >= 1) {
+    label = 'Weak';
+    levelClass = 'weak';
+  } else {
+    label = '—';
+    levelClass = '';
+  }
+
+  return {
+    score,
+    hasMinLength,
+    hasComplexity,
+    label,
+    levelClass
+  };
+}
+
+function updatePasswordChecker() {
+  const passwordInput = document.getElementById('authPassword');
+  const checkerEl = document.getElementById('passwordChecker');
+  const strengthBar = document.getElementById('strengthBar');
+  const strengthText = document.getElementById('strengthText');
+  const reqLength = document.getElementById('reqLength');
+  const reqComplexity = document.getElementById('reqComplexity');
+
+  if (!passwordInput || !checkerEl) return;
+
+  if (isLoginMode) {
+    checkerEl.style.display = 'none';
+    return;
+  }
+
+  checkerEl.style.display = 'flex';
+  const val = passwordInput.value;
+  const result = evaluatePasswordStrength(val);
+
+  if (strengthBar) {
+    strengthBar.className = 'strength-meter-bar ' + result.levelClass;
+  }
+  if (strengthText) {
+    strengthText.className = 'strength-value ' + result.levelClass;
+    strengthText.innerText = result.label;
+  }
+
+  if (reqLength) {
+    if (result.hasMinLength) {
+      reqLength.classList.add('valid');
+      const check = reqLength.querySelector('.req-check');
+      if (check) check.style.display = 'block';
+    } else {
+      reqLength.classList.remove('valid');
+      const check = reqLength.querySelector('.req-check');
+      if (check) check.style.display = 'none';
+    }
+  }
+
+  if (reqComplexity) {
+    if (result.hasComplexity) {
+      reqComplexity.classList.add('valid');
+      const check = reqComplexity.querySelector('.req-check');
+      if (check) check.style.display = 'block';
+    } else {
+      reqComplexity.classList.remove('valid');
+      const check = reqComplexity.querySelector('.req-check');
+      if (check) check.style.display = 'none';
+    }
+  }
+}
+
+function updatePasswordMatch() {
+  const matchRow = document.getElementById('confirmPasswordMatch');
+  const passwordInput = document.getElementById('authPassword');
+  const confirmInput = document.getElementById('authConfirmPassword');
+
+  if (!matchRow || !passwordInput || !confirmInput) return;
+  if (isLoginMode) {
+    matchRow.style.display = 'none';
+    return;
+  }
+
+  const p1 = passwordInput.value;
+  const p2 = confirmInput.value;
+
+  if (!p2) {
+    matchRow.style.display = 'none';
+    matchRow.className = 'password-match-row';
+    matchRow.innerHTML = '';
+    return;
+  }
+
+  matchRow.style.display = 'flex';
+  if (p1 === p2) {
+    matchRow.className = 'password-match-row match';
+    matchRow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Passwords match</span>';
+  } else {
+    matchRow.className = 'password-match-row mismatch';
+    matchRow.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg><span>Passwords do not match</span>';
+  }
+}
+
+function checkCapsLock(e) {
+  const warning = document.getElementById('capsLockWarning');
+  if (!warning) return;
+  if (e.getModifierState && e.getModifierState('CapsLock')) {
+    warning.style.display = 'flex';
+  } else {
+    warning.style.display = 'none';
+  }
+}
+
+function resetPasswordControls() {
+  const authPassword = document.getElementById('authPassword');
+  const authConfirmPassword = document.getElementById('authConfirmPassword');
+  const capsWarning = document.getElementById('capsLockWarning');
+  const matchRow = document.getElementById('confirmPasswordMatch');
+
+  if (authPassword) authPassword.type = 'password';
+  if (authConfirmPassword) authConfirmPassword.type = 'password';
+
+  document.querySelectorAll('.password-toggle-btn').forEach((btn) => {
+    const eyeOpen = btn.querySelector('.eye-open');
+    const eyeClosed = btn.querySelector('.eye-closed');
+    if (eyeOpen) eyeOpen.style.display = 'block';
+    if (eyeClosed) eyeClosed.style.display = 'none';
+    btn.setAttribute('aria-label', 'Toggle password visibility');
+    btn.setAttribute('title', 'Show password');
+  });
+
+  if (capsWarning) capsWarning.style.display = 'none';
+  if (matchRow) {
+    matchRow.style.display = 'none';
+    matchRow.innerHTML = '';
+  }
+  updatePasswordChecker();
+}
+
 function closeAuthModal() {
   authModal.classList.remove('open');
   document.getElementById('authError').style.display = 'none';
   document.getElementById('authForm').reset();
+  resetPasswordControls();
 }
 
 function openForgotPasswordModal() {
@@ -1897,40 +2317,78 @@ function toggleAuthMode() {
   isLoginMode = !isLoginMode;
   document.getElementById('authError').style.display = 'none';
   document.getElementById('authForm').reset();
-  
+  resetPasswordControls();
+
+  const authTitle = document.getElementById('authTitle');
+  const authName = document.getElementById('authName');
+  const authGender = document.getElementById('authGender');
+  const forgotPasswordRow = document.getElementById('forgotPasswordRow');
+  const authSubmitBtn = document.getElementById('authSubmitBtn');
+  const authSwitchText = document.getElementById('authSwitchText');
+  const authSwitchLink = document.querySelector('.auth-switch a');
+  const passwordChecker = document.getElementById('passwordChecker');
+  const authConfirmGroup = document.getElementById('authConfirmGroup');
+  const authConfirmPassword = document.getElementById('authConfirmPassword');
+
   if (isLoginMode) {
-    document.getElementById('authTitle').innerText = 'Login';
-    document.getElementById('authName').style.display = 'none';
-    document.getElementById('authName').required = false;
-    document.getElementById('authGender').style.display = 'none';
-    document.getElementById('authGender').required = false;
-    document.getElementById('forgotPasswordRow').style.display = 'flex';
-    document.getElementById('authSubmitBtn').innerText = 'Login';
-    document.getElementById('authSwitchText').innerText = "Don't have an account?";
-    document.querySelector('.auth-switch a').innerText = 'Sign up';
+    authTitle.innerText = 'Login';
+    authName.style.display = 'none';
+    authName.required = false;
+    authGender.style.display = 'none';
+    authGender.required = false;
+    if (passwordChecker) passwordChecker.style.display = 'none';
+    if (authConfirmGroup) authConfirmGroup.style.display = 'none';
+    if (authConfirmPassword) authConfirmPassword.required = false;
+    forgotPasswordRow.style.display = 'flex';
+    authSubmitBtn.innerText = 'Login';
+    authSwitchText.innerText = "Don't have an account?";
+    authSwitchLink.innerText = 'Sign up';
   } else {
-    document.getElementById('authTitle').innerText = 'Sign Up';
-    document.getElementById('authName').style.display = 'block';
-    document.getElementById('authName').required = true;
-    document.getElementById('authGender').style.display = 'block';
-    document.getElementById('authGender').required = true;
-    document.getElementById('forgotPasswordRow').style.display = 'none';
-    document.getElementById('authSubmitBtn').innerText = 'Create Account';
-    document.getElementById('authSwitchText').innerText = "Already have an account?";
-    document.querySelector('.auth-switch a').innerText = 'Log in';
+    authTitle.innerText = 'Sign Up';
+    authName.style.display = 'block';
+    authName.required = true;
+    authGender.style.display = 'block';
+    authGender.required = true;
+    if (passwordChecker) passwordChecker.style.display = 'flex';
+    if (authConfirmGroup) authConfirmGroup.style.display = 'block';
+    if (authConfirmPassword) authConfirmPassword.required = true;
+    forgotPasswordRow.style.display = 'none';
+    authSubmitBtn.innerText = 'Create Account';
+    authSwitchText.innerText = "Already have an account?";
+    authSwitchLink.innerText = 'Log in';
+    updatePasswordChecker();
+    updatePasswordMatch();
   }
 }
 
 document.getElementById('authForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const email = document.getElementById('authEmail').value;
+  const errorEl = document.getElementById('authError');
+  errorEl.style.display = 'none';
+
+  const email = document.getElementById('authEmail').value.trim();
   const password = document.getElementById('authPassword').value;
-  const name = document.getElementById('authName').value;
+  const name = document.getElementById('authName').value.trim();
   const gender = document.getElementById('authGender').value;
-  
+  const confirmPasswordEl = document.getElementById('authConfirmPassword');
+  const confirmPassword = confirmPasswordEl ? confirmPasswordEl.value : '';
+
+  if (!isLoginMode) {
+    if (password.length < 8) {
+      errorEl.innerText = 'Password must be at least 8 characters long.';
+      errorEl.style.display = 'block';
+      return;
+    }
+    if (password !== confirmPassword) {
+      errorEl.innerText = 'Passwords do not match.';
+      errorEl.style.display = 'block';
+      return;
+    }
+  }
+
   const endpoint = isLoginMode ? '/api/auth/login' : '/api/auth/register';
-  const payload = isLoginMode ? { email, password } : { name, email, password, gender };
-  
+  const payload = isLoginMode ? { email, password } : { name, email, password, confirmPassword, gender };
+
   try {
     const response = await fetch(buildBackendUrl(endpoint), {
       method: 'POST',
@@ -1938,12 +2396,12 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       body: JSON.stringify(payload),
       credentials: 'include'
     });
-    
+
     const result = await response.json().catch(() => ({}));
-    
+
     if (!response.ok) {
-      document.getElementById('authError').innerText = result.error || result.message || 'Authentication failed';
-      document.getElementById('authError').style.display = 'block';
+      errorEl.innerText = result.error || result.message || 'Authentication failed';
+      errorEl.style.display = 'block';
     } else {
       closeAuthModal();
       if (result.redirectTo) {
@@ -1953,10 +2411,36 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       }
     }
   } catch (err) {
-    document.getElementById('authError').innerText = 'Network error. Please try again.';
-    document.getElementById('authError').style.display = 'block';
+    errorEl.innerText = 'Network error. Please try again.';
+    errorEl.style.display = 'block';
   }
 });
+
+const authPasswordInput = document.getElementById('authPassword');
+const authConfirmPasswordInput = document.getElementById('authConfirmPassword');
+
+if (authPasswordInput) {
+  authPasswordInput.addEventListener('input', () => {
+    updatePasswordChecker();
+    updatePasswordMatch();
+  });
+  authPasswordInput.addEventListener('keyup', checkCapsLock);
+  authPasswordInput.addEventListener('keydown', checkCapsLock);
+  authPasswordInput.addEventListener('blur', () => {
+    const warning = document.getElementById('capsLockWarning');
+    if (warning) warning.style.display = 'none';
+  });
+}
+
+if (authConfirmPasswordInput) {
+  authConfirmPasswordInput.addEventListener('input', updatePasswordMatch);
+  authConfirmPasswordInput.addEventListener('keyup', checkCapsLock);
+  authConfirmPasswordInput.addEventListener('keydown', checkCapsLock);
+  authConfirmPasswordInput.addEventListener('blur', () => {
+    const warning = document.getElementById('capsLockWarning');
+    if (warning) warning.style.display = 'none';
+  });
+}
 
 forgotPasswordForm.addEventListener('submit', async (e) => {
   e.preventDefault();
