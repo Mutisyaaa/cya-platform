@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v27";
+const CACHE_NAME = "cya-shell-v28";
 
 const APP_SHELL = [
   "/",
@@ -17,14 +17,14 @@ const APP_SHELL = [
   "/pastor-jeffer-wambua.jpg",
   "/style.css",
   "/mobile-navbar.css",
-  "/mobile-navbar.css?v=27",
+  "/mobile-navbar.css?v=28",
   "/aos.css",
   "/aos.js",
   "/navbar.js",
-  "/navbar.js?v=27",
+  "/navbar.js?v=28",
   "/backend-origin.js",
   "/pwa.js",
-  "/pwa.js?v=27",
+  "/pwa.js?v=28",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
