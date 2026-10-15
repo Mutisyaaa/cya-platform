@@ -853,7 +853,7 @@ footer {
 
 }
 </style>
-<link rel="stylesheet" href="mobile-navbar.css">
+<link rel="stylesheet" href="mobile-navbar.css?v=27">
 <link rel="stylesheet" href="aos.css">
 </head>
 
@@ -1476,7 +1476,7 @@ document.getElementById("boardsHost").addEventListener("submit", (event) => {
 
 document.addEventListener("DOMContentLoaded", initializePage);
 </script>
-<script src="navbar.js"></script>
+<script src="navbar.js?v=27"></script>
 <script src="aos.js"></script>
 <script>
   if (window.AOS) {
@@ -1489,6 +1489,34 @@ document.addEventListener("DOMContentLoaded", initializePage);
   }
 </script>
 
-<script src="/pwa.js" defer></script>
+<nav class="cya-bottom-nav" aria-label="Mobile Bottom Navigation">
+  <a class="cya-tab-item" href="/index.html" aria-label="Home" data-tab-id="home">
+    <span class="cya-tab-indicator" aria-hidden="true"></span>
+    <span class="cya-tab-icon-wrap" aria-hidden="true"><svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-4.5a1 1 0 0 1-1-1v-4.5h-4v4.5a1 1 0 0 1-1 1H4.5A1.5 1.5 0 0 1 3 20v-9.5z"/></svg></span>
+    <span class="cya-tab-label">Home</span>
+  </a>
+  <a class="cya-tab-item" href="/events.html" aria-label="Events" data-tab-id="events">
+    <span class="cya-tab-indicator" aria-hidden="true"></span>
+    <span class="cya-tab-icon-wrap" aria-hidden="true"><svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg></span>
+    <span class="cya-tab-label">Events</span>
+  </a>
+  <a class="cya-tab-item active" href="/fellowship.html" aria-label="Fellowship" data-tab-id="fellowship" aria-current="page">
+    <span class="cya-tab-indicator" aria-hidden="true"></span>
+    <span class="cya-tab-icon-wrap" aria-hidden="true"><svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+    <span class="cya-tab-label">Fellowship</span>
+  </a>
+  <a class="cya-tab-item" href="/gallery.html" aria-label="Gallery" data-tab-id="gallery">
+    <span class="cya-tab-indicator" aria-hidden="true"></span>
+    <span class="cya-tab-icon-wrap" aria-hidden="true"><svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>
+    <span class="cya-tab-label">Gallery</span>
+  </a>
+  <a class="cya-tab-item" href="/profile.html" aria-label="Profile" data-tab-id="profile">
+    <span class="cya-tab-indicator" aria-hidden="true"></span>
+    <span class="cya-tab-icon-wrap" aria-hidden="true"><svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+    <span class="cya-tab-label">Profile</span>
+  </a>
+</nav>
+
+<script src="/pwa.js?v=27" defer></script>
 </body>
 </html>

@@ -307,14 +307,8 @@
     return;
   }
 
-  function renderBottomNav() {
-    if (document.querySelector(".cya-bottom-nav")) {
-      return;
-    }
-
-    const nav = document.createElement("nav");
-    nav.className = "cya-bottom-nav";
-    nav.setAttribute("aria-label", "Mobile Bottom Navigation");
+  function setupBottomNav() {
+    let nav = document.querySelector(".cya-bottom-nav");
 
     const tabs = [
       {
@@ -354,24 +348,55 @@
       }
     ];
 
-    tabs.forEach((tab) => {
-      const link = document.createElement("a");
-      link.className = "cya-tab-item";
-      link.href = tab.href;
-      link.setAttribute("aria-label", tab.label);
-      link.dataset.tabId = tab.id;
+    if (!nav) {
+      nav = document.createElement("nav");
+      nav.className = "cya-bottom-nav";
+      nav.setAttribute("aria-label", "Mobile Bottom Navigation");
 
-      const isActive = tab.matches(filename);
-      if (isActive) {
-        link.classList.add("active");
-        link.setAttribute("aria-current", "page");
+      tabs.forEach((tab) => {
+        const link = document.createElement("a");
+        link.className = "cya-tab-item";
+        link.href = tab.href;
+        link.setAttribute("aria-label", tab.label);
+        link.dataset.tabId = tab.id;
+
+        const isActive = tab.matches(filename);
+        if (isActive) {
+          link.classList.add("active");
+          link.setAttribute("aria-current", "page");
+        }
+
+        link.innerHTML = `
+          <span class="cya-tab-indicator" aria-hidden="true"></span>
+          <span class="cya-tab-icon-wrap" aria-hidden="true">${tab.svg}</span>
+          <span class="cya-tab-label">${tab.label}</span>
+        `;
+
+        nav.appendChild(link);
+      });
+
+      if (document.body) {
+        document.body.appendChild(nav);
+      } else {
+        document.addEventListener("DOMContentLoaded", () => document.body?.appendChild(nav));
       }
+    } else {
+      nav.querySelectorAll(".cya-tab-item").forEach((link) => {
+        const tabId = link.dataset.tabId;
+        const tabDef = tabs.find((t) => t.id === tabId);
+        if (tabDef && tabDef.matches(filename)) {
+          link.classList.add("active");
+          link.setAttribute("aria-current", "page");
+        } else {
+          link.classList.remove("active");
+          link.removeAttribute("aria-current");
+        }
+      });
+    }
 
-      link.innerHTML = `
-        <span class="cya-tab-indicator" aria-hidden="true"></span>
-        <span class="cya-tab-icon-wrap" aria-hidden="true">${tab.svg}</span>
-        <span class="cya-tab-label">${tab.label}</span>
-      `;
+    nav.querySelectorAll(".cya-tab-item").forEach((link) => {
+      if (link.dataset.hasTapHandler) return;
+      link.dataset.hasTapHandler = "true";
 
       link.addEventListener("click", (event) => {
         if (navigator.vibrate) {
@@ -385,11 +410,7 @@
           window.scrollTo({ top: 0, behavior: "smooth" });
         }
       });
-
-      nav.appendChild(link);
     });
-
-    document.body.appendChild(nav);
 
     try {
       const cachedAvatar = localStorage.getItem("cya_user_avatar");
@@ -410,9 +431,9 @@
   }
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderBottomNav);
+    document.addEventListener("DOMContentLoaded", setupBottomNav);
   } else {
-    renderBottomNav();
+    setupBottomNav();
   }
 })();
 
