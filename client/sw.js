@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v23";
+const CACHE_NAME = "cya-shell-v24";
 
 const APP_SHELL = [
   "/",

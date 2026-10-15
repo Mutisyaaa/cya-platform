@@ -107,7 +107,8 @@
       .cya-install-icon {
         width: 44px;
         height: 44px;
-        border-radius: 11px;
+        border-radius: 13px;
+        overflow: hidden;
         object-fit: cover;
         flex-shrink: 0;
         background: #ffffff;
