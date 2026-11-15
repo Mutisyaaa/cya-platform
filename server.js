@@ -783,7 +783,7 @@ function getApiBaseUrl(req) {
 }
 
 function buildPasswordResetUrl(req, token) {
-  const resetUrl = new URL("/reset-password.html", getAppBaseUrl(req));
+  const resetUrl = new URL("/reset-password", getAppBaseUrl(req));
   resetUrl.searchParams.set("token", token);
   resetUrl.searchParams.set("apiOrigin", getApiBaseUrl(req));
   return resetUrl.toString();
@@ -898,13 +898,13 @@ async function getAdminEventRsvpDetails(eventId) {
 
 function getPostLoginRedirect(user, fallback = "/") {
   if (user?.isAdmin) {
-    return "/admin.html";
+    return "/admin";
   }
 
   const safeFallback = getSafeReturnTo(fallback);
 
   if (!user?.gender) {
-    const profilePromptTarget = new URL("/index.html", "http://127.0.0.1");
+    const profilePromptTarget = new URL("/", "http://127.0.0.1");
     profilePromptTarget.searchParams.set("completeProfile", "1");
 
     if (safeFallback && safeFallback !== "/" && safeFallback !== "/index.html") {
@@ -971,7 +971,40 @@ app.get("/runtime-config.js", (req, res) => {
   res.set("Cache-Control", "no-store");
   res.send(runtimeConfig);
 });
+// Clean URL middleware: redirect direct .html file visits to clean URLs
+app.use((req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return next();
+  }
+
+  const pathname = req.path;
+  if (pathname.startsWith("/api") || pathname.startsWith("/auth")) {
+    return next();
+  }
+
+  // Strip trailing slashes on clean paths (e.g. /events/ -> /events)
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    const cleanPath = pathname.slice(0, -1);
+    const query = req.url.slice(pathname.length);
+    return res.redirect(301, `${cleanPath}${query}`);
+  }
+
+  if (pathname === "/index.html") {
+    const query = req.url.slice(pathname.length);
+    return res.redirect(301, `/${query}`);
+  }
+
+  if (pathname.endsWith(".html")) {
+    const cleanPath = pathname.slice(0, -5);
+    const query = req.url.slice(pathname.length);
+    return res.redirect(301, `${cleanPath}${query}`);
+  }
+
+  next();
+});
+
 app.use(express.static(clientDir, {
+  extensions: ["html"],
   setHeaders: (res, filePath) => {
     if (filePath.endsWith("sw.js")) {
       res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
@@ -1364,7 +1397,7 @@ function sendGalleryUploadResponse(req, res, statusCode, payload) {
     return res.status(statusCode).json(payload);
   }
 
-  const target = new URL("/admin-gallery.html", `http://127.0.0.1:${PORT}`);
+  const target = new URL("/admin-gallery", `http://127.0.0.1:${PORT}`);
 
   if (statusCode >= 400) {
     target.searchParams.set("error", payload.error || "Upload failed");

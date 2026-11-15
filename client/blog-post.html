@@ -667,12 +667,12 @@ footer {
   </button>
 
   <div class="nav-links">
-    <a href="index.html">Home</a>
-    <a href="fellowship.html">Fellowship</a>
-    <a href="events.html">Events</a>
-    <a href="gallery.html">Gallery</a>
-    <a href="blog.html" class="active">Blog</a>
-    <a href="contact.html">Contact</a>
+    <a href="/">Home</a>
+    <a href="/fellowship">Fellowship</a>
+    <a href="/events">Events</a>
+    <a href="/gallery">Gallery</a>
+    <a href="/blog" class="active">Blog</a>
+    <a href="/contact">Contact</a>
     <div id="authSlot" class="auth-slot"></div>
   </div>
 </nav>
@@ -808,7 +808,7 @@ function closeBlogPost() {
     console.warn("Could not resolve previous page for blog close button:", error);
   }
 
-  window.location.href = "blog.html";
+  window.location.href = "/blog";
 }
 
 async function loadBlogPost() {

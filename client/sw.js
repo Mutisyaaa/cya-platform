@@ -1,30 +1,29 @@
-const CACHE_NAME = "cya-shell-v32";
+const CACHE_NAME = "cya-shell-v33";
 
 const APP_SHELL = [
   "/",
-  "/index.html",
-  "/contact.html",
-  "/events.html",
-  "/fellowship.html",
-  "/gallery.html",
-  "/blog.html",
-  "/blog-post.html",
-  "/admin.html",
-  "/admin-gallery.html",
-  "/profile.html",
-  "/reset-password.html",
+  "/events",
+  "/fellowship",
+  "/gallery",
+  "/blog",
+  "/blog-post",
+  "/contact",
+  "/profile",
+  "/admin",
+  "/admin-gallery",
+  "/reset-password",
   "/rev-patrick-odhiambo.jpg",
   "/pastor-jeffer-wambua.jpg",
   "/style.css",
   "/mobile-navbar.css",
-  "/mobile-navbar.css?v=32",
+  "/mobile-navbar.css?v=33",
   "/aos.css",
   "/aos.js",
   "/navbar.js",
-  "/navbar.js?v=32",
+  "/navbar.js?v=33",
   "/backend-origin.js",
   "/pwa.js",
-  "/pwa.js?v=32",
+  "/pwa.js?v=33",
   "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
@@ -87,7 +86,17 @@ async function networkFirstNavigation(request) {
     }
     return response;
   } catch (error) {
-    return (await caches.match(request)) || caches.match("/index.html");
+    const url = new URL(request.url);
+    const cleanPath = url.pathname.replace(/\/$/, "") || "/";
+    const directMatch = await caches.match(request);
+    if (directMatch) {
+      return directMatch;
+    }
+    const cleanMatch = await caches.match(cleanPath);
+    if (cleanMatch) {
+      return cleanMatch;
+    }
+    return (await caches.match("/")) || Response.error();
   }
 }
 

@@ -161,7 +161,7 @@
   }
 
   function renderLoggedOut() {
-    authSlot.innerHTML = `<a class="auth-link" href="index.html">Login</a>`;
+    authSlot.innerHTML = `<a class="auth-link" href="/">Login</a>`;
   }
 
   function renderLoggedIn(user) {
@@ -215,11 +215,11 @@
     });
 
     profilePageButton?.addEventListener("click", () => {
-      window.location.href = "profile.html";
+      window.location.href = "/profile";
     });
 
     adminDashboardButton?.addEventListener("click", () => {
-      window.location.href = "admin.html";
+      window.location.href = "/admin";
     });
 
     themeToggleBtn?.addEventListener("click", () => {
@@ -335,35 +335,35 @@
       {
         id: "home",
         label: "Home",
-        href: "/index.html",
-        matches: (file) => file === "" || file === "index.html",
+        href: "/",
+        matches: (file) => file === "" || file === "index" || file === "index.html",
         svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 3l9 7.5V20a1.5 1.5 0 0 1-1.5 1.5h-4.5a1 1 0 0 1-1-1v-4.5h-4v4.5a1 1 0 0 1-1 1H4.5A1.5 1.5 0 0 1 3 20v-9.5z"/></svg>'
       },
       {
         id: "events",
         label: "Events",
-        href: "/events.html",
+        href: "/events",
         matches: (file) => file.includes("events"),
         svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="3"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><circle cx="8" cy="15" r="1" fill="currentColor"/><circle cx="12" cy="15" r="1" fill="currentColor"/><circle cx="16" cy="15" r="1" fill="currentColor"/></svg>'
       },
       {
         id: "fellowship",
         label: "Fellowship",
-        href: "/fellowship.html",
+        href: "/fellowship",
         matches: (file) => file.includes("fellowship"),
         svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
       },
       {
         id: "gallery",
         label: "Gallery",
-        href: "/gallery.html",
+        href: "/gallery",
         matches: (file) => file.includes("gallery") && !file.startsWith("admin"),
         svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>'
       },
       {
         id: "profile",
         label: "Profile",
-        href: "/profile.html",
+        href: "/profile",
         matches: (file) => file.includes("profile"),
         svg: '<svg class="cya-tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
       }
