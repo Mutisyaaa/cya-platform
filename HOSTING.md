@@ -4,19 +4,19 @@ This app can be hosted for free, including the server and database, with a few t
 
 - The web service may sleep when idle.
 - Free databases often have limits or inactivity rules.
-- Local file uploads are not safe on free app hosts, so this project now supports Cloudinary for gallery media.
+- Local file uploads are not safe on free app hosts, so this project supports Cloudflare R2 (recommended) or Cloudinary for media uploads.
 
 ## Recommended stack
 
 - App host: Render free web service
 - Database: Neon free Postgres
-- Media uploads: Cloudinary free plan
+- Media uploads: Cloudflare R2 free tier (10 GB storage + zero egress fees)
 
 This combination is the most sustainable free setup for the current codebase because:
 
 - Render can run the whole Node app and serve the HTML files directly.
 - Neon gives you a real hosted Postgres database without the 30-day expiration Render places on its free Postgres tier.
-- Cloudinary keeps uploads alive even when the app host redeploys or sleeps.
+- Cloudflare R2 keeps gallery media, event photos and profile avatars alive even when the app host redeploys or sleeps.
 
 ## Before you deploy
 
@@ -33,17 +33,20 @@ This combination is the most sustainable free setup for the current codebase bec
 3. Use it as `DATABASE_URL`.
 4. Set `DB_SSL=true`.
 
-### 2. Cloudinary
+### 2. Cloudflare R2
 
-1. Create a free Cloudinary account.
-2. Copy:
-   - `cloud_name`
-   - `api_key`
-   - `api_secret`
-3. Add them to:
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
+1. In your Cloudflare dashboard, open **R2 Object Storage** and create a bucket (for example `cya-platform-media`).
+2. Open the bucket's **Settings** tab and enable public access using either the `pub-...r2.dev` public development URL or your own custom domain — copy that base URL (`https://...`).
+3. Open **R2 Object Storage** -> **Manage R2 API Tokens** and create an API Token with **Object Read & Write** permission scoped to that bucket.
+4. Copy your **Account ID**, **Access Key ID**, **Secret Access Key**, **Bucket Name** and **Public URL**, then add them to your `.env` (local) or Render Environment tab:
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET_NAME`
+   - `R2_PUBLIC_URL`
+   - `R2_PREFIX=cya-platform` (optional folder prefix inside the bucket)
+
+*(Cloudinary remains supported as a legacy fallback if all `R2_*` variables are left unset.)*
 
 ### 3. Render
 
@@ -60,9 +63,11 @@ This combination is the most sustainable free setup for the current codebase bec
    - `GOOGLE_CLIENT_SECRET`
    - `APP_NAME`
    - `SMTP_FROM`
-   - `CLOUDINARY_CLOUD_NAME`
-   - `CLOUDINARY_API_KEY`
-   - `CLOUDINARY_API_SECRET`
+   - `R2_ACCOUNT_ID`
+   - `R2_ACCESS_KEY_ID`
+   - `R2_SECRET_ACCESS_KEY`
+   - `R2_BUCKET_NAME`
+   - `R2_PUBLIC_URL`
 5. Deploy.
 
 ## Password reset email setup
@@ -131,11 +136,12 @@ Also add the site origin:
 
 - The frontend and backend are served by the same Node app, so you only need one app service.
 - The database tables are created automatically on server start.
-- If Cloudinary env vars are missing, uploads fall back to local disk storage for local development.
-- Existing local uploads inside `server/uploads` will not automatically move to Cloudinary. New uploads will.
+- When `R2_*` variables are set, Cloudflare R2 is used automatically (Cloudinary stays as fallback if `R2_*` is unset and `CLOUDINARY_*` is set).
+- If neither Cloudflare R2 nor Cloudinary env vars are set, uploads fall back to local disk storage for local development.
+- Existing local uploads inside `server/uploads` will not automatically move to R2. New uploads will go straight to Cloudflare R2.
 
 ## Cheapest path with the fewest surprises
 
-Use Render + Neon + Cloudinary.
+Use Render + Neon + Cloudflare R2.
 
 If you try to keep uploads on the app server itself, your media will disappear after redeploys or idle spin-downs on most free hosts.

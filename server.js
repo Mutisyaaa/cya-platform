@@ -12,6 +12,7 @@ const bcrypt = require("bcryptjs");
 const session = require("express-session");
 const passport = require("passport");
 const webpush = require("web-push");
+const { createStorageManager } = require("./config/storage");
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BPhWNyjuYmtrqlyDLnrMus6Ahk-EgSRty_PCI3_6I03mKUdlu16be5Mqr2lRhbUAFTvdv_lLkw-QdoKaUvfiwKA";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "mBjPLffqcVzP0vvX0Ay3oRPhwfhdG9plIyFAGwADhtw";
@@ -354,6 +355,7 @@ const allowLocalOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 const isProduction = process.env.NODE_ENV === "production";
 
 fs.mkdirSync(uploadsDir, { recursive: true });
+const storageManager = createStorageManager({ uploadsDir });
 
 function parseCsvEnv(value) {
   return String(value || "")
@@ -808,27 +810,12 @@ function buildSafeSpreadsheetFileName(title) {
   return `${slug || "event-rsvps"}-rsvps.xls`;
 }
 
-function deleteLocalUploadIfPresent(imageUrl) {
-  if (!imageUrl?.startsWith("/uploads/")) {
-    return;
-  }
-
-  const filename = path.basename(imageUrl);
-  const filePath = path.join(uploadsDir, filename);
-
-  fs.unlink(filePath, (err) => {
-    if (err && err.code !== "ENOENT") {
-      console.error(`Failed to delete file: ${filePath}`, err);
-    }
-  });
-}
-
 function isValidDisplayName(value) {
   return typeof value === "string" && value.trim().length >= 2 && value.trim().length <= 60;
 }
 
 function getAvatarUploadStorage() {
-  return isCloudinaryConfigured() ? multer.memoryStorage() : storage;
+  return storageManager.isCloudStorageConfigured() ? multer.memoryStorage() : storage;
 }
 
 function avatarFileFilter(req, file, cb) {
@@ -1014,112 +1001,6 @@ app.use(express.static(clientDir, {
   }
 }));
 app.use("/uploads", express.static(uploadsDir));
-
-function isCloudinaryConfigured() {
-  return Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
-}
-
-function getCloudinaryFolder() {
-  return process.env.CLOUDINARY_FOLDER?.trim() || "cya-platform/gallery";
-}
-
-function buildCloudinarySignature(params, apiSecret) {
-  const stringToSign = Object.entries(params)
-    .filter(([, value]) => value !== undefined && value !== null && value !== "")
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("&");
-
-  return crypto
-    .createHash("sha1")
-    .update(`${stringToSign}${apiSecret}`)
-    .digest("hex");
-}
-
-function getCloudinaryResourceType(file) {
-  if (file?.mimetype?.startsWith("video/")) {
-    return "video";
-  }
-
-  if (file?.mimetype?.startsWith("image/")) {
-    return "image";
-  }
-
-  return "raw";
-}
-
-async function uploadToCloudinary(file) {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const resourceType = getCloudinaryResourceType(file);
-  const folder = getCloudinaryFolder();
-  const signature = buildCloudinarySignature(
-    { folder, timestamp },
-    process.env.CLOUDINARY_API_SECRET
-  );
-  const formData = new FormData();
-
-  formData.append(
-    "file",
-    new Blob([file.buffer], { type: file.mimetype || "application/octet-stream" }),
-    file.originalname || `upload-${Date.now()}`
-  );
-  formData.append("api_key", process.env.CLOUDINARY_API_KEY);
-  formData.append("timestamp", String(timestamp));
-  formData.append("folder", folder);
-  formData.append("signature", signature);
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
-    {
-      method: "POST",
-      body: formData,
-    }
-  );
-  const data = await response.json();
-
-  if (!response.ok) {
-    throw new Error(data?.error?.message || "Cloudinary upload failed.");
-  }
-
-  return {
-    imageUrl: data.secure_url,
-    publicId: data.public_id,
-    resourceType: data.resource_type || resourceType,
-  };
-}
-
-async function destroyCloudinaryAsset(publicId, resourceType = "image") {
-  const timestamp = Math.floor(Date.now() / 1000);
-  const invalidate = "true";
-  const signature = buildCloudinarySignature(
-    { invalidate, public_id: publicId, timestamp },
-    process.env.CLOUDINARY_API_SECRET
-  );
-  const body = new URLSearchParams({
-    public_id: publicId,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    timestamp: String(timestamp),
-    invalidate,
-    signature,
-  });
-
-  const response = await fetch(
-    `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/${resourceType}/destroy`,
-    {
-      method: "POST",
-      body,
-    }
-  );
-  const data = await response.json();
-
-  if (!response.ok || data.result === "not found") {
-    throw new Error(data?.error?.message || `Cloudinary destroy failed for ${publicId}.`);
-  }
-}
 
 app.get("/auth/google", (req, res, next) => {
   if (!isGoogleAuthReady()) {
@@ -2161,24 +2042,19 @@ app.post(
       const { title, date, time, description, fellowship_id, target_gender } = req.body || {};
 
       if (!title?.trim() || !date) {
-        if (req.file && !isCloudinaryConfigured()) {
-          deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+        if (req.file && !storageManager.isCloudStorageConfigured()) {
+          storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
         }
 
         return res.status(400).json({ error: "Event title and date are required." });
       }
 
       if (req.file) {
-        if (isCloudinaryConfigured()) {
-          const uploadedAsset = await uploadToCloudinary(req.file);
-          imageUrl = uploadedAsset.imageUrl;
-          imageStorageProvider = "cloudinary";
-          imageStoragePublicId = uploadedAsset.publicId;
-          imageStorageResourceType = uploadedAsset.resourceType;
-        } else {
-          imageUrl = `/uploads/${req.file.filename}`;
-          imageStorageProvider = "local";
-        }
+        const uploadedAsset = await storageManager.uploadMediaAsset(req.file, { folder: "events" });
+        imageUrl = uploadedAsset.url;
+        imageStorageProvider = uploadedAsset.provider;
+        imageStoragePublicId = uploadedAsset.publicId;
+        imageStorageResourceType = uploadedAsset.resourceType;
       }
 
       const result = await pool.query(
@@ -2210,14 +2086,17 @@ app.post(
 
       res.status(201).json(result.rows[0]);
     } catch (err) {
-      if (imageStorageProvider === "cloudinary" && imageStoragePublicId && isCloudinaryConfigured()) {
+      if (imageUrl || imageStoragePublicId) {
         try {
-          await destroyCloudinaryAsset(imageStoragePublicId, imageStorageResourceType || "image");
+          await storageManager.deleteMediaAsset({
+            provider: imageStorageProvider,
+            publicId: imageStoragePublicId,
+            resourceType: imageStorageResourceType,
+            url: imageUrl,
+          });
         } catch (cleanupError) {
-          console.error(`Failed to clean up Cloudinary event photo: ${imageStoragePublicId}`, cleanupError);
+          console.error("Failed to clean up uploaded event photo:", cleanupError);
         }
-      } else {
-        deleteLocalUploadIfPresent(imageUrl);
       }
 
       res.status(500).json({ error: err.message });
@@ -2246,14 +2125,17 @@ app.delete("/api/events/:id", ensureAdmin, async (req, res) => {
       return res.status(404).json({ error: "Event not found." });
     }
 
-    if (event.image_storage_provider === "cloudinary" && event.image_storage_public_id && isCloudinaryConfigured()) {
+    if (event.image_url || event.image_storage_public_id) {
       try {
-        await destroyCloudinaryAsset(event.image_storage_public_id, event.image_storage_resource_type || "image");
+        await storageManager.deleteMediaAsset({
+          provider: event.image_storage_provider,
+          publicId: event.image_storage_public_id,
+          resourceType: event.image_storage_resource_type,
+          url: event.image_url,
+        });
       } catch (cleanupError) {
-        console.error(`Failed to delete Cloudinary event photo: ${event.image_storage_public_id}`, cleanupError);
+        console.error(`Failed to delete event photo (${event.image_storage_provider || "local"}):`, cleanupError);
       }
-    } else {
-      deleteLocalUploadIfPresent(event.image_url);
     }
 
     res.status(200).json({ message: "Event deleted successfully." });
@@ -2594,7 +2476,7 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage: isCloudinaryConfigured() ? multer.memoryStorage() : storage,
+  storage: storageManager.isCloudStorageConfigured() ? multer.memoryStorage() : storage,
 });
 
 const avatarUpload = multer({
@@ -2627,6 +2509,8 @@ app.post(
     });
   },
   async (req, res) => {
+    let uploadedAvatar = null;
+
     try {
       if (!req.file) {
         return res.status(400).json({ error: "Please choose an image to upload." });
@@ -2638,18 +2522,16 @@ app.post(
       );
 
       if (currentUserResult.rows.length === 0) {
+        if (!storageManager.isCloudStorageConfigured()) {
+          storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+        }
+
         return res.status(404).json({ error: "User account not found." });
       }
 
       const currentUser = currentUserResult.rows[0];
-      let avatarUrl;
-
-      if (isCloudinaryConfigured()) {
-        const uploadedAsset = await uploadToCloudinary(req.file);
-        avatarUrl = uploadedAsset.imageUrl;
-      } else {
-        avatarUrl = `/uploads/${req.file.filename}`;
-      }
+      uploadedAvatar = await storageManager.uploadMediaAsset(req.file, { folder: "avatars" });
+      const avatarUrl = uploadedAvatar.url;
 
       const updateResult = await pool.query(
         `UPDATE users
@@ -2665,7 +2547,11 @@ app.post(
       await loginUpdatedUser(req, sessionUser);
 
       if (currentUser.avatar_url && currentUser.avatar_url !== updatedUser.avatar_url) {
-        deleteLocalUploadIfPresent(currentUser.avatar_url);
+        try {
+          await storageManager.deleteMediaAsset({ url: currentUser.avatar_url });
+        } catch (cleanupError) {
+          console.error("Failed to remove previous avatar asset:", cleanupError);
+        }
       }
 
       return res.status(201).json({
@@ -2676,6 +2562,16 @@ app.post(
         },
       });
     } catch (error) {
+      if (uploadedAvatar) {
+        try {
+          await storageManager.deleteMediaAsset(uploadedAvatar);
+        } catch (cleanupError) {
+          console.error("Failed to clean up uploaded avatar:", cleanupError);
+        }
+      } else if (req.file && !storageManager.isCloudStorageConfigured()) {
+        storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+      }
+
       console.error("Profile avatar upload error:", error);
       return res.status(500).json({ error: "Could not update your profile photo right now." });
     }
@@ -2706,26 +2602,15 @@ app.post(
     });
   },
   async (req, res) => {
+    let uploadedAsset = null;
+
     try {
       if (!req.file) {
         return sendGalleryUploadResponse(req, res, 400, { error: "No file uploaded" });
       }
 
       const { title } = req.body;
-      let mediaUrl;
-      let storageProvider = "local";
-      let storagePublicId = null;
-      let storageResourceType = null;
-
-      if (isCloudinaryConfigured()) {
-        const uploadedAsset = await uploadToCloudinary(req.file);
-        mediaUrl = uploadedAsset.imageUrl;
-        storageProvider = "cloudinary";
-        storagePublicId = uploadedAsset.publicId;
-        storageResourceType = uploadedAsset.resourceType;
-      } else {
-        mediaUrl = `/uploads/${req.file.filename}`;
-      }
+      uploadedAsset = await storageManager.uploadMediaAsset(req.file, { folder: "gallery" });
 
       const result = await pool.query(
         `INSERT INTO gallery (
@@ -2735,7 +2620,13 @@ app.post(
           storage_public_id,
           storage_resource_type
         ) VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-        [title, mediaUrl, storageProvider, storagePublicId, storageResourceType]
+        [
+          title,
+          uploadedAsset.url,
+          uploadedAsset.provider,
+          uploadedAsset.publicId,
+          uploadedAsset.resourceType,
+        ]
       );
 
       return sendGalleryUploadResponse(req, res, 201, {
@@ -2743,6 +2634,16 @@ app.post(
         data: result.rows[0],
       });
     } catch (err) {
+      if (uploadedAsset) {
+        try {
+          await storageManager.deleteMediaAsset(uploadedAsset);
+        } catch (cleanupError) {
+          console.error("Failed to clean up uploaded gallery asset:", cleanupError);
+        }
+      } else if (req.file && !storageManager.isCloudStorageConfigured()) {
+        storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+      }
+
       console.error("UPLOAD ERROR:", err);
       return sendGalleryUploadResponse(req, res, 500, { error: err.message });
     }
@@ -2772,19 +2673,17 @@ app.delete("/api/gallery/:id", ensureAdmin, async (req, res) => {
 
     await pool.query("DELETE FROM gallery WHERE id = $1", [id]);
 
-    if (storageProvider === "cloudinary" && storagePublicId && isCloudinaryConfigured()) {
+    if (imageUrl || storagePublicId) {
       try {
-        await destroyCloudinaryAsset(storagePublicId, storageResourceType || "image");
+        await storageManager.deleteMediaAsset({
+          provider: storageProvider,
+          publicId: storagePublicId,
+          resourceType: storageResourceType,
+          url: imageUrl,
+        });
       } catch (err) {
-        console.error(`Failed to delete Cloudinary asset: ${storagePublicId}`, err);
+        console.error(`Failed to delete gallery asset (${storageProvider || "local"}):`, err);
       }
-    } else if (imageUrl?.startsWith("/uploads/")) {
-      const filename = path.basename(imageUrl);
-      const filePath = path.join(uploadsDir, filename);
-
-      fs.unlink(filePath, (err) => {
-        if (err) console.error(`Failed to delete file: ${filePath}`, err);
-      });
     }
 
     res.status(200).json({ message: "Gallery item deleted successfully." });
@@ -3139,6 +3038,17 @@ app.delete("/api/admin/comments/:contentType/:id", ensureAdmin, async (req, res)
 
 app.get("/api/admin/overview", ensureAdmin, getDashboardOverview);
 
+app.get("/api/admin/storage/status", ensureAdmin, async (req, res) => {
+  try {
+    const status = await storageManager.getStorageStatus({
+      probe: req.query.probe === "1",
+    });
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get("/api/stats/users", ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query("SELECT COUNT(*) FROM users");
@@ -3391,6 +3301,7 @@ initializeDatabase()
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      console.info(`Media storage provider: ${storageManager.getActiveStorageProvider()}`);
     });
   })
   .catch(() => {
