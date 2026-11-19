@@ -282,18 +282,34 @@
     document.head.appendChild(style);
   }
 
+  function getSiteSettings() {
+    return window.__CYA_SITE_SETTINGS__ || {};
+  }
+
+  function escapePwaHtml(value) {
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
   function createBanner() {
     if (bannerEl) return bannerEl;
     injectStyles();
+
+    const branding = getSiteSettings()?.branding || {};
+    const appTitle = escapePwaHtml(branding.siteName || "AIC Ziwani CYA");
+    const appIcon = escapePwaHtml(branding.appIconUrl || "/icon-192.png");
 
     bannerEl = document.createElement("div");
     bannerEl.className = "cya-install-banner";
     bannerEl.setAttribute("role", "region");
     bannerEl.setAttribute("aria-label", "App installation prompt");
     bannerEl.innerHTML = `
-      <img src="/icon-192.png" alt="CYA Icon" class="cya-install-icon" />
+      <img src="${appIcon}" alt="CYA Icon" class="cya-install-icon" />
       <div class="cya-install-text">
-        <div class="cya-install-title">AIC Ziwani CYA</div>
+        <div class="cya-install-title">${appTitle}</div>
         <div class="cya-install-desc">Install app for faster access and offline use</div>
       </div>
       <div class="cya-install-actions">
@@ -333,6 +349,9 @@
   }
 
   function showBanner() {
+    if (getSiteSettings()?.features_security?.enablePwaInstallBanner === false) {
+      return;
+    }
     if (isRunningStandalone() || isDismissed() || safeStorageGet(INSTALLED_KEY) === "true") {
       return;
     }
@@ -357,9 +376,10 @@
 
     iosModalEl = document.createElement("div");
     iosModalEl.className = "cya-ios-modal-overlay";
+    const iosTitle = escapePwaHtml(getSiteSettings()?.branding?.siteName || "AIC Ziwani CYA");
     iosModalEl.innerHTML = `
       <div class="cya-ios-card">
-        <div class="cya-ios-title">Install AIC Ziwani CYA</div>
+        <div class="cya-ios-title">Install ${iosTitle}</div>
         <div class="cya-ios-step">
           <span class="cya-ios-badge">1</span>
           <span>Tap the <strong>Share</strong> button at the bottom of Safari (the square with an arrow pointing up).</span>
@@ -573,14 +593,18 @@
     if (pushBannerEl) return pushBannerEl;
     injectStyles();
 
+    const branding = getSiteSettings()?.branding || {};
+    const appTitle = escapePwaHtml(branding.siteName || "AIC Ziwani CYA");
+    const appIcon = escapePwaHtml(branding.appIconUrl || "/notification-icon.png");
+
     pushBannerEl = document.createElement("div");
     pushBannerEl.className = "cya-install-banner";
     pushBannerEl.setAttribute("role", "region");
     pushBannerEl.setAttribute("aria-label", "Notification permission prompt");
     pushBannerEl.innerHTML = `
-      <img src="/notification-icon.png" alt="CYA Notification Icon" class="cya-install-icon" />
+      <img src="${appIcon}" alt="CYA Notification Icon" class="cya-install-icon" />
       <div class="cya-install-text">
-        <div class="cya-install-title">AIC Ziwani CYA</div>
+        <div class="cya-install-title">${appTitle}</div>
         <div class="cya-install-desc">Enable notifications for youth events and fellowship updates</div>
       </div>
       <div class="cya-install-actions">
@@ -614,6 +638,7 @@
   }
 
   function showPushBanner() {
+    if (getSiteSettings()?.features_security?.enablePushPrompts === false) return;
     if (!window.cyaPush || !window.cyaPush.isSupported()) return;
     if (window.cyaPush.getPermissionState() !== "default") return;
     if (isPushPromptDismissed()) return;

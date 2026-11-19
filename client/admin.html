@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PDRVX92S"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>Admin Dashboard</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -20,6 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script src="runtime-config.js"></script>
+<script src="site-config.js"></script>
 <script src="backend-origin.js"></script>
 <script>
   (function() {
@@ -34,7 +29,7 @@
 
 <script>
   (function() {
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = window.CYASiteConfig?.resolveInitialTheme?.() || localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
 </script>
@@ -1050,6 +1045,7 @@ button.submit:hover {
   <button onclick="showSection('events')">Events</button>
   <button onclick="showSection('users')">Users</button>
   <button onclick="showSection('notifications')">Notifications</button>
+  <button onclick="window.location.href='/admin-settings'">System Settings</button>
   <button onclick="window.location.href='/'">Back To Site</button>
   <button onclick="logout()">Logout</button>
 </div>
@@ -1359,6 +1355,9 @@ button.submit:hover {
         </button>
         <button class="quick-action-btn" onclick="showSection('events'); document.querySelector('#eventForm input[name=\'title\']').focus();">
           <span>🗓️</span> Create Event
+        </button>
+        <button class="quick-action-btn" onclick="window.location.href='/admin-settings'">
+          <span>⚙️</span> System Settings
         </button>
       </div>
     </div>
@@ -2417,6 +2416,14 @@ if (pushForm) {
 
 async function initializeDashboard() {
   try {
+    const pushDefaults = window.__CYA_SITE_SETTINGS__?.integrations;
+    const defaultPushTitle = pushDefaults?.defaultPushTitle || "AIC Ziwani CYA";
+    const defaultPushUrl = pushDefaults?.defaultPushUrl || "/events";
+    if (previewTitle) previewTitle.textContent = defaultPushTitle;
+    if (pushTitleInput && !pushTitleInput.value) pushTitleInput.value = defaultPushTitle;
+    const urlEl = document.getElementById("pushUrlInput");
+    if (urlEl) urlEl.value = defaultPushUrl;
+
     await fetchFellowshipsForDropdown();
     await showSection('overview');
   } catch (error) {

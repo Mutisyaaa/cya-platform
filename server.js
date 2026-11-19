@@ -13,6 +13,7 @@ const session = require("express-session");
 const passport = require("passport");
 const webpush = require("web-push");
 const { createStorageManager } = require("./config/storage");
+const { createSiteSettingsManager, DEFAULT_SITE_SETTINGS, VALID_SECTIONS } = require("./config/siteSettings");
 
 const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY || "BPhWNyjuYmtrqlyDLnrMus6Ahk-EgSRty_PCI3_6I03mKUdlu16be5Mqr2lRhbUAFTvdv_lLkw-QdoKaUvfiwKA";
 const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY || "mBjPLffqcVzP0vvX0Ay3oRPhwfhdG9plIyFAGwADhtw";
@@ -217,6 +218,41 @@ const schemaBootstrapQuery = `
   ALTER TABLE gallery_comments
     ADD COLUMN IF NOT EXISTS parent_comment_id INTEGER REFERENCES gallery_comments(id) ON DELETE CASCADE,
     ADD COLUMN IF NOT EXISTS author_id INTEGER REFERENCES users(id) ON DELETE SET NULL;
+
+  CREATE TABLE IF NOT EXISTS site_settings (
+    section TEXT PRIMARY KEY,
+    data JSONB NOT NULL DEFAULT '{}'::jsonb,
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated_by_name TEXT,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE TABLE IF NOT EXISTS site_settings_audit (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    section TEXT NOT NULL,
+    action TEXT NOT NULL,
+    actor_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    actor_name TEXT,
+    summary TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_site_settings_audit_created_at
+    ON site_settings_audit (created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS contact_messages (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    name TEXT NOT NULL,
+    contact TEXT NOT NULL,
+    department TEXT NOT NULL DEFAULT 'general',
+    subject TEXT,
+    message TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'read', 'resolved')),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
+
+  CREATE INDEX IF NOT EXISTS idx_contact_messages_created_at
+    ON contact_messages (created_at DESC);
 `;
 
 const legacyLikesSchemaRepairQuery = `
@@ -356,6 +392,7 @@ const isProduction = process.env.NODE_ENV === "production";
 
 fs.mkdirSync(uploadsDir, { recursive: true });
 const storageManager = createStorageManager({ uploadsDir });
+const settingsManager = createSiteSettingsManager({ pool });
 
 function parseCsvEnv(value) {
   return String(value || "")
@@ -685,8 +722,10 @@ function createPasswordResetTransport() {
 async function sendPasswordResetEmail({ req, email, name, token }) {
   const resetUrl = buildPasswordResetUrl(req, token);
   const directLinkConfigured = String(process.env.PASSWORD_RESET_DIRECT_LINK || "").trim().toLowerCase();
+  const siteSettings = await getSafeSiteSettings();
+  const modeSetting = siteSettings?.features_security?.passwordResetMode || "auto";
 
-  if (directLinkConfigured === "true" || !isPasswordResetEmailConfigured()) {
+  if (modeSetting === "direct" || (modeSetting === "auto" && directLinkConfigured === "true") || !isPasswordResetEmailConfigured()) {
     console.info(`Password reset direct link mode for ${email}: ${resetUrl}`);
     return { delivered: false, previewUrl: resetUrl, direct: true };
   }
@@ -699,7 +738,7 @@ async function sendPasswordResetEmail({ req, email, name, token }) {
     }
 
     const from = process.env.SMTP_FROM?.trim() || "no-reply@cya-platform.com";
-    const appName = process.env.APP_NAME?.trim() || "AIC Ziwani";
+    const appName = siteSettings?.branding?.siteName || process.env.APP_NAME?.trim() || "AIC Ziwani";
     const safeName = name?.trim() || "there";
 
     await transport.sendMail({
@@ -725,7 +764,7 @@ async function sendPasswordResetEmail({ req, email, name, token }) {
     });
 
     console.info(`Password reset email delivered successfully to ${email}`);
-    const shouldReturnDirectUrl = directLinkConfigured !== "false";
+    const shouldReturnDirectUrl = modeSetting === "auto" && directLinkConfigured !== "false";
     return { delivered: true, previewUrl: shouldReturnDirectUrl ? resetUrl : null, direct: false };
   } catch (sendError) {
     console.error(`Password reset email delivery failed for ${email}. Falling back to direct reset link. Reason:`, sendError);
@@ -748,8 +787,30 @@ function generatePasswordResetToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
-function isStrongPassword(password) {
-  return typeof password === "string" && password.length >= 8;
+function isStrongPassword(password, minLength = 8) {
+  return typeof password === "string" && password.length >= minLength;
+}
+
+async function getSafeSiteSettings() {
+  try {
+    return await settingsManager.getPublicSettings();
+  } catch (error) {
+    console.warn("Falling back to default site settings:", error.message);
+    return JSON.parse(JSON.stringify(DEFAULT_SITE_SETTINGS));
+  }
+}
+
+function escapeHtmlServer(value = "") {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function serializeForInlineScript(value) {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
 }
 
 function getAppBaseUrl(req) {
@@ -950,14 +1011,244 @@ app.use(cors({
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.get("/runtime-config.js", (req, res) => {
+function buildMaintenanceHtml(siteSettings, googleReady) {
+  const branding = siteSettings.branding || DEFAULT_SITE_SETTINGS.branding;
+  const appearance = siteSettings.appearance || DEFAULT_SITE_SETTINGS.appearance;
+  const security = siteSettings.features_security || DEFAULT_SITE_SETTINGS.features_security;
+  const primaryColor = escapeHtmlServer(appearance.primaryColor || "#c8102e");
+  const siteName = escapeHtmlServer(branding.siteName || "AIC Ziwani CYA");
+  const logoUrl = escapeHtmlServer(branding.logoUrl || "/favicon.png");
+  const title = escapeHtmlServer(security.maintenanceTitle || "We Will Be Back Shortly");
+  const message = escapeHtmlServer(security.maintenanceMessage || "Our site is undergoing brief scheduled maintenance.");
+  const allowGoogle = googleReady && security.allowGoogleLogin !== false;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <title>${title} | ${siteName}</title>
+  <link rel="icon" type="image/x-icon" href="${escapeHtmlServer(branding.faviconUrl || "/favicon.ico?v=2")}">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --brand: ${primaryColor};
+      --surface: light-dark(#ffffff, #17171f);
+      --page-bg: light-dark(#f4f5f7, #0d0d12);
+      --text-main: light-dark(#18181b, #f4f4f5);
+      --text-sub: light-dark(#52525b, #a1a1aa);
+      --border: light-dark(#e4e4e7, #272732);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body {
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top center, color-mix(in srgb, var(--brand) 14%, transparent), transparent 45%),
+        var(--page-bg);
+      color: var(--text-main);
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .card {
+      width: min(100%, 480px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 28px;
+      text-align: center;
+      box-shadow: 0 22px 54px rgba(0, 0, 0, 0.14);
+    }
+    .logo {
+      width: 68px;
+      height: 68px;
+      object-fit: contain;
+      border-radius: 16px;
+      margin-bottom: 16px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--brand) 14%, transparent);
+      color: var(--brand);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 10px; }
+    .copy { color: var(--text-sub); line-height: 1.6; font-size: 15px; margin-bottom: 24px; }
+    .admin-toggle {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-sub);
+      padding: 9px 16px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .admin-toggle:hover { color: var(--text-main); border-color: var(--brand); }
+    .admin-panel {
+      display: none;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border);
+      text-align: left;
+    }
+    .admin-panel.open { display: block; }
+    .admin-panel input {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--page-bg);
+      color: var(--text-main);
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .btn-primary {
+      width: 100%;
+      border: none;
+      background: var(--brand);
+      color: #ffffff;
+      padding: 11px 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .google-link {
+      display: block;
+      text-align: center;
+      margin-top: 10px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .err {
+      display: none;
+      color: #dc2626;
+      font-size: 13px;
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <img class="logo" src="${logoUrl}" alt="${siteName}">
+    <div class="badge">${siteName}</div>
+    <h1>${title}</h1>
+    <p class="copy">${message}</p>
+    <button id="toggleAdminLogin" type="button" class="admin-toggle">Admin Sign In</button>
+    <section id="adminLoginPanel" class="admin-panel">
+      <div id="maintErr" class="err" role="alert"></div>
+      <form id="maintLoginForm">
+        <input id="maintEmail" type="email" name="email" placeholder="Admin email" required autocomplete="email">
+        <input id="maintPassword" type="password" name="password" placeholder="Password" required autocomplete="current-password">
+        <button type="submit" class="btn-primary">Sign In As Admin</button>
+      </form>
+      ${allowGoogle ? '<a class="google-link" href="/auth/google?returnTo=/admin-settings">Continue with Google</a>' : ""}
+    </section>
+  </main>
+  <script>
+    const toggleBtn = document.getElementById("toggleAdminLogin");
+    const panel = document.getElementById("adminLoginPanel");
+    const form = document.getElementById("maintLoginForm");
+    const errEl = document.getElementById("maintErr");
+    toggleBtn?.addEventListener("click", () => {
+      panel?.classList.toggle("open");
+      if (panel?.classList.contains("open")) {
+        document.getElementById("maintEmail")?.focus();
+      }
+    });
+    form?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (errEl) errEl.style.display = "none";
+      try {
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            email: document.getElementById("maintEmail").value.trim(),
+            password: document.getElementById("maintPassword").value
+          })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(data.error || "Sign in failed.");
+        if (!data.user?.isAdmin) throw new Error("Only administrators can sign in during maintenance.");
+        window.location.href = "/admin-settings";
+      } catch (err) {
+        if (errEl) {
+          errEl.textContent = err.message || "Could not sign in.";
+          errEl.style.display = "block";
+        }
+      }
+    });
+  </script>
+</body>
+</html>`;
+}
+
+app.get("/runtime-config.js", async (req, res) => {
   const apiOrigin = (process.env.API_ORIGIN || "").trim().replace(/\/+$/, "");
-  const runtimeConfig = `window.__CYA_RUNTIME_CONFIG__ = ${JSON.stringify({ apiOrigin })};\n`;
+  const siteSettings = await getSafeSiteSettings();
+  const runtimeConfig = [
+    `window.__CYA_RUNTIME_CONFIG__ = ${serializeForInlineScript({ apiOrigin })};`,
+    `window.__CYA_SITE_SETTINGS__ = ${serializeForInlineScript(siteSettings)};`,
+    "",
+  ].join("\n");
 
   res.type("application/javascript");
   res.set("Cache-Control", "no-store");
   res.send(runtimeConfig);
 });
+
+app.get("/manifest.webmanifest", async (req, res) => {
+  const siteSettings = await getSafeSiteSettings();
+  const branding = siteSettings.branding || DEFAULT_SITE_SETTINGS.branding;
+  const customIcon = branding.appIconUrl && branding.appIconUrl !== "/icon-512.png"
+    ? branding.appIconUrl
+    : "";
+
+  const icons = customIcon
+    ? [
+        { src: customIcon, sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: customIcon, sizes: "512x512", type: "image/png", purpose: "any maskable" },
+      ]
+    : [
+        { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+        { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      ];
+
+  const manifest = {
+    name: branding.pwaName || branding.siteName || "AIC Ziwani CYA",
+    short_name: branding.pwaShortName || "CYA Ziwani",
+    description: branding.pwaDescription || "The AIC Ziwani Christian Youth Association community app.",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: branding.pwaThemeColor || "#ffffff",
+    orientation: "portrait-primary",
+    icons,
+  };
+
+  res.type("application/manifest+json");
+  res.set("Cache-Control", "no-cache");
+  res.json(manifest);
+});
+
 // Clean URL middleware: redirect direct .html file visits to clean URLs
 app.use((req, res, next) => {
   if (req.method !== "GET" && req.method !== "HEAD") {
@@ -990,6 +1281,49 @@ app.use((req, res, next) => {
   next();
 });
 
+const MAINTENANCE_BYPASS_PATHS = new Set([
+  "/admin",
+  "/admin-settings",
+  "/admin-gallery",
+  "/reset-password",
+]);
+const MAINTENANCE_STATIC_EXT_RE = /\.(js|css|png|jpe?g|webp|gif|svg|ico|webmanifest|json|woff2?|ttf|map)$/i;
+
+app.use(async (req, res, next) => {
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return next();
+  }
+
+  const pathname = req.path;
+  if (
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/uploads") ||
+    MAINTENANCE_BYPASS_PATHS.has(pathname) ||
+    MAINTENANCE_STATIC_EXT_RE.test(pathname)
+  ) {
+    return next();
+  }
+
+  if (req.isAuthenticated?.() && req.user?.isAdmin) {
+    return next();
+  }
+
+  const siteSettings = await getSafeSiteSettings();
+  if (!siteSettings?.features_security?.maintenanceMode) {
+    return next();
+  }
+
+  res.status(503);
+  res.set("Retry-After", "300");
+  res.set("Cache-Control", "no-store");
+  if (req.method === "HEAD") {
+    return res.end();
+  }
+
+  return res.type("html").send(buildMaintenanceHtml(siteSettings, isGoogleAuthReady()));
+});
+
 app.use(express.static(clientDir, {
   extensions: ["html"],
   setHeaders: (res, filePath) => {
@@ -1002,9 +1336,14 @@ app.use(express.static(clientDir, {
 }));
 app.use("/uploads", express.static(uploadsDir));
 
-app.get("/auth/google", (req, res, next) => {
+app.get("/auth/google", async (req, res, next) => {
   if (!isGoogleAuthReady()) {
     return res.status(503).json({ error: getAuthUnavailableMessage() });
+  }
+
+  const siteSettings = await getSafeSiteSettings();
+  if (siteSettings?.features_security?.allowGoogleLogin === false) {
+    return res.status(403).json({ error: "Google sign-in is currently disabled." });
   }
 
   if (req.session) {
@@ -1016,9 +1355,14 @@ app.get("/auth/google", (req, res, next) => {
   })(req, res, next);
 });
 
-app.get("/auth/google/callback", (req, res, next) => {
+app.get("/auth/google/callback", async (req, res, next) => {
   if (!isGoogleAuthReady()) {
     return res.status(503).json({ error: getAuthUnavailableMessage() });
+  }
+
+  const siteSettings = await getSafeSiteSettings();
+  if (siteSettings?.features_security?.allowGoogleLogin === false) {
+    return res.status(403).json({ error: "Google sign-in is currently disabled." });
   }
 
   return passport.authenticate("google", {
@@ -1178,6 +1522,11 @@ app.get("/api/fellowship/posts", async (req, res) => {
 
 app.post("/api/fellowship/posts", ensureUserAuthenticated, async (req, res) => {
   try {
+    const siteSettings = await getSafeSiteSettings();
+    if (siteSettings?.features_security?.allowFellowshipPosting === false) {
+      return res.status(403).json({ error: "Fellowship posting is currently paused by an administrator." });
+    }
+
     const { title, content, category, target_gender } = req.body;
     const normalizedCategory = typeof category === "string" ? category.trim().toLowerCase() : "discussion";
     const normalizedTargetGender = typeof target_gender === "string" ? target_gender.trim().toLowerCase() : "all";
@@ -1220,6 +1569,11 @@ app.post("/api/fellowship/posts", ensureUserAuthenticated, async (req, res) => {
 
 app.post("/api/fellowship/posts/:id/comments", ensureUserAuthenticated, async (req, res) => {
   try {
+    const siteSettings = await getSafeSiteSettings();
+    if (siteSettings?.features_security?.allowFellowshipPosting === false) {
+      return res.status(403).json({ error: "Fellowship posting is currently paused by an administrator." });
+    }
+
     const { id } = req.params;
     const { content } = req.body;
 
@@ -1258,9 +1612,13 @@ app.post("/api/fellowship/posts/:id/comments", ensureUserAuthenticated, async (r
 app.get("/api/users", ensureAdmin, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email, google_id, is_admin, created_at FROM users ORDER BY created_at DESC"
+      "SELECT id, name, email, google_id, is_admin, gender, avatar_url, created_at FROM users ORDER BY created_at DESC"
     );
-    res.json(result.rows);
+    const users = result.rows.map((row) => ({
+      ...row,
+      is_bootstrap: isBootstrapAdminEmail(row.email),
+    }));
+    res.json(users);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -1293,14 +1651,22 @@ app.post("/api/auth/register", async (req, res) => {
   try {
     const { name, email, password, confirmPassword, gender } = req.body;
     const isBootstrapAdmin = isBootstrapAdminEmail(email);
+    const siteSettings = await getSafeSiteSettings();
+    const security = siteSettings?.features_security || DEFAULT_SITE_SETTINGS.features_security;
+
+    if (!isBootstrapAdmin && security.allowRegistration === false) {
+      return res.status(403).json({ error: "New member registration is currently paused by an administrator." });
+    }
+
     const normalizedGender = typeof gender === "string" ? gender.trim().toLowerCase() : "";
 
     if (!name || !email || !password || (!isBootstrapAdmin && !normalizedGender)) {
       return res.status(400).json({ error: isBootstrapAdmin ? "Name, email and password are required." : "Name, email, password and gender are required." });
     }
 
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    const minLength = Number.isInteger(security.minPasswordLength) ? security.minPasswordLength : 8;
+    if (!isStrongPassword(password, minLength)) {
+      return res.status(400).json({ error: `Password must be at least ${minLength} characters long.` });
     }
 
     if (typeof confirmPassword === "string" && confirmPassword !== password) {
@@ -1477,8 +1843,13 @@ app.post("/api/auth/reset-password", async (req, res) => {
       return res.status(400).json({ error: "Reset token and new password are required." });
     }
 
-    if (!isStrongPassword(password)) {
-      return res.status(400).json({ error: "Password must be at least 8 characters long." });
+    const siteSettings = await getSafeSiteSettings();
+    const minLength = Number.isInteger(siteSettings?.features_security?.minPasswordLength)
+      ? siteSettings.features_security.minPasswordLength
+      : 8;
+
+    if (!isStrongPassword(password, minLength)) {
+      return res.status(400).json({ error: `Password must be at least ${minLength} characters long.` });
     }
 
     const tokenHash = hashResetToken(token);
@@ -1711,6 +2082,11 @@ app.delete("/api/blogs/:id", ensureAdmin, async (req, res) => {
 
 app.post("/api/blogs/:id/comments", ensureUserAuthenticated, async (req, res) => {
   try {
+    const siteSettings = await getSafeSiteSettings();
+    if (siteSettings?.features_security?.allowBlogComments === false) {
+      return res.status(403).json({ error: "Blog comments are currently disabled." });
+    }
+
     const { id } = req.params;
     const { content } = req.body;
     const parentCommentId = req.body?.parentCommentId == null || req.body.parentCommentId === ""
@@ -2433,6 +2809,11 @@ app.get("/api/events/:id/rsvps/export", ensureAdmin, async (req, res) => {
 
 app.post("/api/events/:id/rsvp", ensureUserAuthenticated, async (req, res) => {
   try {
+    const siteSettings = await getSafeSiteSettings();
+    if (siteSettings?.features_security?.allowEventRsvp === false) {
+      return res.status(403).json({ error: "Event RSVPs are currently disabled." });
+    }
+
     const { id: eventId } = req.params;
     const userId = req.user.id;
 
@@ -2488,6 +2869,14 @@ const avatarUpload = multer({
 });
 
 const eventImageUpload = multer({
+  storage: getAvatarUploadStorage(),
+  fileFilter: avatarFileFilter,
+  limits: {
+    fileSize: 8 * 1024 * 1024,
+  },
+});
+
+const settingsAssetUpload = multer({
   storage: getAvatarUploadStorage(),
   fileFilter: avatarFileFilter,
   limits: {
@@ -2904,6 +3293,11 @@ app.delete("/api/gallery/:id/save", ensureUserAuthenticated, async (req, res) =>
 
 app.post("/api/gallery/:id/comments", ensureUserAuthenticated, async (req, res) => {
   try {
+    const siteSettings = await getSafeSiteSettings();
+    if (siteSettings?.features_security?.allowGalleryComments === false) {
+      return res.status(403).json({ error: "Gallery comments are currently disabled." });
+    }
+
     const { id } = req.params;
     const { content } = req.body;
     const parentCommentId = req.body?.parentCommentId == null || req.body.parentCommentId === ""
@@ -3167,8 +3561,11 @@ app.post("/api/push/send-test", async (req, res) => {
       }
     };
 
+    const siteSettings = await getSafeSiteSettings();
+    const defaultPushTitle = siteSettings?.integrations?.defaultPushTitle || "AIC Ziwani CYA";
+
     const payload = JSON.stringify({
-      title: "AIC Ziwani CYA",
+      title: defaultPushTitle,
       body: "Notifications are working! You will receive church youth updates and service reminders here.",
       url: "/",
       icon: "/notification-icon.png",
@@ -3204,7 +3601,12 @@ app.get("/api/admin/push/stats", ensureAdmin, async (req, res) => {
 
 app.post("/api/admin/push/send", ensureAdmin, async (req, res) => {
   const { title, body, url, targetGender } = req.body || {};
-  if (!title || !body) {
+  const siteSettings = await getSafeSiteSettings();
+  const defaultTitle = siteSettings?.integrations?.defaultPushTitle || "AIC Ziwani CYA";
+  const defaultUrl = siteSettings?.integrations?.defaultPushUrl || "/events";
+  const resolvedTitle = title && title.trim() ? title.trim() : defaultTitle;
+
+  if (!resolvedTitle || !body || !body.trim()) {
     return res.status(400).json({ error: "Title and message body are required." });
   }
 
@@ -3234,9 +3636,9 @@ app.post("/api/admin/push/send", ensureAdmin, async (req, res) => {
     }
 
     const payload = JSON.stringify({
-      title: title.trim(),
+      title: resolvedTitle,
       body: body.trim(),
-      url: url && url.trim() ? url.trim() : "/",
+      url: url && url.trim() ? url.trim() : defaultUrl,
       icon: "/notification-icon.png",
       badge: "/notification-icon.png",
       tag: "cya-broadcast-" + Date.now()
@@ -3284,6 +3686,462 @@ app.post("/api/admin/push/send", ensureAdmin, async (req, res) => {
   } catch (error) {
     console.error("Admin push broadcast error:", error);
     return res.status(500).json({ error: "Failed to broadcast push notification." });
+  }
+});
+
+
+// SYSTEM SETTINGS, ROLES, SYSTEM HEALTH AND CONTACT INBOX ROUTES
+app.get("/api/settings/public", async (req, res) => {
+  try {
+    const publicSettings = await settingsManager.getPublicSettings();
+    res.set("Cache-Control", "no-store");
+    return res.json(publicSettings);
+  } catch (error) {
+    console.error("Load public settings error:", error);
+    return res.status(500).json({ error: "Could not load public settings right now." });
+  }
+});
+
+app.get("/api/admin/settings", ensureAdmin, async (req, res) => {
+  try {
+    const [allSettings, auditLog, unreadResult] = await Promise.all([
+      settingsManager.getAllSettings(),
+      settingsManager.getAuditLog(40),
+      pool.query("SELECT COUNT(*)::int AS count FROM contact_messages WHERE status = 'new'"),
+    ]);
+
+    return res.json({
+      ...allSettings,
+      auditLog,
+      unreadContactCount: unreadResult.rows[0]?.count || 0,
+    });
+  } catch (error) {
+    console.error("Admin load settings error:", error);
+    return res.status(500).json({ error: "Could not load admin settings right now." });
+  }
+});
+
+app.put("/api/admin/settings/:section", ensureAdmin, async (req, res) => {
+  try {
+    const { section } = req.params;
+    if (!VALID_SECTIONS.includes(section)) {
+      return res.status(400).json({ error: `Unknown settings section: ${section}` });
+    }
+
+    const patch = req.body && typeof req.body === "object" ? req.body : {};
+    const summary = typeof req.body?._auditSummary === "string"
+      ? req.body._auditSummary
+      : `Updated ${section} configuration`;
+    const updated = await settingsManager.updateSection(section, patch, req.user, summary);
+    const auditLog = await settingsManager.getAuditLog(40);
+
+    return res.json({
+      message: "Settings saved successfully.",
+      section,
+      data: updated.settings[section],
+      settings: updated.settings,
+      meta: updated.meta,
+      auditLog,
+    });
+  } catch (error) {
+    console.error("Update section settings error:", error);
+    return res.status(500).json({ error: error.message || "Could not save settings right now." });
+  }
+});
+
+app.post("/api/admin/settings/reset", ensureAdmin, async (req, res) => {
+  try {
+    const section = typeof req.body?.section === "string" ? req.body.section.trim() : "";
+    if (!section || (section !== "all" && !VALID_SECTIONS.includes(section))) {
+      return res.status(400).json({ error: "Please choose a valid settings section or 'all'." });
+    }
+
+    const updated = await settingsManager.resetSection(section, req.user);
+    const auditLog = await settingsManager.getAuditLog(40);
+
+    return res.json({
+      message: section === "all"
+        ? "All system settings reset to factory defaults."
+        : `Section '${section}' reset to default values.`,
+      settings: updated.settings,
+      meta: updated.meta,
+      auditLog,
+    });
+  } catch (error) {
+    console.error("Reset settings error:", error);
+    return res.status(500).json({ error: error.message || "Could not reset settings right now." });
+  }
+});
+
+app.post("/api/admin/settings/import", ensureAdmin, async (req, res) => {
+  try {
+    const payload = req.body?.settings && typeof req.body.settings === "object"
+      ? req.body.settings
+      : req.body;
+    const updated = await settingsManager.importAllSettings(payload, req.user);
+    const auditLog = await settingsManager.getAuditLog(40);
+
+    return res.json({
+      message: "Settings backup imported successfully.",
+      settings: updated.settings,
+      meta: updated.meta,
+      auditLog,
+    });
+  } catch (error) {
+    console.error("Import settings error:", error);
+    return res.status(400).json({ error: error.message || "Could not import those settings." });
+  }
+});
+
+app.post(
+  "/api/admin/settings/upload",
+  ensureAdmin,
+  (req, res, next) => {
+    settingsAssetUpload.single("asset")(req, res, (err) => {
+      if (err) {
+        console.error("SETTINGS ASSET UPLOAD ERROR:", err);
+        return res.status(400).json({ error: err.message || "Could not upload that image." });
+      }
+      next();
+    });
+  },
+  async (req, res) => {
+    let uploadedAsset = null;
+
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "Please select an image file to upload." });
+      }
+
+      const rawFolder = typeof req.body?.folder === "string" ? req.body.folder.trim().toLowerCase() : "branding";
+      if (!["branding", "leaders"].includes(rawFolder)) {
+        if (!storageManager.isCloudStorageConfigured() && req.file.filename) {
+          storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+        }
+        return res.status(400).json({ error: "Invalid upload folder. Allowed folders: branding, leaders." });
+      }
+
+      uploadedAsset = await storageManager.uploadMediaAsset(req.file, { folder: rawFolder });
+      return res.status(201).json({
+        url: uploadedAsset.url,
+        provider: uploadedAsset.provider,
+        publicId: uploadedAsset.publicId,
+        resourceType: uploadedAsset.resourceType,
+      });
+    } catch (error) {
+      if (uploadedAsset) {
+        try {
+          await storageManager.deleteMediaAsset(uploadedAsset);
+        } catch (cleanupError) {
+          console.error("Failed to clean up failed settings upload:", cleanupError);
+        }
+      } else if (req.file && !storageManager.isCloudStorageConfigured() && req.file.filename) {
+        storageManager.deleteLocalUploadIfPresent(`/uploads/${req.file.filename}`);
+      }
+
+      console.error("Settings upload error:", error);
+      return res.status(500).json({ error: error.message || "Failed to upload asset." });
+    }
+  }
+);
+
+app.get("/api/admin/system-health", ensureAdmin, async (req, res) => {
+  const probeStorage = req.query.probe === "1";
+
+  let postgresStatus = { connected: false, latencyMs: null, error: null };
+  const pgStart = Date.now();
+  try {
+    await pool.query("SELECT 1");
+    postgresStatus = { connected: true, latencyMs: Date.now() - pgStart };
+  } catch (error) {
+    postgresStatus = { connected: false, latencyMs: null, error: "Database query failed." };
+  }
+
+  let storageStatus = null;
+  try {
+    storageStatus = await storageManager.getStorageStatus({ probe: probeStorage });
+  } catch (error) {
+    storageStatus = { activeProvider: "unknown", error: error.message };
+  }
+
+  return res.json({
+    checkedAt: new Date().toISOString(),
+    nodeVersion: process.version,
+    uptimeSeconds: Math.floor(process.uptime()),
+    environment: process.env.NODE_ENV || "development",
+    postgres: postgresStatus,
+    storage: storageStatus,
+    googleOAuth: {
+      configured: isGoogleAuthReady(),
+    },
+    smtpEmail: {
+      configured: isPasswordResetEmailConfigured(),
+    },
+    webPush: {
+      configured: Boolean(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY),
+    },
+  });
+});
+
+app.patch("/api/admin/users/:id/role", ensureAdmin, async (req, res) => {
+  const targetUserId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+    return res.status(400).json({ error: "Invalid user ID." });
+  }
+
+  if (typeof req.body?.isAdmin !== "boolean") {
+    return res.status(400).json({ error: "isAdmin boolean field is required." });
+  }
+
+  const nextIsAdmin = req.body.isAdmin;
+
+  if (targetUserId === req.user.id) {
+    return res.status(400).json({ error: "You cannot change your own admin role." });
+  }
+
+  try {
+    const userResult = await pool.query(
+      "SELECT id, name, email, is_admin FROM users WHERE id = $1",
+      [targetUserId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const targetUser = userResult.rows[0];
+    if (!nextIsAdmin && isBootstrapAdminEmail(targetUser.email)) {
+      return res.status(403).json({ error: "The configured bootstrap admin cannot be demoted." });
+    }
+
+    if (!nextIsAdmin && targetUser.is_admin) {
+      const adminCountResult = await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE is_admin = TRUE");
+      if ((adminCountResult.rows[0]?.count || 0) <= 1) {
+        return res.status(400).json({ error: "Cannot demote the last remaining administrator." });
+      }
+    }
+
+    const updatedResult = await pool.query(
+      `UPDATE users
+       SET is_admin = $1,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING id, name, email, google_id, is_admin, gender, avatar_url, created_at`,
+      [nextIsAdmin, targetUserId]
+    );
+
+    const updatedUser = updatedResult.rows[0];
+    await settingsManager.recordAudit({
+      section: "users",
+      action: nextIsAdmin ? "promote_admin" : "demote_admin",
+      actor: req.user,
+      summary: `${nextIsAdmin ? "Promoted" : "Demoted"} ${updatedUser.name || updatedUser.email} (${updatedUser.email})`,
+    });
+
+    return res.json({
+      message: `${updatedUser.name || updatedUser.email} is now ${nextIsAdmin ? "an Admin" : "a Member"}.`,
+      user: {
+        ...updatedUser,
+        is_bootstrap: isBootstrapAdminEmail(updatedUser.email),
+      },
+    });
+  } catch (error) {
+    console.error("Update user role error:", error);
+    return res.status(500).json({ error: "Could not update user role right now." });
+  }
+});
+
+app.delete("/api/admin/users/:id", ensureAdmin, async (req, res) => {
+  const targetUserId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(targetUserId) || targetUserId <= 0) {
+    return res.status(400).json({ error: "Invalid user ID." });
+  }
+
+  if (targetUserId === req.user.id) {
+    return res.status(400).json({ error: "You cannot delete your own account while signed in." });
+  }
+
+  try {
+    const userResult = await pool.query(
+      "SELECT id, name, email, is_admin, avatar_url FROM users WHERE id = $1",
+      [targetUserId]
+    );
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ error: "User not found." });
+    }
+
+    const targetUser = userResult.rows[0];
+    if (isBootstrapAdminEmail(targetUser.email)) {
+      return res.status(403).json({ error: "The configured bootstrap admin account cannot be deleted." });
+    }
+
+    if (targetUser.is_admin) {
+      const adminCountResult = await pool.query("SELECT COUNT(*)::int AS count FROM users WHERE is_admin = TRUE");
+      if ((adminCountResult.rows[0]?.count || 0) <= 1) {
+        return res.status(400).json({ error: "Cannot delete the last remaining administrator." });
+      }
+    }
+
+    await pool.query("DELETE FROM users WHERE id = $1", [targetUserId]);
+
+    if (targetUser.avatar_url) {
+      try {
+        await storageManager.deleteMediaAsset({ url: targetUser.avatar_url });
+      } catch (cleanupError) {
+        console.error("Failed to remove deleted user's avatar asset:", cleanupError);
+      }
+    }
+
+    await settingsManager.recordAudit({
+      section: "users",
+      action: "delete_user",
+      actor: req.user,
+      summary: `Deleted user ${targetUser.name || targetUser.email} (${targetUser.email})`,
+    });
+
+    return res.json({ message: "User deleted successfully.", id: targetUserId });
+  } catch (error) {
+    console.error("Delete user error:", error);
+    return res.status(500).json({ error: "Could not delete user right now." });
+  }
+});
+
+app.post("/api/contact", async (req, res) => {
+  try {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    const contact = typeof req.body?.contact === "string" ? req.body.contact.trim() : "";
+    const department = typeof req.body?.department === "string" ? req.body.department.trim() : "general";
+    const subject = typeof req.body?.subject === "string" ? req.body.subject.trim() : "";
+    const message = typeof req.body?.message === "string" ? req.body.message.trim() : "";
+
+    if (name.length < 2 || name.length > 120) {
+      return res.status(400).json({ error: "Please provide your full name (2 to 120 characters)." });
+    }
+
+    if (contact.length < 3 || contact.length > 180) {
+      return res.status(400).json({ error: "Please provide a valid email address or phone number." });
+    }
+
+    if (department.length > 80) {
+      return res.status(400).json({ error: "Selected department is too long." });
+    }
+
+    if (subject.length > 160) {
+      return res.status(400).json({ error: "Subject must be 160 characters or fewer." });
+    }
+
+    if (message.length < 5 || message.length > 4000) {
+      return res.status(400).json({ error: "Message must be between 5 and 4000 characters." });
+    }
+
+    const result = await pool.query(
+      `INSERT INTO contact_messages (name, contact, department, subject, message)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, name, contact, department, subject, message, status, created_at`,
+      [name, contact, department || "general", subject || null, message]
+    );
+
+    return res.status(201).json({
+      message: "Your message has been received.",
+      data: result.rows[0],
+    });
+  } catch (error) {
+    console.error("Contact submission error:", error);
+    return res.status(500).json({ error: "Could not submit your message right now." });
+  }
+});
+
+app.get("/api/admin/contact-messages", ensureAdmin, async (req, res) => {
+  try {
+    const statusFilter = typeof req.query.status === "string" ? req.query.status.trim().toLowerCase() : "";
+    const hasValidFilter = ["new", "read", "resolved"].includes(statusFilter);
+
+    const [messagesResult, countsResult] = await Promise.all([
+      hasValidFilter
+        ? pool.query(
+            `SELECT id, name, contact, department, subject, message, status, created_at
+             FROM contact_messages
+             WHERE status = $1
+             ORDER BY created_at DESC`,
+            [statusFilter]
+          )
+        : pool.query(
+            `SELECT id, name, contact, department, subject, message, status, created_at
+             FROM contact_messages
+             ORDER BY created_at DESC`
+          ),
+      pool.query(
+        `SELECT
+           COUNT(*)::int AS total,
+           COUNT(*) FILTER (WHERE status = 'new')::int AS new_count,
+           COUNT(*) FILTER (WHERE status = 'read')::int AS read_count,
+           COUNT(*) FILTER (WHERE status = 'resolved')::int AS resolved_count
+         FROM contact_messages`
+      ),
+    ]);
+
+    const c = countsResult.rows[0] || {};
+    return res.json({
+      messages: messagesResult.rows,
+      counts: {
+        total: c.total || 0,
+        new: c.new_count || 0,
+        read: c.read_count || 0,
+        resolved: c.resolved_count || 0,
+      },
+    });
+  } catch (error) {
+    console.error("Admin contact list error:", error);
+    return res.status(500).json({ error: "Could not load messages right now." });
+  }
+});
+
+app.patch("/api/admin/contact-messages/:id", ensureAdmin, async (req, res) => {
+  const messageId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(messageId) || messageId <= 0) {
+    return res.status(400).json({ error: "Invalid message ID." });
+  }
+
+  const nextStatus = typeof req.body?.status === "string" ? req.body.status.trim().toLowerCase() : "";
+  if (!["new", "read", "resolved"].includes(nextStatus)) {
+    return res.status(400).json({ error: "Status must be new, read or resolved." });
+  }
+
+  try {
+    const result = await pool.query(
+      `UPDATE contact_messages
+       SET status = $1
+       WHERE id = $2
+       RETURNING id, name, contact, department, subject, message, status, created_at`,
+      [nextStatus, messageId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Message not found." });
+    }
+
+    return res.json({ message: "Message status updated.", data: result.rows[0] });
+  } catch (error) {
+    console.error("Update contact message error:", error);
+    return res.status(500).json({ error: "Could not update message status." });
+  }
+});
+
+app.delete("/api/admin/contact-messages/:id", ensureAdmin, async (req, res) => {
+  const messageId = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(messageId) || messageId <= 0) {
+    return res.status(400).json({ error: "Invalid message ID." });
+  }
+
+  try {
+    const result = await pool.query("DELETE FROM contact_messages WHERE id = $1 RETURNING id", [messageId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: "Message not found." });
+    }
+
+    return res.json({ message: "Message deleted successfully.", id: messageId });
+  } catch (error) {
+    console.error("Delete contact message error:", error);
+    return res.status(500).json({ error: "Could not delete message right now." });
   }
 });
 

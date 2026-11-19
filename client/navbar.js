@@ -454,6 +454,8 @@
       pill.style.opacity = "1";
     }
 
+    window.CYABottomNavSync = () => syncPillToActiveTab(false);
+    window.CYASiteConfig?.applyNavVisibility?.(nav);
     requestAnimationFrame(() => syncPillToActiveTab(false));
     window.addEventListener("resize", () => syncPillToActiveTab(false), { passive: true });
     window.addEventListener("orientationchange", () => setTimeout(() => syncPillToActiveTab(false), 60), { passive: true });

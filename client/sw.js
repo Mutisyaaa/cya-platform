@@ -1,4 +1,4 @@
-const CACHE_NAME = "cya-shell-v33";
+const CACHE_NAME = "cya-shell-v34";
 
 const APP_SHELL = [
   "/",
@@ -10,8 +10,10 @@ const APP_SHELL = [
   "/contact",
   "/profile",
   "/admin",
+  "/admin-settings",
   "/admin-gallery",
   "/reset-password",
+  "/site-config.js",
   "/rev-patrick-odhiambo.jpg",
   "/pastor-jeffer-wambua.jpg",
   "/style.css",
@@ -24,7 +26,6 @@ const APP_SHELL = [
   "/backend-origin.js",
   "/pwa.js",
   "/pwa.js?v=33",
-  "/manifest.webmanifest",
   "/icon-192.png",
   "/icon-512.png",
   "/icon-maskable-512.png",
@@ -64,8 +65,12 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // API responses must stay fresh and are intentionally not cached here.
-  if (url.pathname.startsWith("/api/") || url.pathname === "/runtime-config.js") {
+  // API responses and live dynamic config/manifest must stay fresh and are intentionally not cached here.
+  if (
+    url.pathname.startsWith("/api/") ||
+    url.pathname === "/runtime-config.js" ||
+    url.pathname === "/manifest.webmanifest"
+  ) {
     return;
   }
 

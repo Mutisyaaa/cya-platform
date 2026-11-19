@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PDRVX92S"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>Gallery | AIC Ziwani</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -20,6 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script src="runtime-config.js"></script>
+<script src="site-config.js"></script>
 <script src="backend-origin.js"></script>
 <script>
   (function() {
@@ -34,7 +29,7 @@
 
 <script>
   (function() {
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = window.CYASiteConfig?.resolveInitialTheme?.() || localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
 </script>
@@ -2356,13 +2351,22 @@ async function openGalleryModal(itemId, direction = null) {
     nextUrl.searchParams.set('item', String(item.id));
     window.history.replaceState({}, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 
+    const commentsAllowed = window.__CYA_SITE_SETTINGS__?.features_security?.allowGalleryComments !== false;
+    if (!commentsAllowed && commentForm) {
+      const pausedNotice = document.createElement('p');
+      pausedNotice.style.color = 'var(--text-secondary)';
+      pausedNotice.style.fontSize = '14px';
+      pausedNotice.textContent = 'Comments are currently disabled by an administrator.';
+      commentForm.replaceWith(pausedNotice);
+    }
+
     if (!currentUser) {
       saveButton.disabled = true;
       likeButton.disabled = true;
       saveButton.title = 'Login to save';
       likeButton.title = 'Login to like';
 
-      if (commentForm) {
+      if (commentsAllowed && commentForm) {
         const loginPrompt = document.createElement('p');
         loginPrompt.textContent = 'Please log in from the home page to save, like, or comment on this item.';
         commentForm.replaceWith(loginPrompt);
@@ -2378,7 +2382,7 @@ async function openGalleryModal(itemId, direction = null) {
       setGalleryLikeButtonState(likeButton, item.userHasLiked, item.likes);
       likeButton.addEventListener('click', () => handleGalleryLikeToggle(item.id));
 
-      if (commentForm) {
+      if (commentsAllowed && commentForm) {
         commentForm.addEventListener('submit', (e) => handleGalleryCommentSubmit(e, item.id));
       }
     }
@@ -2542,7 +2546,7 @@ function createGalleryCommentElement(comment, commentGroups, itemId, depth = 0) 
   likeButton.addEventListener('click', () => handleGalleryCommentLikeToggle(comment.id, likeButton));
   toolbar.appendChild(likeButton);
 
-  if (currentUser) {
+  if (currentUser && window.__CYA_SITE_SETTINGS__?.features_security?.allowGalleryComments !== false) {
     const replyButton = document.createElement('button');
     replyButton.type = 'button';
     replyButton.className = 'reply-toggle-btn';

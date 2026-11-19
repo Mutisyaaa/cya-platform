@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PDRVX92S"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>Fellowship Hub | AIC Ziwani</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -20,6 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script src="runtime-config.js"></script>
+<script src="site-config.js"></script>
 <script src="backend-origin.js"></script>
 <script>
   (function() {
@@ -34,7 +29,7 @@
 
 <script>
   (function() {
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = window.CYASiteConfig?.resolveInitialTheme?.() || localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
 </script>
@@ -964,15 +959,16 @@ footer {
 <script>
 const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
 const TARGET_ORDER = ["male", "female", "all"];
+const roomCfg = window.__CYA_SITE_SETTINGS__?.pages_nav?.fellowshipRooms || {};
 const TARGET_LABELS = {
-  male: "Men's Room",
-  female: "Women's Room",
-  all: "Shared Planning"
+  male: roomCfg.maleLabel || "Men's Room",
+  female: roomCfg.femaleLabel || "Women's Room",
+  all: roomCfg.allLabel || "Shared Planning"
 };
 const BOARD_COPY = {
-  male: "A focused space for men's matters, questions and accountability conversations.",
-  female: "A focused space for women's matters, encouragement and practical support.",
-  all: "A shared board for planning events, follow-ups and ideas that involve the wider fellowship."
+  male: roomCfg.maleCopy || "A focused space for men's matters, questions and accountability conversations.",
+  female: roomCfg.femaleCopy || "A focused space for women's matters, encouragement and practical support.",
+  all: roomCfg.allCopy || "A shared board for planning events, follow-ups and ideas that involve the wider fellowship."
 };
 const CATEGORY_LABELS = {
   discussion: "Discussion",
@@ -1148,6 +1144,14 @@ function updateIdentity() {
 
 function renderComposer() {
   const host = document.getElementById("composerHost");
+  if (window.__CYA_SITE_SETTINGS__?.features_security?.allowFellowshipPosting === false) {
+    host.innerHTML = `
+      <div class="ghost-card">
+        Fellowship posting is currently paused by an administrator.
+      </div>
+    `;
+    return;
+  }
 
   if (!currentUser) {
     host.innerHTML = `
@@ -1306,6 +1310,9 @@ function renderFellowshipRail() {
 }
 
 function renderCommentForm(postId, targetGender) {
+  if (window.__CYA_SITE_SETTINGS__?.features_security?.allowFellowshipPosting === false) {
+    return "";
+  }
   if (!canUseTarget(targetGender)) {
     return "";
   }

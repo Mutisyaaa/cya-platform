@@ -1,15 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtm.js?id=GTM-PDRVX92S"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>Contact & Leadership | AIC Ziwani CYA</title>
 <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
 <link rel="manifest" href="/manifest.webmanifest">
@@ -20,6 +14,7 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
 <script src="runtime-config.js"></script>
+<script src="site-config.js"></script>
 <script src="backend-origin.js"></script>
 <script>
   (function() {
@@ -34,7 +29,7 @@
 
 <script>
   (function() {
-    const theme = localStorage.getItem('theme') || 'light';
+    const theme = window.CYASiteConfig?.resolveInitialTheme?.() || localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
   })();
 </script>
@@ -1498,18 +1493,20 @@ footer {
     });
   }
 
-  // Interactive Department Filter Tabs
-  const filterTabs = document.querySelectorAll('.filter-tab');
-  const committeeCards = document.querySelectorAll('.member-card');
+  // Interactive Department Filter Tabs (delegated so dynamically rendered tabs & cards stay live)
+  const filterTabsBar = document.querySelector('.filter-tabs-bar');
+  if (filterTabsBar) {
+    filterTabsBar.addEventListener('click', (event) => {
+      const tab = event.target.closest('.filter-tab');
+      if (!tab) return;
 
-  filterTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      filterTabs.forEach(t => t.classList.remove('active'));
+      filterTabsBar.querySelectorAll('.filter-tab').forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
 
       const filter = tab.dataset.filter;
+      const cards = document.querySelectorAll('#committeeGrid .member-card');
 
-      committeeCards.forEach(card => {
+      cards.forEach((card) => {
         if (filter === 'all' || card.dataset.category === filter) {
           card.style.display = 'flex';
           card.style.opacity = '0';
@@ -1528,34 +1525,78 @@ footer {
         AOS.refreshHard();
       }
     });
-  });
+  }
 
-  // Interactive Contact & Prayer Form Submission
+  // Interactive Contact & Prayer Form Submission backed by PostgreSQL
   const contactForm = document.getElementById('contactForm');
   const contactToast = document.getElementById('contactToast');
   const contactSubmitBtn = document.getElementById('contactSubmitBtn');
 
+  function getContactEndpoint() {
+    if (window.CYABackendOrigin?.buildBackendUrl) {
+      return window.CYABackendOrigin.buildBackendUrl('/api/contact');
+    }
+    return '/api/contact';
+  }
+
   if (contactForm) {
-    contactForm.addEventListener('submit', (e) => {
+    contactForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const originalText = contactSubmitBtn.innerHTML;
+      if (contactToast && !contactToast.dataset.defaultToast) {
+        contactToast.dataset.defaultToast = contactToast.textContent;
+      }
+      const successText = window.__CYA_SITE_SETTINGS__?.schedule_contact?.contactFormToast
+        || contactToast?.dataset?.defaultToast
+        || '';
 
       contactSubmitBtn.disabled = true;
       contactSubmitBtn.innerHTML = `<span>Sending prayer & message...</span>`;
 
-      setTimeout(() => {
-        contactForm.reset();
-        contactSubmitBtn.disabled = false;
-        contactSubmitBtn.innerHTML = originalText;
+      const payload = {
+        name: document.getElementById('contactName')?.value?.trim() || '',
+        contact: document.getElementById('contactEmail')?.value?.trim() || '',
+        department: document.getElementById('contactDepartment')?.value || 'general',
+        subject: document.getElementById('contactSubject')?.value?.trim() || '',
+        message: document.getElementById('contactMessage')?.value?.trim() || '',
+      };
 
+      try {
+        const response = await fetch(getContactEndpoint(), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || 'Could not send your message right now.');
+        }
+
+        contactForm.reset();
         if (contactToast) {
+          contactToast.style.background = '';
+          contactToast.style.borderColor = '';
+          contactToast.style.color = '';
+          contactToast.textContent = successText;
           contactToast.style.display = 'block';
           contactToast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           setTimeout(() => {
             contactToast.style.display = 'none';
           }, 8000);
         }
-      }, 700);
+      } catch (error) {
+        if (contactToast) {
+          contactToast.style.background = 'rgba(220, 38, 38, 0.12)';
+          contactToast.style.borderColor = 'rgba(220, 38, 38, 0.35)';
+          contactToast.style.color = '#b91c1c';
+          contactToast.textContent = error.message || 'Could not send your message right now.';
+          contactToast.style.display = 'block';
+          contactToast.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } finally {
+        contactSubmitBtn.disabled = false;
+        contactSubmitBtn.innerHTML = originalText;
+      }
     });
   }
 </script>

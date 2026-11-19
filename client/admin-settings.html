@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
+<title>System Settings | Admin Dashboard</title>
+<link rel="icon" type="image/x-icon" href="/favicon.ico?v=2">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#c8102e">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+
+<script src="runtime-config.js"></script>
+<script src="site-config.js"></script>
+<script src="backend-origin.js"></script>
+<script>
+  (function() {
+    const { protocol, hostname, port, pathname, search, hash } = window.location;
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+    if (protocol.startsWith("http") && isLocalHost && port && port !== "3000") {
+      window.location.replace(`${protocol}//${hostname}:3000${pathname}${search}${hash}`);
+    }
+  })();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --primary-red: #c8102e;
+  --dark-red: #9e0d23;
+  --bg-primary: #f4f5f8;
+  --bg-secondary: #ffffff;
+  --text-primary: #18181b;
+  --text-secondary: #64748b;
+  --text-muted: #94a3b8;
+  --border-color: #e2e8f0;
+  --input-bg: #f8fafc;
+  --hover-bg: #f1f5f9;
+  --shadow-light: rgba(15, 23, 42, 0.06);
+  --shadow-heavy: rgba(15, 23, 42, 0.14);
+  accent-color: var(--primary-red);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --primary-red: #e53935;
+  --dark-red: #c8102e;
+  --bg-primary: #0d0f14;
+  --bg-secondary: #161922;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --border-color: #262b38;
+  --input-bg: #1e2330;
+  --hover-bg: #222836;
+  --shadow-light: rgba(0, 0, 0, 0.25);
+  --shadow-heavy: rgba(0, 0, 0, 0.48);
+  accent-color: var(--primary-red);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  accent-color: var(--primary-red);
+}
+
+.layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar {
+  width: 278px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+  box-shadow: 4px 0 24px var(--shadow-light);
+}
+
+.sidebar-brand {
+  padding: 6px 10px 14px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 8px;
+}
+
+.sidebar-brand h1 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--primary-red);
+}
+
+.sidebar-brand p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.nav-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 10px 12px 4px;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.16s ease, color 0.16s ease;
+}
+
+.tab-btn:hover {
+  background: var(--hover-bg);
+}
+
+.tab-btn.active {
+  background: var(--primary-red);
+  color: #ffffff;
+}
+
+.tab-badge {
+  background: rgba(200, 16, 46, 0.14);
+  color: var(--primary-red);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tab-btn.active .tab-badge {
+  background: rgba(255, 255, 255, 0.24);
+  color: #ffffff;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  text-decoration: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidebar-link-btn:hover {
+  background: var(--hover-bg);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 28px;
+  max-width: 1140px;
+}
+
+.status-banner {
+  display: none;
+  position: sticky;
+  top: 14px;
+  z-index: 40;
+  margin-bottom: 18px;
+  padding: 13px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 10px 28px var(--shadow-heavy);
+}
+
+.status-banner.show {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.status-banner.success {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #86efac;
+}
+
+.status-banner.error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+.status-banner.info {
+  background: #e0e7ff;
+  color: #3730a3;
+  border: 1px solid #a5b4fc;
+}
+
+[data-theme="dark"] .status-banner.success {
+  background: #064e3b;
+  color: #a7f3d0;
+  border-color: #059669;
+}
+
+[data-theme="dark"] .status-banner.error {
+  background: #450a0a;
+  color: #fecaca;
+  border-color: #b91c1c;
+}
+
+[data-theme="dark"] .status-banner.info {
+  background: #1e1b4b;
+  color: #c7d2fe;
+  border-color: #4338ca;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.active {
+  display: grid;
+  gap: 20px;
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 8px 24px var(--shadow-light);
+}
+
+.card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.card-head h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.card-head p {
+  margin: 5px 0 0;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.meta-pill {
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  padding: 5px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  align-content: start;
+}
+
+.field.span-2 {
+  grid-column: 1 / -1;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.field small {
+  font-size: 12px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="number"],
+textarea,
+select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+textarea {
+  min-height: 86px;
+  resize: vertical;
+}
+
+.color-pair {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-pair input[type="color"] {
+  width: 48px;
+  height: 40px;
+  padding: 2px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--input-bg);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.asset-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  flex-shrink: 0;
+}
+
+.toggle-list {
+  display: grid;
+  gap: 12px;
+}
+
+.toggle-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+}
+
+.toggle-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.toggle-desc {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+input[type="checkbox"].brand-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+@supports not (accent-color: red) {
+  input[type="checkbox"].brand-checkbox {
+    position: absolute !important;
+    clip-path: inset(50%) !important;
+    overflow: hidden !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    white-space: nowrap !important;
+  }
+
+  .toggle-check {
+    position: relative;
+    padding-left: 1.9rem;
+  }
+
+  .toggle-check span::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 1.15rem;
+    height: 1.15rem;
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    background: var(--bg-secondary);
+    box-sizing: border-box;
+  }
+
+  .toggle-check input[type="checkbox"].brand-checkbox:focus-visible + span::before {
+    outline: 2px solid var(--primary-red);
+    outline-offset: 2px;
+  }
+
+  .toggle-check input[type="checkbox"].brand-checkbox:checked + span::before {
+    background-color: var(--primary-red);
+    border-color: var(--primary-red);
+  }
+
+  .toggle-check input[type="checkbox"].brand-checkbox:checked + span::after {
+    content: "✓";
+    position: absolute;
+    left: 0.22rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 800;
+  }
+}
+
+.btn-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.btn-small {
+  padding: 10px 18px;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12.5px;
+  border-radius: 8px;
+}
+
+.btn-primary {
+  background: var(--primary-red);
+  color: #ffffff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--dark-red);
+}
+
+.btn-secondary {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--hover-bg);
+}
+
+.btn-danger {
+  background: rgba(220, 38, 38, 0.12);
+  color: #dc2626;
+  border-color: rgba(220, 38, 38, 0.25);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.repeatable-list {
+  display: grid;
+  gap: 12px;
+}
+
+.repeatable-item {
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  border-radius: 12px;
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.repeatable-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.leader-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.leader-card {
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  border-radius: 14px;
+  padding: 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.leader-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.leader-thumb {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  object-fit: cover;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  display: grid;
+  place-items: center;
+  font-weight: 800;
+  color: var(--primary-red);
+  flex-shrink: 0;
+}
+
+.banner-live-preview {
+  --banner-bg: #c8102e;
+  background-color: var(--banner-bg);
+  color: #ffffff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  text-align: center;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@supports (color: color(from red xyz-d65 0 0 0)) {
+  .banner-live-preview {
+    --wcag-y-threshold: 0.17913;
+    --y: max(0, sign(var(--wcag-y-threshold) - y));
+    color: color(from var(--banner-bg) xyz-d65 calc(var(--y) * 0.9505) var(--y) calc(var(--y) * 1.089));
+  }
+}
+
+@supports (color: contrast-color(red)) {
+  .banner-live-preview {
+    color: contrast-color(var(--banner-bg));
+  }
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+
+.health-card {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  display: grid;
+  gap: 6px;
+}
+
+.health-card strong {
+  font-size: 14px;
+}
+
+.health-pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.health-pill.ok {
+  background: rgba(16, 185, 129, 0.14);
+  color: #059669;
+}
+
+.health-pill.warn {
+  background: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+}
+
+.health-pill.err {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th, td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+th {
+  background: var(--input-bg);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.inbox-filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.inbox-card {
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  border-radius: 14px;
+  padding: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.inbox-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.inbox-msg {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.warning-box {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  background: rgba(220, 38, 38, 0.08);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* Native <dialog> styles matching modern-web-guidance dialog rules */
+dialog {
+  margin: auto;
+  max-width: min(560px, calc(100vw - 28px));
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+dialog[open] {
+  display: grid;
+  gap: 14px;
+}
+
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(15, 23, 42, 0.56);
+  backdrop-filter: blur(4px);
+}
+
+dialog h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+dialog p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    max-height: none;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    flex-direction: row;
+    overflow-x: auto;
+    align-items: center;
+    padding: 10px 12px;
+  }
+
+  .sidebar-brand,
+  .nav-section-label {
+    display: none;
+  }
+
+  .tab-btn {
+    width: auto;
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+
+  .sidebar-footer {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+    display: flex;
+    flex: 0 0 auto;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar" aria-label="Settings Navigation">
+    <div class="sidebar-brand">
+      <h1>System Settings</h1>
+      <p id="adminIdentityLabel">Verifying admin session...</p>
+    </div>
+
+    <div class="nav-section-label">Look & Content</div>
+    <button type="button" class="tab-btn active" data-tab="branding">Identity & Branding</button>
+    <button type="button" class="tab-btn" data-tab="appearance">Theme & Banner</button>
+    <button type="button" class="tab-btn" data-tab="homepage">Homepage & Theme</button>
+    <button type="button" class="tab-btn" data-tab="leadership">Leadership & Committee</button>
+    <button type="button" class="tab-btn" data-tab="schedule_contact">Schedule & Contact</button>
+    <button type="button" class="tab-btn" data-tab="pages_nav">Pages & Navigation</button>
+
+    <div class="nav-section-label">Control & Operations</div>
+    <button type="button" class="tab-btn" data-tab="features_security">Features & Security</button>
+    <button type="button" class="tab-btn" data-tab="roles_users">Admin Roles & Users</button>
+    <button type="button" class="tab-btn" data-tab="inbox">
+      <span>Contact & Prayer Inbox</span>
+      <span id="inboxUnreadBadge" class="tab-badge" hidden>0</span>
+    </button>
+    <button type="button" class="tab-btn" data-tab="integrations">Analytics & Health</button>
+    <button type="button" class="tab-btn" data-tab="backups_audit">Backups & Audit Log</button>
+
+    <div class="sidebar-footer">
+      <a class="sidebar-link-btn" href="/admin">Back to Admin</a>
+      <a class="sidebar-link-btn" href="/">View Live Site</a>
+      <button type="button" id="themeToggleBtn" class="sidebar-link-btn">Toggle Theme</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div id="statusBanner" class="status-banner" role="status" aria-live="polite">
+      <span id="statusBannerText"></span>
+      <button type="button" id="statusCloseBtn" class="btn-small btn-secondary" aria-label="Dismiss message">Close</button>
+    </div>
+
+    <!-- 1. IDENTITY & BRANDING -->
+    <section id="panel-branding" class="tab-panel active">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Site Identity, Branding & PWA App</h2>
+            <p>Customize the church title, splash screen, logos, footer text and Progressive Web App manifest details without editing HTML.</p>
+          </div>
+          <span id="meta-branding" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-branding">
+          <div class="form-grid">
+            <div class="field">
+              <label for="b_siteName">Site Name</label>
+              <input id="b_siteName" type="text" required maxlength="80">
+            </div>
+            <div class="field">
+              <label for="b_churchSubtitle">Church Subtitle</label>
+              <input id="b_churchSubtitle" type="text" required maxlength="80">
+            </div>
+            <div class="field">
+              <label for="b_tabTitleSuffix">Browser Tab Suffix</label>
+              <input id="b_tabTitleSuffix" type="text" required maxlength="80">
+            </div>
+            <div class="field">
+              <label for="b_splashBrand">Launch Splash Brand</label>
+              <input id="b_splashBrand" type="text" required maxlength="80">
+            </div>
+            <div class="field span-2">
+              <label for="b_splashTagline">Launch Splash Tagline</label>
+              <input id="b_splashTagline" type="text" maxlength="120">
+            </div>
+            <div class="field span-2">
+              <label class="toggle-check">
+                <input id="b_splashEnabled" class="brand-checkbox" type="checkbox">
+                <span>Show Homepage Launch Splash Animation</span>
+              </label>
+            </div>
+            <div class="field span-2">
+              <label for="b_logoUrl">Navbar Logo URL or Upload to R2</label>
+              <div class="upload-row">
+                <img id="preview_logoUrl" class="asset-thumb" src="/favicon.png" alt="Logo preview">
+                <input id="b_logoUrl" type="text" style="flex:1; min-width:200px;">
+                <input id="upload_logoUrl" type="file" accept="image/*" hidden>
+                <button type="button" class="btn-secondary btn-small" onclick="triggerBrandingUpload('upload_logoUrl', 'b_logoUrl', 'preview_logoUrl')">Upload to R2</button>
+              </div>
+            </div>
+            <div class="field span-2">
+              <label for="b_faviconUrl">Favicon URL or Upload to R2</label>
+              <div class="upload-row">
+                <img id="preview_faviconUrl" class="asset-thumb" src="/favicon.png" alt="Favicon preview">
+                <input id="b_faviconUrl" type="text" style="flex:1; min-width:200px;">
+                <input id="upload_faviconUrl" type="file" accept="image/*" hidden>
+                <button type="button" class="btn-secondary btn-small" onclick="triggerBrandingUpload('upload_faviconUrl', 'b_faviconUrl', 'preview_faviconUrl')">Upload to R2</button>
+              </div>
+            </div>
+            <div class="field span-2">
+              <label for="b_appIconUrl">PWA App Icon (512px) or Upload to R2</label>
+              <div class="upload-row">
+                <img id="preview_appIconUrl" class="asset-thumb" src="/icon-512.png" alt="App icon preview">
+                <input id="b_appIconUrl" type="text" style="flex:1; min-width:200px;">
+                <input id="upload_appIconUrl" type="file" accept="image/*" hidden>
+                <button type="button" class="btn-secondary btn-small" onclick="triggerBrandingUpload('upload_appIconUrl', 'b_appIconUrl', 'preview_appIconUrl')">Upload to R2</button>
+              </div>
+            </div>
+            <div class="field span-2">
+              <label for="b_footerCopyright">Footer Copyright Text</label>
+              <input id="b_footerCopyright" type="text" required maxlength="240">
+            </div>
+            <div class="field span-2">
+              <label for="b_footerMotto">Footer Motto</label>
+              <input id="b_footerMotto" type="text" maxlength="240">
+            </div>
+            <div class="field">
+              <label for="b_pwaName">PWA Full App Name</label>
+              <input id="b_pwaName" type="text" required maxlength="80">
+            </div>
+            <div class="field">
+              <label for="b_pwaShortName">PWA Home Screen Short Name</label>
+              <input id="b_pwaShortName" type="text" required maxlength="40">
+            </div>
+            <div class="field">
+              <label for="b_pwaThemeColor">PWA Browser Theme Color</label>
+              <div class="color-pair">
+                <input id="cp_pwaThemeColor" type="color" value="#c8102e">
+                <input id="b_pwaThemeColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field span-2">
+              <label for="b_pwaDescription">PWA Description</label>
+              <input id="b_pwaDescription" type="text" required maxlength="240">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('branding')">Reset Branding</button>
+            <button type="submit" class="btn-primary">Save Branding</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 2. THEME & BANNER -->
+    <section id="panel-appearance" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Theme Palette & Site-Wide Announcement Banner</h2>
+            <p>Control primary brand colors, default theme for new visitors and an optional announcement banner shown across public pages.</p>
+          </div>
+          <span id="meta-appearance" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-appearance">
+          <div class="form-grid">
+            <div class="field">
+              <label for="a_primaryColor">Primary Accent Color</label>
+              <div class="color-pair">
+                <input id="cp_primaryColor" type="color" value="#c8102e">
+                <input id="a_primaryColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="a_darkPrimaryColor">Primary Hover / Darker Shade</label>
+              <div class="color-pair">
+                <input id="cp_darkPrimaryColor" type="color" value="#9e0d23">
+                <input id="a_darkPrimaryColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="a_darkModePrimaryColor">Dark Mode Accent Color</label>
+              <div class="color-pair">
+                <input id="cp_darkModePrimaryColor" type="color" value="#e53935">
+                <input id="a_darkModePrimaryColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="a_heroAccentColor">Hero Secondary Highlight</label>
+              <div class="color-pair">
+                <input id="cp_heroAccentColor" type="color" value="#a78bfa">
+                <input id="a_heroAccentColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="a_heroGoldColor">Hero Scripture Accent</label>
+              <div class="color-pair">
+                <input id="cp_heroGoldColor" type="color" value="#fde68a">
+                <input id="a_heroGoldColor" type="text" maxlength="20">
+              </div>
+            </div>
+            <div class="field">
+              <label for="a_defaultTheme">Default Theme (First-Time Visitors)</label>
+              <select id="a_defaultTheme">
+                <option value="light">Light Mode</option>
+                <option value="dark">Dark Mode</option>
+                <option value="system">Follow Visitor Device Setting</option>
+              </select>
+            </div>
+            <div class="field span-2" style="padding-top:10px; border-top:1px solid var(--border-color);">
+              <label class="toggle-check">
+                <input id="a_announcementEnabled" class="brand-checkbox" type="checkbox">
+                <span>Enable Top Announcement Banner Across Public Pages</span>
+              </label>
+            </div>
+            <div class="field span-2">
+              <label for="a_announcementText">Announcement Message</label>
+              <input id="a_announcementText" type="text" maxlength="280" placeholder="e.g. Join us for Youth Sunday this week at 1:00 PM!">
+            </div>
+            <div class="field">
+              <label for="a_announcementLinkLabel">Optional Action Link Label</label>
+              <input id="a_announcementLinkLabel" type="text" maxlength="60" placeholder="e.g. View Event">
+            </div>
+            <div class="field">
+              <label for="a_announcementLinkUrl">Optional Action Link URL</label>
+              <input id="a_announcementLinkUrl" type="text" placeholder="e.g. /events">
+            </div>
+            <div class="field">
+              <label for="a_announcementBgColor">Banner Background Color</label>
+              <div class="color-pair">
+                <input id="cp_announcementBgColor" type="color" value="#c8102e">
+                <input id="a_announcementBgColor" type="text" maxlength="20">
+              </div>
+              <small>Text color automatically adapts for readable contrast against your chosen background.</small>
+            </div>
+            <div class="field span-2">
+              <label>Live Banner Preview</label>
+              <div id="bannerLivePreview" class="banner-live-preview">
+                <span id="bannerPreviewText">Announcement preview text</span>
+                <span id="bannerPreviewLink" style="text-decoration: underline;"></span>
+              </div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('appearance')">Reset Appearance</button>
+            <button type="submit" class="btn-primary">Save Appearance</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 3. HOMEPAGE & YEARLY THEME -->
+    <section id="panel-homepage" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Homepage & Yearly Theme</h2>
+            <p>Update each year's theme headline, scripture verse, CTA button, About Us copy and Ministry highlight cards.</p>
+          </div>
+          <span id="meta-homepage" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-homepage">
+          <div class="form-grid">
+            <div class="field">
+              <label for="h_themeKicker">Hero Theme Kicker</label>
+              <input id="h_themeKicker" type="text" maxlength="80">
+            </div>
+            <div class="field">
+              <label for="h_scriptureRef">Scripture Reference</label>
+              <input id="h_scriptureRef" type="text" maxlength="80">
+            </div>
+            <div class="field">
+              <label for="h_heroMainWord">Hero Headline Line 1 (White)</label>
+              <input id="h_heroMainWord" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="h_heroThemeLine">Hero Headline Line 2 (Accent)</label>
+              <input id="h_heroThemeLine" type="text" maxlength="120">
+            </div>
+            <div class="field span-2">
+              <label for="h_scriptureText">Scripture Reflection Copy</label>
+              <textarea id="h_scriptureText" maxlength="400"></textarea>
+            </div>
+            <div class="field span-2">
+              <label for="h_heroSubtitle">Hero Vision Paragraph</label>
+              <textarea id="h_heroSubtitle" maxlength="600"></textarea>
+            </div>
+            <div class="field">
+              <label for="h_heroCtaLabel">Hero CTA Button Text</label>
+              <input id="h_heroCtaLabel" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="h_heroCtaUrl">Hero CTA Button URL</label>
+              <input id="h_heroCtaUrl" type="text">
+            </div>
+            <div class="field span-2">
+              <label for="h_themeFootnote">Hero Footnote</label>
+              <input id="h_themeFootnote" type="text" maxlength="200">
+            </div>
+            <div class="field">
+              <label for="h_spotlightEmptyTitle">Event Spotlight Empty Title</label>
+              <input id="h_spotlightEmptyTitle" type="text" maxlength="120">
+            </div>
+            <div class="field">
+              <label for="h_recentBlogsCount">Homepage Recent Blogs Count (1 to 6)</label>
+              <input id="h_recentBlogsCount" type="number" min="1" max="6" value="2">
+            </div>
+            <div class="field span-2">
+              <label for="h_spotlightEmptyText">Event Spotlight Empty Message</label>
+              <textarea id="h_spotlightEmptyText" maxlength="400"></textarea>
+            </div>
+            <div class="field">
+              <label for="h_aboutHeading">About Section Heading</label>
+              <input id="h_aboutHeading" type="text" maxlength="80">
+            </div>
+            <div class="field">
+              <label for="h_ministriesHeading">Ministries Section Heading</label>
+              <input id="h_ministriesHeading" type="text" maxlength="80">
+            </div>
+            <div class="field span-2">
+              <label for="h_aboutBody">About Section Description</label>
+              <textarea id="h_aboutBody" maxlength="1200"></textarea>
+            </div>
+            <div class="field span-2">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px;">
+                <label>Homepage Ministry Highlight Cards</label>
+                <button type="button" class="btn-secondary btn-small" onclick="addMinistryHighlight()">+ Add Card</button>
+              </div>
+              <div id="ministryHighlightsHost" class="repeatable-list"></div>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('homepage')">Reset Homepage</button>
+            <button type="submit" class="btn-primary">Save Homepage</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 4. LEADERSHIP & COMMITTEE -->
+    <section id="panel-leadership" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Pastoral & CYA Executive Committee</h2>
+            <p>Add, edit, reorder or remove pastors and youth committee leaders when new elections or transitions happen. Portraits upload straight to Cloudflare R2.</p>
+          </div>
+          <span id="meta-leadership" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-leadership">
+          <div class="form-grid" style="margin-bottom:20px;">
+            <div class="field">
+              <label for="l_pastoralTag">Pastoral Section Tag</label>
+              <input id="l_pastoralTag" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="l_pastoralHeading">Pastoral Section Heading</label>
+              <input id="l_pastoralHeading" type="text" maxlength="100">
+            </div>
+            <div class="field span-2">
+              <label for="l_pastoralSubtext">Pastoral Section Subtitle</label>
+              <input id="l_pastoralSubtext" type="text" maxlength="300">
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:16px;">Pastors & Shepherds</h3>
+            <button type="button" class="btn-secondary btn-small" onclick="openLeaderEditor('pastor', -1)">+ Add Pastor</button>
+          </div>
+          <div id="pastorsListHost" class="leader-grid" style="margin-bottom:26px;"></div>
+
+          <div class="form-grid" style="margin-bottom:20px; padding-top:18px; border-top:1px solid var(--border-color);">
+            <div class="field">
+              <label for="l_committeeTag">Committee Section Tag</label>
+              <input id="l_committeeTag" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="l_committeeHeading">Committee Section Heading</label>
+              <input id="l_committeeHeading" type="text" maxlength="100">
+            </div>
+            <div class="field span-2">
+              <label for="l_committeeSubtext">Committee Section Subtitle</label>
+              <input id="l_committeeSubtext" type="text" maxlength="300">
+            </div>
+            <div class="field span-2">
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:10px;">
+                <label>Department Filter Categories</label>
+                <button type="button" class="btn-secondary btn-small" onclick="addDepartmentCategory()">+ Add Department</button>
+              </div>
+              <div id="departmentsHost" class="repeatable-list"></div>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <h3 style="margin:0; font-size:16px;">CYA Committee Members</h3>
+            <button type="button" class="btn-secondary btn-small" onclick="openLeaderEditor('committee', -1)">+ Add Member</button>
+          </div>
+          <div id="committeeListHost" class="leader-grid"></div>
+
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('leadership')">Reset Leadership</button>
+            <button type="submit" class="btn-primary">Save Leadership</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 5. SCHEDULE & CONTACT -->
+    <section id="panel-schedule_contact" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Service Schedule, Contacts & Social Channels</h2>
+            <p>Manage service times, church location, phone, email, WhatsApp, social links and Contact & Prayer form options.</p>
+          </div>
+          <span id="meta-schedule_contact" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-schedule_contact">
+          <div class="form-grid" style="margin-bottom:20px;">
+            <div class="field">
+              <label for="sc_sanctuaryName">Sanctuary Name</label>
+              <input id="sc_sanctuaryName" type="text" maxlength="120">
+            </div>
+            <div class="field">
+              <label for="sc_phone">Church Hotline / Phone</label>
+              <input id="sc_phone" type="text" maxlength="40">
+            </div>
+            <div class="field">
+              <label for="sc_email">Official Email</label>
+              <input id="sc_email" type="email" maxlength="120">
+            </div>
+            <div class="field">
+              <label for="sc_whatsappNumber">WhatsApp Number (digits only, e.g. 254715325645)</label>
+              <input id="sc_whatsappNumber" type="text" maxlength="30">
+            </div>
+            <div class="field span-2">
+              <label for="sc_whatsappMessage">Prefilled WhatsApp Message</label>
+              <input id="sc_whatsappMessage" type="text" maxlength="240">
+            </div>
+            <div class="field span-2">
+              <label for="sc_locationAddress">Physical Location & Welcome Note</label>
+              <textarea id="sc_locationAddress" maxlength="400"></textarea>
+            </div>
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h3 style="margin:0; font-size:16px;">Weekly Service Times</h3>
+            <button type="button" class="btn-secondary btn-small" onclick="addServiceRow()">+ Add Service</button>
+          </div>
+          <div id="servicesHost" class="repeatable-list" style="margin-bottom:22px;"></div>
+
+          <h3 style="margin:0 0 12px; font-size:16px; padding-top:16px; border-top:1px solid var(--border-color);">Social Media Channels</h3>
+          <div id="socialsHost" class="form-grid" style="margin-bottom:22px;"></div>
+
+          <div class="form-grid" style="padding-top:16px; border-top:1px solid var(--border-color);">
+            <div class="field">
+              <label for="sc_contactFormHeading">Contact Form Heading</label>
+              <input id="sc_contactFormHeading" type="text" maxlength="120">
+            </div>
+            <div class="field">
+              <label for="sc_contactFormSubtext">Contact Form Subtext</label>
+              <input id="sc_contactFormSubtext" type="text" maxlength="400">
+            </div>
+            <div class="field span-2">
+              <label for="sc_contactFormToast">Submission Confirmation Toast Message</label>
+              <textarea id="sc_contactFormToast" maxlength="400"></textarea>
+            </div>
+            <div class="field span-2">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <label>Contact & Prayer Form Recipient Departments</label>
+                <button type="button" class="btn-secondary btn-small" onclick="addContactDepartmentRow()">+ Add Option</button>
+              </div>
+              <div id="contactDeptsHost" class="repeatable-list"></div>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('schedule_contact')">Reset Schedule & Contact</button>
+            <button type="submit" class="btn-primary">Save Schedule & Contact</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 6. PAGES & NAVIGATION -->
+    <section id="panel-pages_nav" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Navigation Links, Page Headers & Fellowship Spaces</h2>
+            <p>Show or hide main navigation tabs, customize labels and adjust page header titles or fellowship board copy.</p>
+          </div>
+          <span id="meta-pages_nav" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-pages_nav">
+          <h3 style="margin:0 0 12px; font-size:16px;">Navigation Menu Visibility & Labels</h3>
+          <div id="navItemsHost" class="repeatable-list" style="margin-bottom:22px;"></div>
+
+          <h3 style="margin:0 0 12px; font-size:16px; padding-top:16px; border-top:1px solid var(--border-color);">Page Headers</h3>
+          <div class="form-grid" style="margin-bottom:22px;">
+            <div class="field span-2">
+              <label for="pn_fellowshipTitle">Fellowship Hero Title</label>
+              <input id="pn_fellowshipTitle" type="text" maxlength="160">
+            </div>
+            <div class="field span-2">
+              <label for="pn_fellowshipSubtitle">Fellowship Hero Subtitle</label>
+              <textarea id="pn_fellowshipSubtitle" maxlength="500"></textarea>
+            </div>
+            <div class="field">
+              <label for="pn_eventsTitle">Events Header Title</label>
+              <input id="pn_eventsTitle" type="text" maxlength="100">
+            </div>
+            <div class="field">
+              <label for="pn_eventsSubtitle">Events Header Subtitle</label>
+              <input id="pn_eventsSubtitle" type="text" maxlength="300">
+            </div>
+            <div class="field">
+              <label for="pn_galleryTitle">Gallery Header Title</label>
+              <input id="pn_galleryTitle" type="text" maxlength="100">
+            </div>
+            <div class="field">
+              <label for="pn_gallerySubtitle">Gallery Header Subtitle</label>
+              <input id="pn_gallerySubtitle" type="text" maxlength="300">
+            </div>
+            <div class="field">
+              <label for="pn_blogTitle">Blog Header Title</label>
+              <input id="pn_blogTitle" type="text" maxlength="100">
+            </div>
+            <div class="field">
+              <label for="pn_blogSubtitle">Blog Header Subtitle</label>
+              <input id="pn_blogSubtitle" type="text" maxlength="300">
+            </div>
+            <div class="field">
+              <label for="pn_contactBadge">Contact Page Badge</label>
+              <input id="pn_contactBadge" type="text" maxlength="80">
+            </div>
+            <div class="field">
+              <label for="pn_contactTitle">Contact Page Title</label>
+              <input id="pn_contactTitle" type="text" maxlength="120">
+            </div>
+            <div class="field span-2">
+              <label for="pn_contactSubtitle">Contact Page Subtitle</label>
+              <textarea id="pn_contactSubtitle" maxlength="400"></textarea>
+            </div>
+          </div>
+
+          <h3 style="margin:0 0 12px; font-size:16px; padding-top:16px; border-top:1px solid var(--border-color);">Fellowship Discussion Board Copy</h3>
+          <div class="form-grid">
+            <div class="field">
+              <label for="pn_maleLabel">Men's Space Label</label>
+              <input id="pn_maleLabel" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="pn_maleCopy">Men's Space Description</label>
+              <input id="pn_maleCopy" type="text" maxlength="240">
+            </div>
+            <div class="field">
+              <label for="pn_femaleLabel">Women's Space Label</label>
+              <input id="pn_femaleLabel" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="pn_femaleCopy">Women's Space Description</label>
+              <input id="pn_femaleCopy" type="text" maxlength="240">
+            </div>
+            <div class="field">
+              <label for="pn_allLabel">Shared Board Label</label>
+              <input id="pn_allLabel" type="text" maxlength="60">
+            </div>
+            <div class="field">
+              <label for="pn_allCopy">Shared Board Description</label>
+              <input id="pn_allCopy" type="text" maxlength="240">
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('pages_nav')">Reset Pages & Nav</button>
+            <button type="submit" class="btn-primary">Save Pages & Nav</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 7. FEATURES & SECURITY -->
+    <section id="panel-features_security" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Feature Switches, Maintenance Mode & Security</h2>
+            <p>Pause signups, enable maintenance mode or control interactive community capabilities live across client and server routes.</p>
+          </div>
+          <span id="meta-features_security" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-features_security">
+          <div class="warning-box" style="margin-bottom:16px;">
+            <strong>Maintenance Mode Safety:</strong> When Maintenance Mode is turned on, public visitors see HTTP 503 with the maintenance screen below. Admin routes (`/admin`, `/admin-settings`) stay accessible and the maintenance screen includes an Admin Sign In panel so you never get locked out.
+          </div>
+
+          <div class="toggle-list" style="margin-bottom:18px;">
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_maintenanceMode" class="brand-checkbox" type="checkbox">
+                  <span>Enable Maintenance Mode</span>
+                </label>
+                <p class="toggle-desc">Temporarily puts public pages behind a branded maintenance notice while signed-in admins continue working.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowRegistration" class="brand-checkbox" type="checkbox">
+                  <span>Allow New Member Registrations</span>
+                </label>
+                <p class="toggle-desc">Disables the public Sign Up form and blocks new registrations on `/api/auth/register`.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowGoogleLogin" class="brand-checkbox" type="checkbox">
+                  <span>Allow Google Sign-In</span>
+                </label>
+                <p class="toggle-desc">Controls visibility of "Continue with Google" and server OAuth entry routes.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowBlogComments" class="brand-checkbox" type="checkbox">
+                  <span>Enable Blog Comments</span>
+                </label>
+                <p class="toggle-desc">Allow members to post new blog comments and replies.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowGalleryComments" class="brand-checkbox" type="checkbox">
+                  <span>Enable Gallery Comments</span>
+                </label>
+                <p class="toggle-desc">Allow members to comment on gallery photos and videos.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowFellowshipPosting" class="brand-checkbox" type="checkbox">
+                  <span>Enable Fellowship Hub Discussions</span>
+                </label>
+                <p class="toggle-desc">Pause or allow creating new Fellowship Hub posts and replies.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_allowEventRsvp" class="brand-checkbox" type="checkbox">
+                  <span>Enable Event RSVPs</span>
+                </label>
+                <p class="toggle-desc">Allow logged-in members to RSVP for upcoming events.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_enablePwaInstallBanner" class="brand-checkbox" type="checkbox">
+                  <span>Show PWA Install App Banner</span>
+                </label>
+                <p class="toggle-desc">Controls the floating "Install AIC Ziwani CYA" mobile prompt.</p>
+              </div>
+            </div>
+            <div class="toggle-card">
+              <div>
+                <label class="toggle-check">
+                  <input id="fs_enablePushPrompts" class="brand-checkbox" type="checkbox">
+                  <span>Show Push Notification Opt-In Prompts</span>
+                </label>
+                <p class="toggle-desc">Controls push prompt banners and the profile notification card.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="field span-2">
+              <label for="fs_maintenanceTitle">Maintenance Screen Title</label>
+              <input id="fs_maintenanceTitle" type="text" maxlength="120">
+            </div>
+            <div class="field span-2">
+              <label for="fs_maintenanceMessage">Maintenance Screen Message</label>
+              <textarea id="fs_maintenanceMessage" maxlength="600"></textarea>
+            </div>
+            <div class="field">
+              <label for="fs_minPasswordLength">Minimum Password Length (6 to 32)</label>
+              <input id="fs_minPasswordLength" type="number" min="6" max="32" value="8">
+            </div>
+            <div class="field">
+              <label for="fs_passwordResetMode">Password Reset Delivery Mode</label>
+              <select id="fs_passwordResetMode">
+                <option value="auto">Automatic (Use SMTP when ready or direct fallback)</option>
+                <option value="email">Email Only (Deliver via SMTP)</option>
+                <option value="direct">Direct Link (Always open reset link immediately)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('features_security')">Reset Security Settings</button>
+            <button type="submit" class="btn-primary">Save Features & Security</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 8. ADMIN ROLES & USERS -->
+    <section id="panel-roles_users" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Admin Roles & Registered Accounts</h2>
+            <p>Promote members to admin, demote admins or remove accounts. Safeguards block modifying yourself, the bootstrap `ADMIN_EMAIL` or the last remaining admin.</p>
+          </div>
+          <button type="button" class="btn-secondary btn-small" onclick="loadUsersManagement()">Refresh Users</button>
+        </div>
+        <div id="usersManagementHost" class="table-wrap">
+          <p style="padding:16px;">Loading users...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 9. CONTACT & PRAYER INBOX -->
+    <section id="panel-inbox" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Contact & Prayer Request Inbox</h2>
+            <p>Every message submitted on the Contact page is saved securely in PostgreSQL for pastoral and committee follow-up.</p>
+          </div>
+          <button type="button" class="btn-secondary btn-small" onclick="loadContactMessages()">Refresh Inbox</button>
+        </div>
+        <div id="inboxCountsBar" class="inbox-filters"></div>
+        <div id="inboxMessagesHost" class="repeatable-list">
+          <p>Loading messages...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. ANALYTICS & SYSTEM HEALTH -->
+    <section id="panel-integrations" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Analytics, Push Defaults & Verification</h2>
+            <p>Update your Google Tag Manager / GA4 container ID once here and every page updates automatically.</p>
+          </div>
+          <span id="meta-integrations" class="meta-pill">Loading...</span>
+        </div>
+        <form id="form-integrations">
+          <div class="form-grid">
+            <div class="field">
+              <label for="i_gtmId">Google Tag / GA4 Container ID (leave blank to disable)</label>
+              <input id="i_gtmId" type="text" placeholder="e.g. GTM-PDRVX92S or G-XXXXXXXXXX" maxlength="30">
+            </div>
+            <div class="field">
+              <label for="i_googleSiteVerification">Google Site Verification Meta Token</label>
+              <input id="i_googleSiteVerification" type="text" placeholder="Optional content value from Search Console" maxlength="180">
+            </div>
+            <div class="field">
+              <label for="i_defaultPushTitle">Default Push Notification Title</label>
+              <input id="i_defaultPushTitle" type="text" maxlength="80">
+            </div>
+            <div class="field">
+              <label for="i_defaultPushUrl">Default Push Notification Link</label>
+              <input id="i_defaultPushUrl" type="text" placeholder="/events">
+            </div>
+          </div>
+          <div class="btn-row">
+            <button type="button" class="btn-secondary" onclick="handleResetSection('integrations')">Reset Integrations</button>
+            <button type="submit" class="btn-primary">Save Integrations</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Live System Health</h2>
+            <p>Connection status for your database, Cloudflare R2 storage, authentication and mail services without exposing server secrets.</p>
+          </div>
+          <button type="button" class="btn-primary btn-small" onclick="loadSystemHealth(true)">Probe Live R2 Storage</button>
+        </div>
+        <div id="systemHealthHost" class="health-grid">
+          <p>Checking system status...</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 11. BACKUPS & AUDIT LOG -->
+    <section id="panel-backups_audit" class="tab-panel">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Configuration Backups & Factory Reset</h2>
+            <p>Export a JSON backup before major edits, restore an earlier configuration or reset all sections back to factory defaults.</p>
+          </div>
+        </div>
+        <div class="upload-row">
+          <button type="button" class="btn-primary" onclick="exportSettingsBackup()">Download JSON Backup</button>
+          <input id="importBackupInput" type="file" accept=".json,application/json" hidden>
+          <button type="button" class="btn-secondary" onclick="document.getElementById('importBackupInput').click()">Import JSON Backup</button>
+          <button type="button" class="btn-danger" onclick="handleResetSection('all')">Reset Entire System to Defaults</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Audit Trail</h2>
+            <p>Recent configuration, backup and admin role actions recorded by PostgreSQL.</p>
+          </div>
+        </div>
+        <div id="auditLogHost" class="table-wrap">
+          <p style="padding:16px;">Loading audit trail...</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Native confirmation <dialog> -->
+<dialog id="confirmDialog" aria-labelledby="confirmDialogTitle" closedby="any">
+  <h3 id="confirmDialogTitle">Confirm Action</h3>
+  <p id="confirmDialogBody">Are you sure you want to continue?</p>
+  <form method="dialog">
+    <div class="dialog-actions">
+      <button type="submit" value="cancel" class="btn-secondary" autofocus>Cancel</button>
+      <button type="submit" value="confirm" id="confirmDialogSubmitBtn" class="btn-danger">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Native Pastor / Committee Member editor <dialog> -->
+<dialog id="leaderDialog" aria-labelledby="leaderDialogTitle" closedby="any">
+  <h3 id="leaderDialogTitle">Edit Leader</h3>
+  <form id="leaderForm" class="form-grid">
+    <div class="field span-2">
+      <label for="ld_name">Full Name</label>
+      <input id="ld_name" type="text" required maxlength="120">
+    </div>
+    <div id="ld_badgeWrap" class="field">
+      <label for="ld_badge">Card Badge</label>
+      <input id="ld_badge" type="text" maxlength="60" placeholder="e.g. Senior Pastor">
+    </div>
+    <div class="field">
+      <label for="ld_role">Role / Title</label>
+      <input id="ld_role" type="text" required maxlength="120">
+    </div>
+    <div id="ld_deptWrap" class="field span-2">
+      <label for="ld_department">Department</label>
+      <select id="ld_department"></select>
+    </div>
+    <div class="field span-2">
+      <label for="ld_bio">Short Bio</label>
+      <textarea id="ld_bio" maxlength="1000"></textarea>
+    </div>
+    <div id="ld_scriptureWrap" class="field span-2">
+      <label for="ld_scripture">Favorite Scripture Verse</label>
+      <textarea id="ld_scripture" maxlength="400"></textarea>
+    </div>
+    <div class="field span-2">
+      <label for="ld_photoUrl">Photo URL or Upload Portrait to R2</label>
+      <div class="upload-row">
+        <img id="ld_photoPreview" class="asset-thumb" src="/favicon.png" alt="Leader photo preview">
+        <input id="ld_photoUrl" type="text" style="flex:1; min-width:180px;">
+        <input id="ld_photoFile" type="file" accept="image/*" hidden>
+        <button type="button" class="btn-secondary btn-small" onclick="document.getElementById('ld_photoFile').click()">Upload to R2</button>
+      </div>
+    </div>
+    <div class="dialog-actions span-2">
+      <button type="button" id="leaderCancelBtn" class="btn-secondary">Cancel</button>
+      <button type="submit" class="btn-primary">Apply Leader Changes</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const LOCAL_BACKEND_ORIGIN = "http://localhost:3000";
+
+function getBackendOrigin() {
+  if (window.CYABackendOrigin?.resolveBackendOrigin) {
+    return window.CYABackendOrigin.resolveBackendOrigin({ localFallback: LOCAL_BACKEND_ORIGIN });
+  }
+  const { protocol, hostname, port, origin } = window.location;
+  const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
+  if (protocol.startsWith("http") && (!isLocalHost || port === "3000")) {
+    return origin;
+  }
+  return LOCAL_BACKEND_ORIGIN;
+}
+
+const backendOrigin = getBackendOrigin();
+function buildBackendUrl(path) {
+  if (window.CYABackendOrigin?.buildBackendUrl) {
+    return window.CYABackendOrigin.buildBackendUrl(path, backendOrigin);
+  }
+  return new URL(path, backendOrigin).toString();
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+let stateSettings = null;
+let stateMeta = {};
+let stateAuditLog = [];
+let stateUsers = [];
+let stateInbox = { messages: [], counts: { total: 0, new: 0, read: 0, resolved: 0 } };
+let currentInboxFilter = "all";
+let currentAdminUser = null;
+
+function showStatus(message, type = "success") {
+  const banner = document.getElementById("statusBanner");
+  const text = document.getElementById("statusBannerText");
+  banner.className = `status-banner show ${type}`;
+  text.textContent = message;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+document.getElementById("statusCloseBtn").addEventListener("click", () => {
+  document.getElementById("statusBanner").classList.remove("show");
+});
+
+document.getElementById("themeToggleBtn").addEventListener("click", () => {
+  const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+  const next = current === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  document.documentElement.style.colorScheme = next;
+  try {
+    localStorage.setItem("theme", next);
+  } catch {}
+});
+
+// Fallback light dismiss only when browser lacks native dialog.closedBy (Pointer bounds check)
+if (!("closedBy" in HTMLDialogElement.prototype)) {
+  const outsideDialog = (event, dialogEl) => {
+    const r = dialogEl.getBoundingClientRect();
+    return event.clientX < r.left || event.clientX > r.right || event.clientY < r.top || event.clientY > r.bottom;
+  };
+  document.querySelectorAll('dialog[closedby="any"]').forEach((dialogEl) => {
+    let pressedOutside = false;
+    dialogEl.addEventListener("pointerdown", (e) => {
+      pressedOutside = outsideDialog(e, dialogEl);
+    });
+    dialogEl.addEventListener("pointerup", (e) => {
+      if (pressedOutside && outsideDialog(e, dialogEl)) {
+        dialogEl.close("");
+      }
+      pressedOutside = false;
+    });
+  });
+}
+
+// Confirmation modal backed by native <dialog>
+const confirmDialog = document.getElementById("confirmDialog");
+const confirmDialogTitle = document.getElementById("confirmDialogTitle");
+const confirmDialogBody = document.getElementById("confirmDialogBody");
+const confirmDialogSubmitBtn = document.getElementById("confirmDialogSubmitBtn");
+let pendingConfirmResolve = null;
+
+confirmDialog.addEventListener("close", () => {
+  const accepted = confirmDialog.returnValue === "confirm";
+  confirmDialog.returnValue = "";
+  const resolve = pendingConfirmResolve;
+  pendingConfirmResolve = null;
+  if (resolve) resolve(accepted);
+});
+
+function askConfirm({ title, body, confirmLabel = "Confirm", danger = true }) {
+  return new Promise((resolve) => {
+    pendingConfirmResolve = resolve;
+    confirmDialogTitle.textContent = title;
+    confirmDialogBody.textContent = body;
+    confirmDialogSubmitBtn.textContent = confirmLabel;
+    confirmDialogSubmitBtn.className = danger ? "btn-danger" : "btn-primary";
+    confirmDialog.returnValue = "";
+    confirmDialog.showModal();
+  });
+}
+
+async function apiJson(path, options = {}) {
+  const res = await fetch(buildBackendUrl(path), {
+    credentials: "include",
+    ...options,
+  });
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.error || payload.message || `Request failed (${res.status})`);
+  }
+  return payload;
+}
+
+// Tab Switching
+document.querySelectorAll(".tab-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const tab = btn.dataset.tab;
+    document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    document.querySelectorAll(".tab-panel").forEach((p) => p.classList.remove("active"));
+    document.getElementById(`panel-${tab}`)?.classList.add("active");
+
+    if (tab === "roles_users") loadUsersManagement();
+    if (tab === "inbox") loadContactMessages();
+    if (tab === "integrations") loadSystemHealth(false);
+    if (tab === "backups_audit") renderAuditLog();
+  });
+});
+
+function updateSectionMetaLabels() {
+  const sections = [
+    "branding",
+    "appearance",
+    "homepage",
+    "leadership",
+    "schedule_contact",
+    "pages_nav",
+    "features_security",
+    "integrations",
+  ];
+  sections.forEach((key) => {
+    const el = document.getElementById(`meta-${key}`);
+    if (!el) return;
+    const info = stateMeta?.[key];
+    if (info?.updatedAt) {
+      el.textContent = `Updated ${new Date(info.updatedAt).toLocaleString()} by ${info.updatedByName || "Admin"}`;
+    } else {
+      el.textContent = "Using factory defaults";
+    }
+  });
+}
+
+// Color picker sync helpers
+function syncColorPair(pickerId, inputId, onInputCallback) {
+  const picker = document.getElementById(pickerId);
+  const textInput = document.getElementById(inputId);
+  if (!picker || !textInput) return;
+
+  picker.addEventListener("input", () => {
+    textInput.value = picker.value;
+    if (onInputCallback) onInputCallback();
+  });
+  textInput.addEventListener("input", () => {
+    const val = textInput.value.trim();
+    if (/^#[0-9a-f]{6}$/i.test(val)) {
+      picker.value = val;
+    }
+    if (onInputCallback) onInputCallback();
+  });
+}
+
+function setColorPair(pickerId, inputId, hex) {
+  const picker = document.getElementById(pickerId);
+  const textInput = document.getElementById(inputId);
+  const validHex = /^#[0-9a-f]{6}$/i.test(hex || "") ? hex : "#c8102e";
+  if (picker) picker.value = validHex;
+  if (textInput) textInput.value = hex || validHex;
+}
+
+function updateBannerPreview() {
+  const bg = document.getElementById("a_announcementBgColor")?.value.trim() || "#c8102e";
+  const text = document.getElementById("a_announcementText")?.value.trim() || "Announcement preview text";
+  const linkLabel = document.getElementById("a_announcementLinkLabel")?.value.trim() || "";
+  const preview = document.getElementById("bannerLivePreview");
+  const textEl = document.getElementById("bannerPreviewText");
+  const linkEl = document.getElementById("bannerPreviewLink");
+  if (preview && /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(bg)) {
+    preview.style.setProperty("--banner-bg", bg);
+  }
+  if (textEl) textEl.textContent = text;
+  if (linkEl) linkEl.textContent = linkLabel;
+}
+
+["cp_pwaThemeColor", "cp_primaryColor", "cp_darkPrimaryColor", "cp_darkModePrimaryColor", "cp_heroAccentColor", "cp_heroGoldColor", "cp_announcementBgColor"].forEach((cpId) => {
+  const key = cpId.replace("cp_", "");
+  const inputId = key === "pwaThemeColor" ? `b_${key}` : `a_${key}`;
+  const cb = key === "announcementBgColor" ? updateBannerPreview : null;
+  syncColorPair(cpId, inputId, cb);
+});
+
+document.getElementById("a_announcementText").addEventListener("input", updateBannerPreview);
+document.getElementById("a_announcementLinkLabel").addEventListener("input", updateBannerPreview);
+
+// R2 upload helper for Branding & Leadership
+async function uploadImageToR2(file, folder) {
+  const formData = new FormData();
+  formData.append("folder", folder);
+  formData.append("asset", file);
+  return apiJson("/api/admin/settings/upload", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+function triggerBrandingUpload(fileInputId, targetUrlInputId, previewImgId) {
+  const fileEl = document.getElementById(fileInputId);
+  fileEl.onchange = async () => {
+    const file = fileEl.files?.[0];
+    if (!file) return;
+    try {
+      showStatus("Uploading image to Cloudflare R2...", "info");
+      const uploaded = await uploadImageToR2(file, "branding");
+      document.getElementById(targetUrlInputId).value = uploaded.url;
+      document.getElementById(previewImgId).src = uploaded.url;
+      showStatus(`Uploaded to ${uploaded.provider.toUpperCase()} cleanly. Click Save Branding to publish.`, "success");
+    } catch (error) {
+      showStatus(error.message || "Could not upload image.", true ? "error" : "info");
+    } finally {
+      fileEl.value = "";
+    }
+  };
+  fileEl.click();
+}
+
+// Populate forms from stateSettings
+function populateAllForms() {
+  if (!stateSettings) return;
+  const { branding, appearance, homepage, leadership, schedule_contact, pages_nav, features_security, integrations } = stateSettings;
+
+  // 1. Branding
+  document.getElementById("b_siteName").value = branding.siteName || "";
+  document.getElementById("b_churchSubtitle").value = branding.churchSubtitle || "";
+  document.getElementById("b_tabTitleSuffix").value = branding.tabTitleSuffix || "";
+  document.getElementById("b_splashBrand").value = branding.splashBrand || "";
+  document.getElementById("b_splashTagline").value = branding.splashTagline || "";
+  document.getElementById("b_splashEnabled").checked = branding.splashEnabled !== false;
+  document.getElementById("b_logoUrl").value = branding.logoUrl || "";
+  document.getElementById("preview_logoUrl").src = branding.logoUrl || "/favicon.png";
+  document.getElementById("b_faviconUrl").value = branding.faviconUrl || "";
+  document.getElementById("preview_faviconUrl").src = branding.faviconUrl || "/favicon.png";
+  document.getElementById("b_appIconUrl").value = branding.appIconUrl || "";
+  document.getElementById("preview_appIconUrl").src = branding.appIconUrl || "/icon-512.png";
+  document.getElementById("b_footerCopyright").value = branding.footerCopyright || "";
+  document.getElementById("b_footerMotto").value = branding.footerMotto || "";
+  document.getElementById("b_pwaName").value = branding.pwaName || "";
+  document.getElementById("b_pwaShortName").value = branding.pwaShortName || "";
+  document.getElementById("b_pwaDescription").value = branding.pwaDescription || "";
+  setColorPair("cp_pwaThemeColor", "b_pwaThemeColor", branding.pwaThemeColor);
+
+  // 2. Appearance
+  setColorPair("cp_primaryColor", "a_primaryColor", appearance.primaryColor);
+  setColorPair("cp_darkPrimaryColor", "a_darkPrimaryColor", appearance.darkPrimaryColor);
+  setColorPair("cp_darkModePrimaryColor", "a_darkModePrimaryColor", appearance.darkModePrimaryColor);
+  setColorPair("cp_heroAccentColor", "a_heroAccentColor", appearance.heroAccentColor);
+  setColorPair("cp_heroGoldColor", "a_heroGoldColor", appearance.heroGoldColor);
+  document.getElementById("a_defaultTheme").value = appearance.defaultTheme || "light";
+  document.getElementById("a_announcementEnabled").checked = Boolean(appearance.announcementEnabled);
+  document.getElementById("a_announcementText").value = appearance.announcementText || "";
+  document.getElementById("a_announcementLinkLabel").value = appearance.announcementLinkLabel || "";
+  document.getElementById("a_announcementLinkUrl").value = appearance.announcementLinkUrl || "";
+  setColorPair("cp_announcementBgColor", "a_announcementBgColor", appearance.announcementBgColor);
+  updateBannerPreview();
+
+  // 3. Homepage
+  document.getElementById("h_themeKicker").value = homepage.themeKicker || "";
+  document.getElementById("h_heroMainWord").value = homepage.heroMainWord || "";
+  document.getElementById("h_heroThemeLine").value = homepage.heroThemeLine || "";
+  document.getElementById("h_scriptureRef").value = homepage.scriptureRef || "";
+  document.getElementById("h_scriptureText").value = homepage.scriptureText || "";
+  document.getElementById("h_heroSubtitle").value = homepage.heroSubtitle || "";
+  document.getElementById("h_heroCtaLabel").value = homepage.heroCtaLabel || "";
+  document.getElementById("h_heroCtaUrl").value = homepage.heroCtaUrl || "";
+  document.getElementById("h_themeFootnote").value = homepage.themeFootnote || "";
+  document.getElementById("h_spotlightEmptyTitle").value = homepage.spotlightEmptyTitle || "";
+  document.getElementById("h_spotlightEmptyText").value = homepage.spotlightEmptyText || "";
+  document.getElementById("h_aboutHeading").value = homepage.aboutHeading || "";
+  document.getElementById("h_aboutBody").value = homepage.aboutBody || "";
+  document.getElementById("h_ministriesHeading").value = homepage.ministriesHeading || "";
+  document.getElementById("h_recentBlogsCount").value = homepage.recentBlogsCount || 2;
+  renderMinistryHighlights();
+
+  // 4. Leadership
+  document.getElementById("l_pastoralTag").value = leadership.pastoralTag || "";
+  document.getElementById("l_pastoralHeading").value = leadership.pastoralHeading || "";
+  document.getElementById("l_pastoralSubtext").value = leadership.pastoralSubtext || "";
+  document.getElementById("l_committeeTag").value = leadership.committeeTag || "";
+  document.getElementById("l_committeeHeading").value = leadership.committeeHeading || "";
+  document.getElementById("l_committeeSubtext").value = leadership.committeeSubtext || "";
+  renderDepartments();
+  renderPastorsList();
+  renderCommitteeList();
+
+  // 5. Schedule & Contact
+  document.getElementById("sc_sanctuaryName").value = schedule_contact.sanctuaryName || "";
+  document.getElementById("sc_locationAddress").value = schedule_contact.locationAddress || "";
+  document.getElementById("sc_phone").value = schedule_contact.phone || "";
+  document.getElementById("sc_email").value = schedule_contact.email || "";
+  document.getElementById("sc_whatsappNumber").value = schedule_contact.whatsappNumber || "";
+  document.getElementById("sc_whatsappMessage").value = schedule_contact.whatsappMessage || "";
+  document.getElementById("sc_contactFormHeading").value = schedule_contact.contactFormHeading || "";
+  document.getElementById("sc_contactFormSubtext").value = schedule_contact.contactFormSubtext || "";
+  document.getElementById("sc_contactFormToast").value = schedule_contact.contactFormToast || "";
+  renderServicesList();
+  renderSocialsGrid();
+  renderContactDeptsList();
+
+  // 6. Pages & Nav
+  renderNavItemsList();
+  document.getElementById("pn_fellowshipTitle").value = pages_nav.fellowshipTitle || "";
+  document.getElementById("pn_fellowshipSubtitle").value = pages_nav.fellowshipSubtitle || "";
+  document.getElementById("pn_eventsTitle").value = pages_nav.eventsTitle || "";
+  document.getElementById("pn_eventsSubtitle").value = pages_nav.eventsSubtitle || "";
+  document.getElementById("pn_galleryTitle").value = pages_nav.galleryTitle || "";
+  document.getElementById("pn_gallerySubtitle").value = pages_nav.gallerySubtitle || "";
+  document.getElementById("pn_blogTitle").value = pages_nav.blogTitle || "";
+  document.getElementById("pn_blogSubtitle").value = pages_nav.blogSubtitle || "";
+  document.getElementById("pn_contactBadge").value = pages_nav.contactBadge || "";
+  document.getElementById("pn_contactTitle").value = pages_nav.contactTitle || "";
+  document.getElementById("pn_contactSubtitle").value = pages_nav.contactSubtitle || "";
+  document.getElementById("pn_maleLabel").value = pages_nav.fellowshipRooms?.maleLabel || "";
+  document.getElementById("pn_maleCopy").value = pages_nav.fellowshipRooms?.maleCopy || "";
+  document.getElementById("pn_femaleLabel").value = pages_nav.fellowshipRooms?.femaleLabel || "";
+  document.getElementById("pn_femaleCopy").value = pages_nav.fellowshipRooms?.femaleCopy || "";
+  document.getElementById("pn_allLabel").value = pages_nav.fellowshipRooms?.allLabel || "";
+  document.getElementById("pn_allCopy").value = pages_nav.fellowshipRooms?.allCopy || "";
+
+  // 7. Features & Security
+  document.getElementById("fs_maintenanceMode").checked = Boolean(features_security.maintenanceMode);
+  document.getElementById("fs_allowRegistration").checked = features_security.allowRegistration !== false;
+  document.getElementById("fs_allowGoogleLogin").checked = features_security.allowGoogleLogin !== false;
+  document.getElementById("fs_allowBlogComments").checked = features_security.allowBlogComments !== false;
+  document.getElementById("fs_allowGalleryComments").checked = features_security.allowGalleryComments !== false;
+  document.getElementById("fs_allowFellowshipPosting").checked = features_security.allowFellowshipPosting !== false;
+  document.getElementById("fs_allowEventRsvp").checked = features_security.allowEventRsvp !== false;
+  document.getElementById("fs_enablePwaInstallBanner").checked = features_security.enablePwaInstallBanner !== false;
+  document.getElementById("fs_enablePushPrompts").checked = features_security.enablePushPrompts !== false;
+  document.getElementById("fs_maintenanceTitle").value = features_security.maintenanceTitle || "";
+  document.getElementById("fs_maintenanceMessage").value = features_security.maintenanceMessage || "";
+  document.getElementById("fs_minPasswordLength").value = features_security.minPasswordLength || 8;
+  document.getElementById("fs_passwordResetMode").value = features_security.passwordResetMode || "auto";
+
+  // 10. Integrations
+  document.getElementById("i_gtmId").value = integrations.gtmId || "";
+  document.getElementById("i_googleSiteVerification").value = integrations.googleSiteVerification || "";
+  document.getElementById("i_defaultPushTitle").value = integrations.defaultPushTitle || "";
+  document.getElementById("i_defaultPushUrl").value = integrations.defaultPushUrl || "";
+
+  updateSectionMetaLabels();
+}
+
+// Repeatable UI renderers
+function renderMinistryHighlights() {
+  const list = stateSettings.homepage.ministryHighlights || [];
+  const host = document.getElementById("ministryHighlightsHost");
+  host.innerHTML = list.map((item, idx) => `
+    <div class="repeatable-item">
+      <div class="form-grid">
+        <div class="field">
+          <label>Card Title</label>
+          <input type="text" value="${escapeHtml(item.title)}" oninput="stateSettings.homepage.ministryHighlights[${idx}].title = this.value">
+        </div>
+        <div class="field">
+          <label>Card Description</label>
+          <input type="text" value="${escapeHtml(item.description)}" oninput="stateSettings.homepage.ministryHighlights[${idx}].description = this.value">
+        </div>
+      </div>
+      <div class="repeatable-actions">
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.homepage.ministryHighlights, ${idx}, -1, renderMinistryHighlights)" ${idx === 0 ? "disabled" : ""}>Up</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.homepage.ministryHighlights, ${idx}, 1, renderMinistryHighlights)" ${idx === list.length - 1 ? "disabled" : ""}>Down</button>
+        <button type="button" class="btn-danger btn-small" onclick="stateSettings.homepage.ministryHighlights.splice(${idx}, 1); renderMinistryHighlights();">Remove</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addMinistryHighlight() {
+  stateSettings.homepage.ministryHighlights.push({ title: "New Ministry", description: "Description here." });
+  renderMinistryHighlights();
+}
+
+function moveItem(arr, index, delta, rerenderFn) {
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= arr.length) return;
+  const [item] = arr.splice(index, 1);
+  arr.splice(nextIndex, 0, item);
+  rerenderFn();
+}
+
+// Departments & Leaders
+function renderDepartments() {
+  const list = stateSettings.leadership.departments || [];
+  const host = document.getElementById("departmentsHost");
+  host.innerHTML = list.map((dept, idx) => `
+    <div class="repeatable-item">
+      <div class="form-grid">
+        <div class="field">
+          <label>Department Key</label>
+          <input type="text" value="${escapeHtml(dept.id)}" oninput="stateSettings.leadership.departments[${idx}].id = this.value">
+        </div>
+        <div class="field">
+          <label>Filter Tab Label</label>
+          <input type="text" value="${escapeHtml(dept.label)}" oninput="stateSettings.leadership.departments[${idx}].label = this.value">
+        </div>
+        <div class="field span-2">
+          <label>Card Badge Label</label>
+          <input type="text" value="${escapeHtml(dept.chipLabel)}" oninput="stateSettings.leadership.departments[${idx}].chipLabel = this.value">
+        </div>
+      </div>
+      <div class="repeatable-actions">
+        <button type="button" class="btn-danger btn-small" onclick="removeDepartment(${idx})" ${list.length <= 1 ? "disabled" : ""}>Remove</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addDepartmentCategory() {
+  const idx = stateSettings.leadership.departments.length + 1;
+  stateSettings.leadership.departments.push({ id: `dept-${idx}`, label: `Department ${idx}`, chipLabel: `Department ${idx}` });
+  renderDepartments();
+}
+
+function removeDepartment(idx) {
+  if (stateSettings.leadership.departments.length <= 1) return;
+  stateSettings.leadership.departments.splice(idx, 1);
+  renderDepartments();
+}
+
+function getInitials(name) {
+  const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+  if (!parts.length) return "CY";
+  return parts.length === 1 ? parts[0].slice(0, 2).toUpperCase() : `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+}
+
+function renderPastorsList() {
+  const list = stateSettings.leadership.pastors || [];
+  const host = document.getElementById("pastorsListHost");
+  host.innerHTML = list.map((p, idx) => `
+    <article class="leader-card">
+      <div class="leader-card-top">
+        ${p.photoUrl
+          ? `<img class="leader-thumb" src="${escapeHtml(p.photoUrl)}" alt="${escapeHtml(p.name)}">`
+          : `<div class="leader-thumb">${escapeHtml(getInitials(p.name))}</div>`}
+        <div>
+          <strong>${escapeHtml(p.name)}</strong>
+          <div style="font-size:12px; color:var(--text-secondary);">${escapeHtml(p.badge || p.role)}</div>
+        </div>
+      </div>
+      <div class="repeatable-actions" style="justify-content:flex-start;">
+        <button type="button" class="btn-secondary btn-small" onclick="openLeaderEditor('pastor', ${idx})">Edit</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.leadership.pastors, ${idx}, -1, renderPastorsList)" ${idx === 0 ? "disabled" : ""}>Up</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.leadership.pastors, ${idx}, 1, renderPastorsList)" ${idx === list.length - 1 ? "disabled" : ""}>Down</button>
+        <button type="button" class="btn-danger btn-small" onclick="confirmDeleteLeader('pastor', ${idx})">Delete</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+function renderCommitteeList() {
+  const list = stateSettings.leadership.committee || [];
+  const host = document.getElementById("committeeListHost");
+  host.innerHTML = list.map((m, idx) => `
+    <article class="leader-card">
+      <div class="leader-card-top">
+        ${m.photoUrl
+          ? `<img class="leader-thumb" src="${escapeHtml(m.photoUrl)}" alt="${escapeHtml(m.name)}">`
+          : `<div class="leader-thumb">${escapeHtml(getInitials(m.name))}</div>`}
+        <div>
+          <strong>${escapeHtml(m.name)}</strong>
+          <div style="font-size:12px; color:var(--text-secondary);">${escapeHtml(m.role)} (${escapeHtml(m.department)})</div>
+        </div>
+      </div>
+      <div class="repeatable-actions" style="justify-content:flex-start;">
+        <button type="button" class="btn-secondary btn-small" onclick="openLeaderEditor('committee', ${idx})">Edit</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.leadership.committee, ${idx}, -1, renderCommitteeList)" ${idx === 0 ? "disabled" : ""}>Up</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.leadership.committee, ${idx}, 1, renderCommitteeList)" ${idx === list.length - 1 ? "disabled" : ""}>Down</button>
+        <button type="button" class="btn-danger btn-small" onclick="confirmDeleteLeader('committee', ${idx})">Delete</button>
+      </div>
+    </article>
+  `).join("");
+}
+
+async function confirmDeleteLeader(kind, index) {
+  const arr = kind === "pastor" ? stateSettings.leadership.pastors : stateSettings.leadership.committee;
+  const item = arr[index];
+  if (!item) return;
+  const ok = await askConfirm({
+    title: `Remove ${item.name}?`,
+    body: "Click Save Leadership afterwards to apply this change to the live Contact page.",
+    confirmLabel: "Remove",
+    danger: true,
+  });
+  if (!ok) return;
+  arr.splice(index, 1);
+  if (kind === "pastor") renderPastorsList();
+  else renderCommitteeList();
+}
+
+// Leader modal using native <dialog>
+const leaderDialog = document.getElementById("leaderDialog");
+const leaderForm = document.getElementById("leaderForm");
+let activeLeaderEdit = null;
+
+leaderDialog.addEventListener("close", () => {
+  leaderDialog.returnValue = "";
+  activeLeaderEdit = null;
+});
+
+document.getElementById("leaderCancelBtn").addEventListener("click", () => {
+  leaderDialog.close("cancel");
+});
+
+document.getElementById("ld_photoUrl").addEventListener("input", () => {
+  document.getElementById("ld_photoPreview").src = document.getElementById("ld_photoUrl").value.trim() || "/favicon.png";
+});
+
+document.getElementById("ld_photoFile").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    showStatus("Uploading portrait to Cloudflare R2...", "info");
+    const uploaded = await uploadImageToR2(file, "leaders");
+    document.getElementById("ld_photoUrl").value = uploaded.url;
+    document.getElementById("ld_photoPreview").src = uploaded.url;
+    if (activeLeaderEdit) {
+      activeLeaderEdit.photoPublicId = uploaded.publicId || "";
+    }
+    showStatus("Portrait uploaded to R2. Apply leader changes and save Leadership.", "success");
+  } catch (error) {
+    showStatus(error.message || "Could not upload portrait.", "error");
+  } finally {
+    e.target.value = "";
+  }
+});
+
+function openLeaderEditor(kind, index) {
+  const isPastor = kind === "pastor";
+  const arr = isPastor ? stateSettings.leadership.pastors : stateSettings.leadership.committee;
+  const existing = index >= 0 ? arr[index] : {};
+  activeLeaderEdit = { kind, index, photoPublicId: existing.photoPublicId || "" };
+
+  document.getElementById("leaderDialogTitle").textContent = index >= 0
+    ? `Edit ${existing.name}`
+    : (isPastor ? "Add Pastor" : "Add Committee Member");
+  document.getElementById("ld_name").value = existing.name || "";
+  document.getElementById("ld_badge").value = existing.badge || "";
+  document.getElementById("ld_role").value = existing.role || "";
+  document.getElementById("ld_bio").value = existing.bio || "";
+  document.getElementById("ld_scripture").value = existing.scripture || "";
+  document.getElementById("ld_photoUrl").value = existing.photoUrl || "";
+  document.getElementById("ld_photoPreview").src = existing.photoUrl || "/favicon.png";
+
+  document.getElementById("ld_badgeWrap").style.display = isPastor ? "" : "none";
+  document.getElementById("ld_scriptureWrap").style.display = isPastor ? "" : "none";
+  document.getElementById("ld_deptWrap").style.display = isPastor ? "none" : "";
+
+  if (!isPastor) {
+    const deptSelect = document.getElementById("ld_department");
+    const depts = stateSettings.leadership.departments || [];
+    deptSelect.innerHTML = depts.map((d) => `<option value="${escapeHtml(d.id)}">${escapeHtml(d.label)}</option>`).join("");
+    deptSelect.value = existing.department || depts[0]?.id || "exec";
+  }
+
+  leaderDialog.showModal();
+}
+
+leaderForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  if (!activeLeaderEdit) return;
+  const { kind, index, photoPublicId } = activeLeaderEdit;
+  const isPastor = kind === "pastor";
+  const arr = isPastor ? stateSettings.leadership.pastors : stateSettings.leadership.committee;
+  const item = {
+    id: index >= 0 && arr[index]?.id ? arr[index].id : `${kind}-${Date.now()}`,
+    name: document.getElementById("ld_name").value.trim(),
+    role: document.getElementById("ld_role").value.trim(),
+    bio: document.getElementById("ld_bio").value.trim(),
+    photoUrl: document.getElementById("ld_photoUrl").value.trim(),
+    photoPublicId: photoPublicId || (index >= 0 ? arr[index]?.photoPublicId || "" : ""),
+  };
+  if (isPastor) {
+    item.badge = document.getElementById("ld_badge").value.trim();
+    item.scripture = document.getElementById("ld_scripture").value.trim();
+  } else {
+    item.department = document.getElementById("ld_department").value;
+  }
+
+  if (index >= 0) {
+    arr[index] = item;
+  } else {
+    arr.push(item);
+  }
+
+  leaderDialog.close("apply");
+  if (isPastor) renderPastorsList();
+  else renderCommitteeList();
+});
+
+// Schedule & Contact list builders
+function renderServicesList() {
+  const list = stateSettings.schedule_contact.services || [];
+  const host = document.getElementById("servicesHost");
+  host.innerHTML = list.map((svc, idx) => `
+    <div class="repeatable-item">
+      <div class="form-grid">
+        <div class="field">
+          <label>Service Name</label>
+          <input type="text" value="${escapeHtml(svc.name)}" oninput="stateSettings.schedule_contact.services[${idx}].name = this.value">
+        </div>
+        <div class="field">
+          <label>Service Time</label>
+          <input type="text" value="${escapeHtml(svc.time)}" oninput="stateSettings.schedule_contact.services[${idx}].time = this.value">
+        </div>
+        <div class="field span-2">
+          <label>Short Description</label>
+          <input type="text" value="${escapeHtml(svc.description)}" oninput="stateSettings.schedule_contact.services[${idx}].description = this.value">
+        </div>
+        <div class="field span-2">
+          <label class="toggle-check">
+            <input type="checkbox" class="brand-checkbox" ${svc.featured ? "checked" : ""} onchange="stateSettings.schedule_contact.services[${idx}].featured = this.checked">
+            <span>Highlight as Featured Youth Service</span>
+          </label>
+        </div>
+      </div>
+      <div class="repeatable-actions">
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.schedule_contact.services, ${idx}, -1, renderServicesList)" ${idx === 0 ? "disabled" : ""}>Up</button>
+        <button type="button" class="btn-secondary btn-small" onclick="moveItem(stateSettings.schedule_contact.services, ${idx}, 1, renderServicesList)" ${idx === list.length - 1 ? "disabled" : ""}>Down</button>
+        <button type="button" class="btn-danger btn-small" onclick="stateSettings.schedule_contact.services.splice(${idx}, 1); renderServicesList();">Remove</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addServiceRow() {
+  stateSettings.schedule_contact.services.push({
+    name: "New Gathering",
+    time: "Sunday 9:00 AM",
+    description: "Description here",
+    featured: false,
+  });
+  renderServicesList();
+}
+
+function renderSocialsGrid() {
+  const socials = stateSettings.schedule_contact.socials || {};
+  const host = document.getElementById("socialsHost");
+  const names = {
+    instagram: "Instagram",
+    tiktok: "TikTok",
+    whatsapp: "WhatsApp",
+    youtube: "YouTube",
+    facebook: "Facebook",
+    x: "X (Twitter)",
+  };
+  host.innerHTML = Object.keys(names).map((key) => {
+    const cfg = socials[key] || { enabled: false, url: "" };
+    return `
+      <div class="repeatable-item">
+        <label class="toggle-check">
+          <input type="checkbox" class="brand-checkbox" ${cfg.enabled ? "checked" : ""} onchange="stateSettings.schedule_contact.socials['${key}'].enabled = this.checked">
+          <span>Show ${names[key]}</span>
+        </label>
+        <input type="url" placeholder="https://..." value="${escapeHtml(cfg.url)}" oninput="stateSettings.schedule_contact.socials['${key}'].url = this.value">
+      </div>
+    `;
+  }).join("");
+}
+
+function renderContactDeptsList() {
+  const list = stateSettings.schedule_contact.contactDepartments || [];
+  const host = document.getElementById("contactDeptsHost");
+  host.innerHTML = list.map((opt, idx) => `
+    <div class="repeatable-item">
+      <div class="form-grid">
+        <div class="field">
+          <label>Option Key</label>
+          <input type="text" value="${escapeHtml(opt.value)}" oninput="stateSettings.schedule_contact.contactDepartments[${idx}].value = this.value">
+        </div>
+        <div class="field">
+          <label>Dropdown Label</label>
+          <input type="text" value="${escapeHtml(opt.label)}" oninput="stateSettings.schedule_contact.contactDepartments[${idx}].label = this.value">
+        </div>
+      </div>
+      <div class="repeatable-actions">
+        <button type="button" class="btn-danger btn-small" onclick="stateSettings.schedule_contact.contactDepartments.splice(${idx}, 1); renderContactDeptsList();" ${list.length <= 1 ? "disabled" : ""}>Remove</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function addContactDepartmentRow() {
+  const idx = stateSettings.schedule_contact.contactDepartments.length + 1;
+  stateSettings.schedule_contact.contactDepartments.push({ value: `dept_${idx}`, label: "New Department" });
+  renderContactDeptsList();
+}
+
+function renderNavItemsList() {
+  const nav = stateSettings.pages_nav.nav || {};
+  const host = document.getElementById("navItemsHost");
+  const keys = ["fellowship", "events", "gallery", "blog", "contact"];
+  host.innerHTML = keys.map((key) => {
+    const cfg = nav[key] || { visible: true, label: key };
+    return `
+      <div class="repeatable-item">
+        <div class="form-grid" style="align-items:center;">
+          <div class="field">
+            <label class="toggle-check">
+              <input type="checkbox" class="brand-checkbox" ${cfg.visible !== false ? "checked" : ""} onchange="stateSettings.pages_nav.nav['${key}'].visible = this.checked">
+              <span>Show /${key} Link</span>
+            </label>
+          </div>
+          <div class="field">
+            <label>Navigation Label</label>
+            <input type="text" value="${escapeHtml(cfg.label)}" oninput="stateSettings.pages_nav.nav['${key}'].label = this.value">
+          </div>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+// Section saves & resets
+async function saveSection(section, data, summary) {
+  try {
+    showStatus(`Saving ${section} settings...`, "info");
+    const res = await apiJson(`/api/admin/settings/${section}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...data, _auditSummary: summary }),
+    });
+    stateSettings = res.settings;
+    stateMeta = res.meta;
+    stateAuditLog = res.auditLog || stateAuditLog;
+    window.__CYA_SITE_SETTINGS__ = stateSettings;
+    try {
+      localStorage.setItem("cya_site_settings_cache", JSON.stringify(stateSettings));
+    } catch {}
+    populateAllForms();
+    showStatus(`${section.replace("_", " ")} settings saved live across the site.`, "success");
+  } catch (error) {
+    showStatus(error.message || "Failed to save settings.", "error");
+  }
+}
+
+async function handleResetSection(section) {
+  const isAll = section === "all";
+  const ok = await askConfirm({
+    title: isAll ? "Reset ALL System Settings?" : `Reset ${section} to defaults?`,
+    body: isAll
+      ? "This restores branding, theme colors, homepage copy, leadership, schedules, navigation, toggles and integrations back to factory defaults."
+      : "This reverts only this section to default values.",
+    confirmLabel: isAll ? "Reset All" : "Reset Section",
+    danger: true,
+  });
+  if (!ok) return;
+
+  try {
+    const res = await apiJson("/api/admin/settings/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ section }),
+    });
+    stateSettings = res.settings;
+    stateMeta = res.meta;
+    stateAuditLog = res.auditLog || stateAuditLog;
+    window.__CYA_SITE_SETTINGS__ = stateSettings;
+    try {
+      localStorage.setItem("cya_site_settings_cache", JSON.stringify(stateSettings));
+    } catch {}
+    populateAllForms();
+    renderAuditLog();
+    showStatus(res.message || "Reset completed.", "success");
+  } catch (error) {
+    showStatus(error.message || "Could not reset settings.", "error");
+  }
+}
+
+document.getElementById("form-branding").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("branding", {
+    siteName: document.getElementById("b_siteName").value,
+    churchSubtitle: document.getElementById("b_churchSubtitle").value,
+    tabTitleSuffix: document.getElementById("b_tabTitleSuffix").value,
+    splashBrand: document.getElementById("b_splashBrand").value,
+    splashTagline: document.getElementById("b_splashTagline").value,
+    splashEnabled: document.getElementById("b_splashEnabled").checked,
+    logoUrl: document.getElementById("b_logoUrl").value,
+    faviconUrl: document.getElementById("b_faviconUrl").value,
+    appIconUrl: document.getElementById("b_appIconUrl").value,
+    footerCopyright: document.getElementById("b_footerCopyright").value,
+    footerMotto: document.getElementById("b_footerMotto").value,
+    pwaName: document.getElementById("b_pwaName").value,
+    pwaShortName: document.getElementById("b_pwaShortName").value,
+    pwaDescription: document.getElementById("b_pwaDescription").value,
+    pwaThemeColor: document.getElementById("b_pwaThemeColor").value,
+  });
+});
+
+document.getElementById("form-appearance").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("appearance", {
+    primaryColor: document.getElementById("a_primaryColor").value,
+    darkPrimaryColor: document.getElementById("a_darkPrimaryColor").value,
+    darkModePrimaryColor: document.getElementById("a_darkModePrimaryColor").value,
+    heroAccentColor: document.getElementById("a_heroAccentColor").value,
+    heroGoldColor: document.getElementById("a_heroGoldColor").value,
+    defaultTheme: document.getElementById("a_defaultTheme").value,
+    announcementEnabled: document.getElementById("a_announcementEnabled").checked,
+    announcementText: document.getElementById("a_announcementText").value,
+    announcementLinkLabel: document.getElementById("a_announcementLinkLabel").value,
+    announcementLinkUrl: document.getElementById("a_announcementLinkUrl").value,
+    announcementBgColor: document.getElementById("a_announcementBgColor").value,
+  });
+});
+
+document.getElementById("form-homepage").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("homepage", {
+    themeKicker: document.getElementById("h_themeKicker").value,
+    heroMainWord: document.getElementById("h_heroMainWord").value,
+    heroThemeLine: document.getElementById("h_heroThemeLine").value,
+    scriptureRef: document.getElementById("h_scriptureRef").value,
+    scriptureText: document.getElementById("h_scriptureText").value,
+    heroSubtitle: document.getElementById("h_heroSubtitle").value,
+    heroCtaLabel: document.getElementById("h_heroCtaLabel").value,
+    heroCtaUrl: document.getElementById("h_heroCtaUrl").value,
+    themeFootnote: document.getElementById("h_themeFootnote").value,
+    spotlightEmptyTitle: document.getElementById("h_spotlightEmptyTitle").value,
+    spotlightEmptyText: document.getElementById("h_spotlightEmptyText").value,
+    aboutHeading: document.getElementById("h_aboutHeading").value,
+    aboutBody: document.getElementById("h_aboutBody").value,
+    ministriesHeading: document.getElementById("h_ministriesHeading").value,
+    recentBlogsCount: Number.parseInt(document.getElementById("h_recentBlogsCount").value, 10) || 2,
+    ministryHighlights: stateSettings.homepage.ministryHighlights,
+  });
+});
+
+document.getElementById("form-leadership").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("leadership", {
+    pastoralTag: document.getElementById("l_pastoralTag").value,
+    pastoralHeading: document.getElementById("l_pastoralHeading").value,
+    pastoralSubtext: document.getElementById("l_pastoralSubtext").value,
+    pastors: stateSettings.leadership.pastors,
+    committeeTag: document.getElementById("l_committeeTag").value,
+    committeeHeading: document.getElementById("l_committeeHeading").value,
+    committeeSubtext: document.getElementById("l_committeeSubtext").value,
+    departments: stateSettings.leadership.departments,
+    committee: stateSettings.leadership.committee,
+  });
+});
+
+document.getElementById("form-schedule_contact").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("schedule_contact", {
+    sanctuaryName: document.getElementById("sc_sanctuaryName").value,
+    locationAddress: document.getElementById("sc_locationAddress").value,
+    phone: document.getElementById("sc_phone").value,
+    email: document.getElementById("sc_email").value,
+    whatsappNumber: document.getElementById("sc_whatsappNumber").value,
+    whatsappMessage: document.getElementById("sc_whatsappMessage").value,
+    contactFormHeading: document.getElementById("sc_contactFormHeading").value,
+    contactFormSubtext: document.getElementById("sc_contactFormSubtext").value,
+    contactFormToast: document.getElementById("sc_contactFormToast").value,
+    services: stateSettings.schedule_contact.services,
+    socials: stateSettings.schedule_contact.socials,
+    contactDepartments: stateSettings.schedule_contact.contactDepartments,
+  });
+});
+
+document.getElementById("form-pages_nav").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("pages_nav", {
+    nav: stateSettings.pages_nav.nav,
+    fellowshipTitle: document.getElementById("pn_fellowshipTitle").value,
+    fellowshipSubtitle: document.getElementById("pn_fellowshipSubtitle").value,
+    eventsTitle: document.getElementById("pn_eventsTitle").value,
+    eventsSubtitle: document.getElementById("pn_eventsSubtitle").value,
+    galleryTitle: document.getElementById("pn_galleryTitle").value,
+    gallerySubtitle: document.getElementById("pn_gallerySubtitle").value,
+    blogTitle: document.getElementById("pn_blogTitle").value,
+    blogSubtitle: document.getElementById("pn_blogSubtitle").value,
+    contactBadge: document.getElementById("pn_contactBadge").value,
+    contactTitle: document.getElementById("pn_contactTitle").value,
+    contactSubtitle: document.getElementById("pn_contactSubtitle").value,
+    fellowshipRooms: {
+      maleLabel: document.getElementById("pn_maleLabel").value,
+      maleCopy: document.getElementById("pn_maleCopy").value,
+      femaleLabel: document.getElementById("pn_femaleLabel").value,
+      femaleCopy: document.getElementById("pn_femaleCopy").value,
+      allLabel: document.getElementById("pn_allLabel").value,
+      allCopy: document.getElementById("pn_allCopy").value,
+    },
+  });
+});
+
+document.getElementById("form-features_security").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("features_security", {
+    maintenanceMode: document.getElementById("fs_maintenanceMode").checked,
+    allowRegistration: document.getElementById("fs_allowRegistration").checked,
+    allowGoogleLogin: document.getElementById("fs_allowGoogleLogin").checked,
+    allowBlogComments: document.getElementById("fs_allowBlogComments").checked,
+    allowGalleryComments: document.getElementById("fs_allowGalleryComments").checked,
+    allowFellowshipPosting: document.getElementById("fs_allowFellowshipPosting").checked,
+    allowEventRsvp: document.getElementById("fs_allowEventRsvp").checked,
+    enablePwaInstallBanner: document.getElementById("fs_enablePwaInstallBanner").checked,
+    enablePushPrompts: document.getElementById("fs_enablePushPrompts").checked,
+    maintenanceTitle: document.getElementById("fs_maintenanceTitle").value,
+    maintenanceMessage: document.getElementById("fs_maintenanceMessage").value,
+    minPasswordLength: Number.parseInt(document.getElementById("fs_minPasswordLength").value, 10) || 8,
+    passwordResetMode: document.getElementById("fs_passwordResetMode").value,
+  });
+});
+
+document.getElementById("form-integrations").addEventListener("submit", (e) => {
+  e.preventDefault();
+  saveSection("integrations", {
+    gtmId: document.getElementById("i_gtmId").value,
+    googleSiteVerification: document.getElementById("i_googleSiteVerification").value,
+    defaultPushTitle: document.getElementById("i_defaultPushTitle").value,
+    defaultPushUrl: document.getElementById("i_defaultPushUrl").value,
+  });
+});
+
+// 8. Admin Roles & Users Management
+async function loadUsersManagement() {
+  const host = document.getElementById("usersManagementHost");
+  try {
+    stateUsers = await apiJson("/api/users");
+    if (!stateUsers.length) {
+      host.innerHTML = '<p style="padding:16px;">No registered users found.</p>';
+      return;
+    }
+
+    host.innerHTML = `
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Provider</th>
+            <th>Role</th>
+            <th>Joined</th>
+            <th style="text-align:right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${stateUsers.map((u) => {
+            const isSelf = currentAdminUser && Number(u.id) === Number(currentAdminUser.id);
+            const isBootstrap = Boolean(u.is_bootstrap);
+            const roleLabel = u.is_admin ? (isBootstrap ? "Bootstrap Admin" : "Admin") : "Member";
+            const disableRole = isSelf || (u.is_admin && isBootstrap);
+            const disableDelete = isSelf || isBootstrap;
+
+            return `
+              <tr>
+                <td><strong>${escapeHtml(u.name || "-")}</strong>${isSelf ? ' <span class="meta-pill">You</span>' : ""}</td>
+                <td>${escapeHtml(u.email)}</td>
+                <td>${u.google_id ? "Google" : "Local"}</td>
+                <td><span class="health-pill ${u.is_admin ? "ok" : "warn"}">${roleLabel}</span></td>
+                <td>${new Date(u.created_at).toLocaleDateString()}</td>
+                <td style="text-align:right; white-space:nowrap;">
+                  <button
+                    type="button"
+                    class="btn-secondary btn-small"
+                    ${disableRole ? "disabled title='Protected account or your own session'" : ""}
+                    onclick="toggleUserAdmin(${u.id}, ${!u.is_admin})"
+                  >${u.is_admin ? "Remove Admin" : "Make Admin"}</button>
+                  <button
+                    type="button"
+                    class="btn-danger btn-small"
+                    ${disableDelete ? "disabled title='Protected account or your own session'" : ""}
+                    onclick="deleteUserAccount(${u.id})"
+                  >Delete</button>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+    `;
+  } catch (error) {
+    host.innerHTML = `<p style="padding:16px; color:#dc2626;">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function toggleUserAdmin(userId, nextIsAdmin) {
+  const user = stateUsers.find((u) => Number(u.id) === Number(userId));
+  if (!user) return;
+  const ok = await askConfirm({
+    title: nextIsAdmin ? `Promote ${user.name || user.email} to Admin?` : `Remove admin access from ${user.name || user.email}?`,
+    body: nextIsAdmin
+      ? "Admins can manage site settings, members, events, blogs and gallery media."
+      : "This member will lose admin dashboard access.",
+    confirmLabel: nextIsAdmin ? "Promote to Admin" : "Demote to Member",
+    danger: !nextIsAdmin,
+  });
+  if (!ok) return;
+
+  try {
+    const res = await apiJson(`/api/admin/users/${userId}/role`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isAdmin: nextIsAdmin }),
+    });
+    showStatus(res.message || "User role updated.", "success");
+    await loadUsersManagement();
+    const adminRes = await apiJson("/api/admin/settings");
+    stateAuditLog = adminRes.auditLog || stateAuditLog;
+  } catch (error) {
+    showStatus(error.message || "Could not update user role.", "error");
+  }
+}
+
+async function deleteUserAccount(userId) {
+  const user = stateUsers.find((u) => Number(u.id) === Number(userId));
+  if (!user) return;
+  const ok = await askConfirm({
+    title: `Permanently delete ${user.name || user.email}?`,
+    body: "This removes their user account, RSVPs, saves and avatar permanently.",
+    confirmLabel: "Delete User",
+    danger: true,
+  });
+  if (!ok) return;
+
+  try {
+    const res = await apiJson(`/api/admin/users/${userId}`, { method: "DELETE" });
+    showStatus(res.message || "User deleted.", "success");
+    await loadUsersManagement();
+  } catch (error) {
+    showStatus(error.message || "Could not delete user.", "error");
+  }
+}
+
+// 9. Contact & Prayer Inbox
+function updateUnreadBadge(newCount) {
+  const badge = document.getElementById("inboxUnreadBadge");
+  if (!badge) return;
+  const n = Number.parseInt(newCount, 10) || 0;
+  badge.textContent = String(n);
+  badge.hidden = n <= 0;
+}
+
+async function loadContactMessages() {
+  const countsBar = document.getElementById("inboxCountsBar");
+  const host = document.getElementById("inboxMessagesHost");
+  try {
+    const query = currentInboxFilter === "all" ? "" : `?status=${encodeURIComponent(currentInboxFilter)}`;
+    stateInbox = await apiJson(`/api/admin/contact-messages${query}`);
+    updateUnreadBadge(stateInbox.counts?.new || 0);
+
+    const counts = stateInbox.counts || { total: 0, new: 0, read: 0, resolved: 0 };
+    const filters = [
+      { id: "all", label: `All (${counts.total})` },
+      { id: "new", label: `New (${counts.new})` },
+      { id: "read", label: `Read (${counts.read})` },
+      { id: "resolved", label: `Resolved (${counts.resolved})` },
+    ];
+    countsBar.innerHTML = filters.map((f) => `
+      <button type="button" class="btn-small ${currentInboxFilter === f.id ? "btn-primary" : "btn-secondary"}" onclick="currentInboxFilter='${f.id}'; loadContactMessages();">
+        ${escapeHtml(f.label)}
+      </button>
+    `).join("");
+
+    if (!stateInbox.messages.length) {
+      host.innerHTML = '<div class="repeatable-item"><p style="margin:0; color:var(--text-secondary);">No messages match this filter yet.</p></div>';
+      return;
+    }
+
+    host.innerHTML = stateInbox.messages.map((msg) => {
+      const pillClass = msg.status === "resolved" ? "ok" : msg.status === "new" ? "err" : "warn";
+      return `
+        <article class="inbox-card">
+          <div class="inbox-head">
+            <div>
+              <strong>${escapeHtml(msg.name)}</strong>
+              <span class="meta-pill" style="margin-left:6px;">${escapeHtml(msg.contact)}</span>
+              <span class="meta-pill" style="margin-left:4px;">${escapeHtml(msg.department)}</span>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">${new Date(msg.created_at).toLocaleString()}</div>
+            </div>
+            <span class="health-pill ${pillClass}">${escapeHtml(msg.status.toUpperCase())}</span>
+          </div>
+          ${msg.subject ? `<div style="font-weight:700; font-size:14px;">Subject: ${escapeHtml(msg.subject)}</div>` : ""}
+          <p class="inbox-msg">${escapeHtml(msg.message)}</p>
+          <div class="repeatable-actions">
+            ${msg.status !== "read" ? `<button type="button" class="btn-secondary btn-small" onclick="setContactStatus(${msg.id}, 'read')">Mark Read</button>` : ""}
+            ${msg.status !== "resolved" ? `<button type="button" class="btn-primary btn-small" onclick="setContactStatus(${msg.id}, 'resolved')">Mark Resolved</button>` : ""}
+            ${msg.status !== "new" ? `<button type="button" class="btn-secondary btn-small" onclick="setContactStatus(${msg.id}, 'new')">Reopen</button>` : ""}
+            <button type="button" class="btn-danger btn-small" onclick="deleteContactMessage(${msg.id})">Delete</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+  } catch (error) {
+    host.innerHTML = `<p style="color:#dc2626;">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+async function setContactStatus(id, status) {
+  try {
+    await apiJson(`/api/admin/contact-messages/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    });
+    await loadContactMessages();
+  } catch (error) {
+    showStatus(error.message || "Could not update message status.", "error");
+  }
+}
+
+async function deleteContactMessage(id) {
+  const ok = await askConfirm({
+    title: "Delete this message?",
+    body: "This removes the contact/prayer request permanently from PostgreSQL.",
+    confirmLabel: "Delete Message",
+    danger: true,
+  });
+  if (!ok) return;
+
+  try {
+    await apiJson(`/api/admin/contact-messages/${id}`, { method: "DELETE" });
+    showStatus("Message deleted.", "success");
+    await loadContactMessages();
+  } catch (error) {
+    showStatus(error.message || "Could not delete message.", "error");
+  }
+}
+
+// 10. System Health
+async function loadSystemHealth(probe = false) {
+  const host = document.getElementById("systemHealthHost");
+  if (probe) {
+    host.innerHTML = "<p>Probing live PostgreSQL and Cloudflare R2 connectivity...</p>";
+  }
+  try {
+    const h = await apiJson(`/api/admin/system-health${probe ? "?probe=1" : ""}`);
+    const r2Conn = h.storage?.r2?.connection;
+    const storagePill = h.storage?.activeProvider === "r2"
+      ? (r2Conn ? (r2Conn.connected ? '<span class="health-pill ok">R2 Connected (Live)</span>' : '<span class="health-pill err">R2 Probe Failed</span>') : '<span class="health-pill ok">Cloudflare R2 Ready</span>')
+      : (h.storage?.activeProvider === "cloudinary" ? '<span class="health-pill warn">Cloudinary Active</span>' : '<span class="health-pill warn">Local Disk Fallback</span>');
+
+    host.innerHTML = `
+      <div class="health-card">
+        <strong>PostgreSQL Database</strong>
+        <span class="health-pill ${h.postgres?.connected ? "ok" : "err"}">${h.postgres?.connected ? `Connected (${h.postgres.latencyMs} ms)` : "Disconnected"}</span>
+        <small style="color:var(--text-muted);">Environment: ${escapeHtml(h.environment)}</small>
+      </div>
+      <div class="health-card">
+        <strong>Media Storage</strong>
+        ${storagePill}
+        <small style="color:var(--text-muted);">Bucket: ${escapeHtml(h.storage?.r2?.bucket || "Local /uploads")}</small>
+        ${r2Conn?.error ? `<small style="color:#dc2626;">${escapeHtml(r2Conn.error)}</small>` : ""}
+      </div>
+      <div class="health-card">
+        <strong>Google OAuth</strong>
+        <span class="health-pill ${h.googleOAuth?.configured ? "ok" : "warn"}">${h.googleOAuth?.configured ? "Configured" : "Not Configured"}</span>
+      </div>
+      <div class="health-card">
+        <strong>SMTP Password Reset Email</strong>
+        <span class="health-pill ${h.smtpEmail?.configured ? "ok" : "warn"}">${h.smtpEmail?.configured ? "SMTP Ready" : "Direct Link Fallback"}</span>
+      </div>
+      <div class="health-card">
+        <strong>Web Push (VAPID)</strong>
+        <span class="health-pill ${h.webPush?.configured ? "ok" : "warn"}">${h.webPush?.configured ? "Ready" : "Missing Keys"}</span>
+      </div>
+      <div class="health-card">
+        <strong>Server Runtime</strong>
+        <span class="health-pill ok">${escapeHtml(h.nodeVersion)}</span>
+        <small style="color:var(--text-muted);">Uptime: ${Math.floor((h.uptimeSeconds || 0) / 60)} min</small>
+      </div>
+    `;
+  } catch (error) {
+    host.innerHTML = `<p style="color:#dc2626;">${escapeHtml(error.message)}</p>`;
+  }
+}
+
+// 11. Backups & Audit Log
+function exportSettingsBackup() {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    app: stateSettings?.branding?.siteName || "AIC Ziwani CYA",
+    settings: stateSettings,
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `cya-settings-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+document.getElementById("importBackupInput").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  e.target.value = "";
+  if (!file) return;
+
+  try {
+    const raw = await file.text();
+    const parsed = JSON.parse(raw);
+    const ok = await askConfirm({
+      title: "Import Settings Backup?",
+      body: `Restore settings from "${file.name}"? Sections found in the file will overwrite current live values.`,
+      confirmLabel: "Import Backup",
+      danger: false,
+    });
+    if (!ok) return;
+
+    const res = await apiJson("/api/admin/settings/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(parsed),
+    });
+    stateSettings = res.settings;
+    stateMeta = res.meta;
+    stateAuditLog = res.auditLog || [];
+    window.__CYA_SITE_SETTINGS__ = stateSettings;
+    populateAllForms();
+    renderAuditLog();
+    showStatus(res.message || "Backup imported successfully.", "success");
+  } catch (error) {
+    showStatus(error.message || "Invalid JSON settings backup.", "error");
+  }
+});
+
+function renderAuditLog() {
+  const host = document.getElementById("auditLogHost");
+  if (!stateAuditLog.length) {
+    host.innerHTML = '<p style="padding:16px; color:var(--text-secondary);">No settings changes recorded yet.</p>';
+    return;
+  }
+
+  host.innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>When</th>
+          <th>Admin</th>
+          <th>Section</th>
+          <th>Action</th>
+          <th>Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${stateAuditLog.map((entry) => `
+          <tr>
+            <td>${new Date(entry.created_at).toLocaleString()}</td>
+            <td>${escapeHtml(entry.actor_name || "Admin")}</td>
+            <td><span class="meta-pill">${escapeHtml(entry.section)}</span></td>
+            <td>${escapeHtml(entry.action)}</td>
+            <td>${escapeHtml(entry.summary || "-")}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+// Initial boot & admin guard
+async function initAdminSettingsPage() {
+  try {
+    const userRes = await fetch(buildBackendUrl("/api/auth/user"), { credentials: "include" });
+    if (!userRes.ok) {
+      window.location.replace("/");
+      return;
+    }
+    const user = await userRes.json();
+    if (!user?.isAdmin) {
+      window.location.replace("/");
+      return;
+    }
+    currentAdminUser = user;
+    document.getElementById("adminIdentityLabel").textContent = `Signed in as ${user.displayName || user.emails?.[0]?.value || "Admin"}`;
+
+    const adminData = await apiJson("/api/admin/settings");
+    stateSettings = adminData.settings;
+    stateMeta = adminData.meta || {};
+    stateAuditLog = adminData.auditLog || [];
+    updateUnreadBadge(adminData.unreadContactCount || 0);
+    populateAllForms();
+    renderAuditLog();
+  } catch (error) {
+    showStatus(error.message || "Could not verify admin session.", "error");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initAdminSettingsPage);
+</script>
+<script src="/pwa.js?v=33" defer></script>
+</body>
+</html>
