@@ -35,7 +35,6 @@
 </script>
 <style>
 :root {
-  --in-oklab: ;
   --primary-red: #c8102e;
   --dark-red: #9e0d23;
   --bg-primary: #f4f4f4;
@@ -49,12 +48,6 @@
   --shadow-color-heavy: rgba(0,0,0,0.08);
   --button-hover-bg: #f0f0f0;
   --input-bg: #f9f9f9;
-}
-
-@supports (background: linear-gradient(in oklab, white, black)) {
-  :root {
-    --in-oklab: in oklab;
-  }
 }
 
 [data-theme="dark"] {
@@ -911,32 +904,12 @@ button.submit:hover {
 }
 
 .chart-stage {
-  position: relative;
-  isolation: isolate;
-  margin-top: 28px;
-  padding: 22px;
-  border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background:
-    radial-gradient(circle at 1px 1px, rgba(15, 23, 42, 0.06) 1px, transparent 0) 0 0 / 20px 20px,
-    radial-gradient(circle at 88% 12%, rgba(6, 182, 212, 0.09), transparent 45%),
-    radial-gradient(circle at 12% 18%, rgba(200, 16, 46, 0.08), transparent 46%),
-    linear-gradient(145deg var(--in-oklab), #ffffff, #f8fafc);
-  box-shadow:
-    0 18px 42px rgba(15, 23, 42, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
-}
-
-[data-theme="dark"] .chart-stage {
-  border-color: rgba(148, 163, 184, 0.16);
-  background:
-    radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.09) 1px, transparent 0) 0 0 / 20px 20px,
-    radial-gradient(circle at 88% 12%, rgba(56, 189, 248, 0.14), transparent 44%),
-    radial-gradient(circle at 12% 18%, rgba(229, 57, 53, 0.15), transparent 46%),
-    linear-gradient(145deg var(--in-oklab), #090d16, #111827);
-  box-shadow:
-    0 20px 50px rgba(0, 0, 0, 0.46),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  box-shadow: 0 4px 16px var(--shadow-color-light);
 }
 
 .chart-stage-header {
@@ -956,9 +929,8 @@ button.submit:hover {
 
 .chart-title-wrap h3 {
   margin: 0;
-  font-size: 16px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  font-size: 15.5px;
+  font-weight: 700;
   color: var(--text-primary);
 }
 
@@ -968,34 +940,6 @@ button.submit:hover {
   color: var(--text-secondary);
 }
 
-.pulse-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  background: radial-gradient(circle, #38bdf8 0%, #c8102e 100%);
-  box-shadow:
-    0 0 0 4px rgba(200, 16, 46, 0.14),
-    0 0 14px rgba(56, 189, 248, 0.45);
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .pulse-dot {
-    animation: pulseGlow 2.6s ease-in-out infinite;
-  }
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    transform: scale(0.92);
-    opacity: 0.78;
-  }
-  50% {
-    transform: scale(1.12);
-    opacity: 1;
-  }
-}
-
 .chart-mode-switcher {
   display: inline-flex;
   align-items: center;
@@ -1003,13 +947,8 @@ button.submit:hover {
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-}
-
-[data-theme="dark"] .chart-mode-switcher {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(148, 163, 184, 0.16);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
 }
 
 .chart-mode-btn {
@@ -1020,9 +959,9 @@ button.submit:hover {
   color: var(--text-secondary);
   font: inherit;
   font-size: 12.5px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
 }
 
 .chart-mode-btn:hover {
@@ -1030,20 +969,20 @@ button.submit:hover {
 }
 
 .chart-mode-btn:focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid var(--primary-red);
   outline-offset: 2px;
 }
 
 .chart-mode-btn.active {
-  background: linear-gradient(135deg var(--in-oklab), #c8102e, #e53935);
+  background: var(--primary-red);
   color: #ffffff;
-  box-shadow: 0 6px 18px rgba(200, 16, 46, 0.34);
+  box-shadow: 0 2px 8px rgba(200, 16, 46, 0.22);
 }
 
 #statsGraphs {
   position: relative;
-  height: 360px;
-  margin-top: 14px;
+  height: 340px;
+  margin-top: 12px;
 }
 
 .quick-actions-grid {
@@ -1571,16 +1510,14 @@ button.submit:hover {
       <div class="chart-stage">
         <div class="chart-stage-header">
           <div class="chart-title-wrap">
-            <span class="pulse-dot" aria-hidden="true"></span>
             <div>
-              <h3>Platform Telemetry</h3>
+              <h3>Platform Overview</h3>
               <p id="chartTotalSummary">Loading live platform metrics...</p>
             </div>
           </div>
           <div class="chart-mode-switcher" role="group" aria-label="Chart visualization style">
-            <button type="button" class="chart-mode-btn active" data-chart-mode="wave" aria-pressed="true">Smooth Wave</button>
-            <button type="button" class="chart-mode-btn" data-chart-mode="bar" aria-pressed="false">Neon Bars</button>
-            <button type="button" class="chart-mode-btn" data-chart-mode="radar" aria-pressed="false">Radial Pulse</button>
+            <button type="button" class="chart-mode-btn active" data-chart-mode="wave" aria-pressed="true">Smooth Curve</button>
+            <button type="button" class="chart-mode-btn" data-chart-mode="bar" aria-pressed="false">Soft Bars</button>
           </div>
         </div>
         <div id="statsGraphs">
@@ -2235,7 +2172,7 @@ async function loadUsers() {
   }
 }
 
-const VALID_CHART_MODES = ['wave', 'bar', 'radar'];
+const VALID_CHART_MODES = ['wave', 'bar'];
 let overviewChartInstance = null;
 let lastOverviewStats = null;
 let overviewChartMode = (() => {
@@ -2331,31 +2268,14 @@ function updateChart(data) {
   const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
   const textColor = isDark ? '#cbd5e1' : '#334155';
   const mutedTextColor = isDark ? '#94a3b8' : '#64748b';
-  const gridColor = isDark ? 'rgba(148, 163, 184, 0.14)' : 'rgba(15, 23, 42, 0.08)';
-  const surfacePointBg = isDark ? '#0f172a' : '#ffffff';
-  const chartWidth = canvas.clientWidth || canvas.parentElement?.clientWidth || 600;
-  const chartHeight = canvas.clientHeight || canvas.parentElement?.clientHeight || 360;
+  const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(15, 23, 42, 0.06)';
+  const surfacePointBg = isDark ? '#1e1e1e' : '#ffffff';
+  const brandAccent = isDark ? '#e55353' : '#c8102e';
+  const chartHeight = canvas.clientHeight || canvas.parentElement?.clientHeight || 340;
   const prefersReducedMotion = Boolean(reducedMotionQuery?.matches);
 
-  const neonGlowPlugin = {
-    id: 'neonGlowPlugin',
-    beforeDatasetDraw(chart, args) {
-      if (args.index !== 0) return;
-      const { ctx: c } = chart;
-      c.save();
-      c.shadowColor = isDark ? 'rgba(56, 189, 248, 0.36)' : 'rgba(200, 16, 46, 0.24)';
-      c.shadowBlur = chart.config.type === 'bar' ? 14 : 18;
-      c.shadowOffsetX = 0;
-      c.shadowOffsetY = chart.config.type === 'bar' ? 6 : 8;
-    },
-    afterDatasetDraw(chart, args) {
-      if (args.index !== 0) return;
-      chart.ctx.restore();
-    }
-  };
-
-  const crosshairPlugin = {
-    id: 'crosshairPlugin',
+  const softGuidePlugin = {
+    id: 'softGuidePlugin',
     afterDatasetsDraw(chart) {
       if (chart.config.type !== 'line') return;
       const active = chart.tooltip?.getActiveElements?.() || chart.tooltip?._active || [];
@@ -2365,12 +2285,8 @@ function updateChart(data) {
       const { top, bottom } = chart.chartArea;
       const { ctx: c } = chart;
       c.save();
-      const grad = c.createLinearGradient(0, top, 0, bottom);
-      grad.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(200, 16, 46, 0.05)');
-      grad.addColorStop(0.5, isDark ? 'rgba(56, 189, 248, 0.7)' : 'rgba(200, 16, 46, 0.55)');
-      grad.addColorStop(1, isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(200, 16, 46, 0.05)');
-      c.strokeStyle = grad;
-      c.lineWidth = 1.5;
+      c.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.24)' : 'rgba(100, 116, 139, 0.2)';
+      c.lineWidth = 1;
       c.setLineDash([4, 4]);
       c.beginPath();
       c.moveTo(x, top);
@@ -2383,13 +2299,13 @@ function updateChart(data) {
   const valueBadgePlugin = {
     id: 'valueBadgePlugin',
     afterDatasetsDraw(chart) {
-      if (chart.config.type === 'radar' || !chart.chartArea) return;
+      if (!chart.chartArea) return;
       const meta = chart.getDatasetMeta(0);
       if (!meta?.data?.length) return;
       const { ctx: c, chartArea } = chart;
       c.save();
-      c.font = '700 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-      c.fillStyle = isDark ? '#f8fafc' : '#0f172a';
+      c.font = '600 12px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      c.fillStyle = isDark ? '#e2e8f0' : '#334155';
       c.textAlign = 'center';
       c.textBaseline = 'bottom';
       meta.data.forEach((el, index) => {
@@ -2401,76 +2317,75 @@ function updateChart(data) {
     }
   };
 
-  const waveStroke = ctx.createLinearGradient(0, 0, Math.max(300, chartWidth), 0);
-  waveStroke.addColorStop(0, '#ff2e55');
-  waveStroke.addColorStop(0.52, '#7c3aed');
-  waveStroke.addColorStop(1, '#06b6d4');
+  const waveFill = ctx.createLinearGradient(0, 16, 0, chartHeight);
+  waveFill.addColorStop(0, isDark ? 'rgba(229, 83, 83, 0.22)' : 'rgba(200, 16, 46, 0.16)');
+  waveFill.addColorStop(1, isDark ? 'rgba(229, 83, 83, 0)' : 'rgba(200, 16, 46, 0)');
 
-  const waveFill = ctx.createLinearGradient(0, 20, 0, chartHeight);
-  waveFill.addColorStop(0, isDark ? 'rgba(255, 46, 85, 0.38)' : 'rgba(200, 16, 46, 0.28)');
-  waveFill.addColorStop(0.55, isDark ? 'rgba(124, 58, 237, 0.16)' : 'rgba(124, 58, 237, 0.12)');
-  waveFill.addColorStop(1, 'rgba(6, 182, 212, 0)');
+  const softBarPalettes = isDark
+    ? [
+        ['rgba(229, 83, 83, 0.84)', 'rgba(229, 83, 83, 0.34)'],
+        ['rgba(96, 165, 250, 0.82)', 'rgba(96, 165, 250, 0.34)'],
+        ['rgba(251, 191, 36, 0.8)', 'rgba(251, 191, 36, 0.32)'],
+        ['rgba(74, 222, 128, 0.78)', 'rgba(74, 222, 128, 0.32)'],
+        ['rgba(167, 139, 250, 0.82)', 'rgba(167, 139, 250, 0.34)']
+      ]
+    : [
+        ['rgba(200, 16, 46, 0.78)', 'rgba(200, 16, 46, 0.26)'],
+        ['rgba(71, 120, 184, 0.78)', 'rgba(71, 120, 184, 0.26)'],
+        ['rgba(217, 155, 56, 0.78)', 'rgba(217, 155, 56, 0.26)'],
+        ['rgba(68, 157, 125, 0.78)', 'rgba(68, 157, 125, 0.26)'],
+        ['rgba(116, 102, 190, 0.78)', 'rgba(116, 102, 190, 0.26)']
+      ];
 
-  const radarFill = ctx.createRadialGradient(
-    chartWidth / 2,
-    chartHeight / 2,
-    10,
-    chartWidth / 2,
-    chartHeight / 2,
-    Math.max(120, Math.min(chartWidth, chartHeight) / 2)
-  );
-  radarFill.addColorStop(0, isDark ? 'rgba(56, 189, 248, 0.35)' : 'rgba(200, 16, 46, 0.28)');
-  radarFill.addColorStop(1, isDark ? 'rgba(229, 57, 53, 0.18)' : 'rgba(124, 58, 237, 0.12)');
-
-  const barPalettes = [
-    ['rgba(255, 46, 85, 0.96)', 'rgba(200, 16, 46, 0.22)', '#ff2e55'],
-    ['rgba(6, 182, 212, 0.96)', 'rgba(6, 182, 212, 0.22)', '#06b6d4'],
-    ['rgba(245, 158, 11, 0.96)', 'rgba(245, 158, 11, 0.22)', '#f59e0b'],
-    ['rgba(16, 185, 129, 0.96)', 'rgba(16, 185, 129, 0.22)', '#10b981'],
-    ['rgba(139, 92, 246, 0.96)', 'rgba(139, 92, 246, 0.22)', '#8b5cf6']
-  ];
-
-  const barGradients = barPalettes.map(([topColor, bottomColor]) => {
-    const grad = ctx.createLinearGradient(0, 20, 0, chartHeight);
+  const barGradients = softBarPalettes.map(([topColor, bottomColor]) => {
+    const grad = ctx.createLinearGradient(0, 16, 0, chartHeight);
     grad.addColorStop(0, topColor);
     grad.addColorStop(1, bottomColor);
     return grad;
   });
 
-  const barBorders = barPalettes.map(([, , borderColor]) => borderColor);
   const animationConfig = prefersReducedMotion
     ? false
     : {
-        duration: 950,
-        easing: 'easeOutQuart',
-        delay(context) {
-          return context.type === 'data' && context.mode === 'default'
-            ? context.dataIndex * 85
-            : 0;
-        }
+        duration: 800,
+        easing: 'easeInOutCubic'
       };
 
   const tooltipConfig = {
-    backgroundColor: isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(15, 23, 42, 0.9)',
-    titleColor: '#f8fafc',
-    bodyColor: '#e2e8f0',
-    borderColor: isDark ? 'rgba(56, 189, 248, 0.4)' : 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.94)' : 'rgba(255, 255, 255, 0.96)',
+    titleColor: isDark ? '#f1f5f9' : '#1e293b',
+    bodyColor: isDark ? '#cbd5e1' : '#475569',
+    borderColor: isDark ? 'rgba(148, 163, 184, 0.22)' : 'rgba(15, 23, 42, 0.1)',
     borderWidth: 1,
-    cornerRadius: 12,
-    padding: 12,
+    cornerRadius: 10,
+    padding: 10,
     displayColors: true,
     callbacks: {
       label(context) {
-        const val = Number(context.parsed?.r ?? context.parsed?.y ?? 0);
+        const val = Number(context.parsed?.y ?? 0);
         const pct = total > 0 ? ((val / total) * 100).toFixed(1) : '0.0';
         return ` ${val} records (${pct}%)`;
       }
     }
   };
 
+  const commonScales = {
+    x: {
+      border: { display: false },
+      grid: { display: false },
+      ticks: { color: textColor, font: { weight: '600', size: 12 } }
+    },
+    y: {
+      beginAtZero: true,
+      suggestedMax: Math.ceil(maxVal * 1.18),
+      border: { display: false },
+      grid: { color: gridColor, tickLength: 0 },
+      ticks: { color: mutedTextColor, precision: 0, font: { size: 11.5 } }
+    }
+  };
+
   let chartType = 'line';
   let dataset;
-  let scalesConfig;
 
   if (overviewChartMode === 'bar') {
     chartType = 'bar';
@@ -2478,52 +2393,11 @@ function updateChart(data) {
       label: 'Platform Statistics',
       data: values,
       backgroundColor: barGradients,
-      borderColor: barBorders,
-      borderWidth: 1.5,
-      hoverBorderColor: '#ffffff',
-      hoverBorderWidth: 2,
-      borderRadius: { topLeft: 14, topRight: 14, bottomLeft: 4, bottomRight: 4 },
+      borderWidth: 0,
+      borderRadius: 14,
       borderSkipped: false,
-      barPercentage: 0.56,
-      categoryPercentage: 0.72
-    };
-    scalesConfig = {
-      x: {
-        border: { display: false },
-        grid: { display: false },
-        ticks: { color: textColor, font: { weight: '600', size: 12 } }
-      },
-      y: {
-        beginAtZero: true,
-        suggestedMax: Math.ceil(maxVal * 1.18),
-        border: { display: false },
-        grid: { color: gridColor, tickLength: 0 },
-        ticks: { color: mutedTextColor, precision: 0, font: { size: 11.5 } }
-      }
-    };
-  } else if (overviewChartMode === 'radar') {
-    chartType = 'radar';
-    dataset = {
-      label: 'Platform Statistics',
-      data: values,
-      backgroundColor: radarFill,
-      borderColor: waveStroke,
-      borderWidth: 2.5,
-      pointRadius: 5,
-      pointHoverRadius: 8,
-      pointBackgroundColor: surfacePointBg,
-      pointBorderColor: barBorders,
-      pointBorderWidth: 2.5
-    };
-    scalesConfig = {
-      r: {
-        beginAtZero: true,
-        suggestedMax: Math.max(5, Math.ceil(maxVal * 1.2)),
-        grid: { circular: true, color: gridColor },
-        angleLines: { color: gridColor },
-        pointLabels: { color: textColor, font: { weight: '700', size: 12.5 } },
-        ticks: { display: false }
-      }
+      barPercentage: 0.52,
+      categoryPercentage: 0.68
     };
   } else {
     chartType = 'line';
@@ -2532,32 +2406,20 @@ function updateChart(data) {
       data: values,
       fill: true,
       backgroundColor: waveFill,
-      borderColor: waveStroke,
-      borderWidth: 3.5,
+      borderColor: brandAccent,
+      borderWidth: 3,
+      borderCapStyle: 'round',
+      borderJoinStyle: 'round',
       cubicInterpolationMode: 'monotone',
       tension: 0.45,
-      pointRadius: 6,
-      pointHoverRadius: 9,
+      pointRadius: 4.5,
+      pointHoverRadius: 7,
       pointBackgroundColor: surfacePointBg,
-      pointBorderColor: barBorders,
-      pointBorderWidth: 3,
-      pointHoverBackgroundColor: barBorders,
-      pointHoverBorderColor: '#ffffff',
+      pointBorderColor: brandAccent,
+      pointBorderWidth: 2.5,
+      pointHoverBackgroundColor: brandAccent,
+      pointHoverBorderColor: surfacePointBg,
       pointHoverBorderWidth: 2
-    };
-    scalesConfig = {
-      x: {
-        border: { display: false },
-        grid: { display: false },
-        ticks: { color: textColor, font: { weight: '600', size: 12 } }
-      },
-      y: {
-        beginAtZero: true,
-        suggestedMax: Math.ceil(maxVal * 1.18),
-        border: { display: false },
-        grid: { color: gridColor, tickLength: 0 },
-        ticks: { color: mutedTextColor, precision: 0, font: { size: 11.5 } }
-      }
     };
   }
 
@@ -2567,14 +2429,14 @@ function updateChart(data) {
       labels,
       datasets: [dataset]
     },
-    plugins: [neonGlowPlugin, crosshairPlugin, valueBadgePlugin],
+    plugins: [softGuidePlugin, valueBadgePlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: animationConfig,
       layout: {
         padding: {
-          top: chartType === 'radar' ? 8 : 26,
+          top: 24,
           right: 14,
           bottom: 4,
           left: 8
@@ -2585,7 +2447,7 @@ function updateChart(data) {
         legend: { display: false },
         tooltip: tooltipConfig
       },
-      scales: scalesConfig
+      scales: commonScales
     }
   });
 }
