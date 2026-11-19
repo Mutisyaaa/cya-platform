@@ -76,10 +76,21 @@ body {
   display: flex;
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .sidebar {
-  width: 250px;
+  width: 260px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  box-sizing: border-box;
+  z-index: 100;
   background: var(--bg-secondary);
   padding: 20px;
   box-shadow: 4px 0 20px var(--shadow-color-light);
@@ -123,7 +134,9 @@ body {
 
 .main {
   flex: 1;
+  min-width: 0;
   padding: 30px;
+  box-sizing: border-box;
 }
 
 .status {
@@ -957,16 +970,26 @@ button.submit:hover {
 }
 
 @media (max-width: 640px) {
+  html {
+    scroll-padding-top: 76px;
+  }
+
   #dashboard {
     flex-direction: column;
   }
 
   .sidebar {
     width: 100%;
+    height: auto;
+    max-height: none;
+    align-self: stretch;
+    box-sizing: border-box;
     padding: 14px;
     display: flex;
     gap: 10px;
     overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior: contain;
     border-right: none;
     border-bottom: 1px solid var(--border-color);
     box-shadow: 0 4px 18px var(--shadow-color-light);
@@ -1748,11 +1771,17 @@ async function showSection(id) {
   });
   document.querySelectorAll(".sidebar button").forEach((btn) => {
     btn.classList.remove("active");
+    btn.removeAttribute("aria-current");
   });
 
   document.getElementById(id)?.classList.add("active");
   const activeBtn = document.querySelector(`.sidebar button[onclick="showSection('${id}')"]`);
-  if (activeBtn) activeBtn.classList.add("active");
+  if (activeBtn) {
+    activeBtn.classList.add("active");
+    activeBtn.setAttribute("aria-current", "page");
+  }
+
+  window.scrollTo({ top: 0, behavior: "auto" });
 
   if (id === 'gallery') await loadGallery();
   else if (id === 'blogs') await loadBlogs();

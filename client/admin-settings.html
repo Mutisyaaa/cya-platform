@@ -75,11 +75,13 @@ body {
 .layout {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .sidebar {
   width: 278px;
   flex-shrink: 0;
+  align-self: flex-start;
   background: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   padding: 20px 16px;
@@ -88,8 +90,12 @@ body {
   gap: 6px;
   position: sticky;
   top: 0;
-  max-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  z-index: 100;
   box-shadow: 4px 0 24px var(--shadow-light);
 }
 
@@ -790,18 +796,26 @@ dialog p {
 }
 
 @media (max-width: 900px) {
+  html {
+    scroll-padding-top: 72px;
+  }
+
   .layout {
     flex-direction: column;
   }
 
   .sidebar {
     width: 100%;
+    height: auto;
     max-height: none;
+    align-self: stretch;
     position: sticky;
     top: 0;
     z-index: 50;
     flex-direction: row;
     overflow-x: auto;
+    overflow-y: visible;
+    overscroll-behavior: contain;
     align-items: center;
     padding: 10px 12px;
   }
