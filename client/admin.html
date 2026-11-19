@@ -940,45 +940,6 @@ button.submit:hover {
   color: var(--text-secondary);
 }
 
-.chart-mode-switcher {
-  display: inline-flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 4px;
-  padding: 4px;
-  border-radius: 999px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-}
-
-.chart-mode-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 7px 14px;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
-}
-
-.chart-mode-btn:hover {
-  color: var(--text-primary);
-}
-
-.chart-mode-btn:focus-visible {
-  outline: 2px solid var(--primary-red);
-  outline-offset: 2px;
-}
-
-.chart-mode-btn.active {
-  background: var(--primary-red);
-  color: #ffffff;
-  box-shadow: 0 2px 8px rgba(200, 16, 46, 0.22);
-}
-
 #statsGraphs {
   position: relative;
   height: 340px;
@@ -1134,17 +1095,6 @@ button.submit:hover {
     padding: 16px;
     border-radius: 16px;
     margin-top: 20px;
-  }
-
-  .chart-mode-switcher {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .chart-mode-btn {
-    flex: 1;
-    text-align: center;
-    padding: 7px 10px;
   }
 
   #statsGraphs {
@@ -1514,10 +1464,6 @@ button.submit:hover {
               <h3>Platform Overview</h3>
               <p id="chartTotalSummary">Loading live platform metrics...</p>
             </div>
-          </div>
-          <div class="chart-mode-switcher" role="group" aria-label="Chart visualization style">
-            <button type="button" class="chart-mode-btn active" data-chart-mode="wave" aria-pressed="true">Smooth Curve</button>
-            <button type="button" class="chart-mode-btn" data-chart-mode="bar" aria-pressed="false">Soft Bars</button>
           </div>
         </div>
         <div id="statsGraphs">
@@ -2172,44 +2118,8 @@ async function loadUsers() {
   }
 }
 
-const VALID_CHART_MODES = ['wave', 'bar'];
 let overviewChartInstance = null;
 let lastOverviewStats = null;
-let overviewChartMode = (() => {
-  try {
-    const saved = localStorage.getItem('cya_admin_chart_mode');
-    return VALID_CHART_MODES.includes(saved) ? saved : 'wave';
-  } catch {
-    return 'wave';
-  }
-})();
-
-function syncChartModeButtons() {
-  document.querySelectorAll('.chart-mode-btn').forEach((btn) => {
-    const isActive = btn.dataset.chartMode === overviewChartMode;
-    btn.classList.toggle('active', isActive);
-    btn.setAttribute('aria-pressed', String(isActive));
-  });
-}
-
-syncChartModeButtons();
-
-document.querySelectorAll('.chart-mode-btn').forEach((btn) => {
-  btn.addEventListener('click', () => {
-    const nextMode = btn.dataset.chartMode;
-    if (!VALID_CHART_MODES.includes(nextMode) || nextMode === overviewChartMode) {
-      return;
-    }
-    overviewChartMode = nextMode;
-    try {
-      localStorage.setItem('cya_admin_chart_mode', nextMode);
-    } catch (_) {}
-    syncChartModeButtons();
-    if (lastOverviewStats) {
-      updateChart(lastOverviewStats);
-    }
-  });
-});
 
 new MutationObserver((mutations) => {
   if (mutations.some((m) => m.attributeName === 'data-theme') && lastOverviewStats) {
@@ -2269,32 +2179,8 @@ function updateChart(data) {
   const textColor = isDark ? '#cbd5e1' : '#334155';
   const mutedTextColor = isDark ? '#94a3b8' : '#64748b';
   const gridColor = isDark ? 'rgba(148, 163, 184, 0.1)' : 'rgba(15, 23, 42, 0.06)';
-  const surfacePointBg = isDark ? '#1e1e1e' : '#ffffff';
-  const brandAccent = isDark ? '#e55353' : '#c8102e';
   const chartHeight = canvas.clientHeight || canvas.parentElement?.clientHeight || 340;
   const prefersReducedMotion = Boolean(reducedMotionQuery?.matches);
-
-  const softGuidePlugin = {
-    id: 'softGuidePlugin',
-    afterDatasetsDraw(chart) {
-      if (chart.config.type !== 'line') return;
-      const active = chart.tooltip?.getActiveElements?.() || chart.tooltip?._active || [];
-      if (!active.length || !chart.chartArea) return;
-      const x = active[0].element?.x;
-      if (!Number.isFinite(x)) return;
-      const { top, bottom } = chart.chartArea;
-      const { ctx: c } = chart;
-      c.save();
-      c.strokeStyle = isDark ? 'rgba(148, 163, 184, 0.24)' : 'rgba(100, 116, 139, 0.2)';
-      c.lineWidth = 1;
-      c.setLineDash([4, 4]);
-      c.beginPath();
-      c.moveTo(x, top);
-      c.lineTo(x, bottom);
-      c.stroke();
-      c.restore();
-    }
-  };
 
   const valueBadgePlugin = {
     id: 'valueBadgePlugin',
@@ -2316,10 +2202,6 @@ function updateChart(data) {
       c.restore();
     }
   };
-
-  const waveFill = ctx.createLinearGradient(0, 16, 0, chartHeight);
-  waveFill.addColorStop(0, isDark ? 'rgba(229, 83, 83, 0.22)' : 'rgba(200, 16, 46, 0.16)');
-  waveFill.addColorStop(1, isDark ? 'rgba(229, 83, 83, 0)' : 'rgba(200, 16, 46, 0)');
 
   const softBarPalettes = isDark
     ? [
@@ -2369,67 +2251,24 @@ function updateChart(data) {
     }
   };
 
-  const commonScales = {
-    x: {
-      border: { display: false },
-      grid: { display: false },
-      ticks: { color: textColor, font: { weight: '600', size: 12 } }
-    },
-    y: {
-      beginAtZero: true,
-      suggestedMax: Math.ceil(maxVal * 1.18),
-      border: { display: false },
-      grid: { color: gridColor, tickLength: 0 },
-      ticks: { color: mutedTextColor, precision: 0, font: { size: 11.5 } }
-    }
-  };
-
-  let chartType = 'line';
-  let dataset;
-
-  if (overviewChartMode === 'bar') {
-    chartType = 'bar';
-    dataset = {
-      label: 'Platform Statistics',
-      data: values,
-      backgroundColor: barGradients,
-      borderWidth: 0,
-      borderRadius: 14,
-      borderSkipped: false,
-      barPercentage: 0.52,
-      categoryPercentage: 0.68
-    };
-  } else {
-    chartType = 'line';
-    dataset = {
-      label: 'Platform Statistics',
-      data: values,
-      fill: true,
-      backgroundColor: waveFill,
-      borderColor: brandAccent,
-      borderWidth: 3,
-      borderCapStyle: 'round',
-      borderJoinStyle: 'round',
-      cubicInterpolationMode: 'monotone',
-      tension: 0.45,
-      pointRadius: 4.5,
-      pointHoverRadius: 7,
-      pointBackgroundColor: surfacePointBg,
-      pointBorderColor: brandAccent,
-      pointBorderWidth: 2.5,
-      pointHoverBackgroundColor: brandAccent,
-      pointHoverBorderColor: surfacePointBg,
-      pointHoverBorderWidth: 2
-    };
-  }
-
   overviewChartInstance = new Chart(ctx, {
-    type: chartType,
+    type: 'bar',
     data: {
       labels,
-      datasets: [dataset]
+      datasets: [
+        {
+          label: 'Platform Statistics',
+          data: values,
+          backgroundColor: barGradients,
+          borderWidth: 0,
+          borderRadius: 14,
+          borderSkipped: false,
+          barPercentage: 0.52,
+          categoryPercentage: 0.68
+        }
+      ]
     },
-    plugins: [softGuidePlugin, valueBadgePlugin],
+    plugins: [valueBadgePlugin],
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -2442,12 +2281,25 @@ function updateChart(data) {
           left: 8
         }
       },
-      interaction: chartType === 'line' ? { mode: 'index', intersect: false } : { mode: 'nearest', intersect: true },
+      interaction: { mode: 'nearest', intersect: true },
       plugins: {
         legend: { display: false },
         tooltip: tooltipConfig
       },
-      scales: commonScales
+      scales: {
+        x: {
+          border: { display: false },
+          grid: { display: false },
+          ticks: { color: textColor, font: { weight: '600', size: 12 } }
+        },
+        y: {
+          beginAtZero: true,
+          suggestedMax: Math.ceil(maxVal * 1.18),
+          border: { display: false },
+          grid: { color: gridColor, tickLength: 0 },
+          ticks: { color: mutedTextColor, precision: 0, font: { size: 11.5 } }
+        }
+      }
     }
   });
 }
